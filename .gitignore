@@ -1,0 +1,18 @@
+# Compilación (se regenera con dotnet build)
+bin/
+obj/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Secretos (nunca subir)
+secrets.json
+appsettings.Development.json
+appsettings.Local.json
+
+# Temporales
+*.log
+*.tmp

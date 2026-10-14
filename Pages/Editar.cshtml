@@ -1,0 +1,52 @@
+@page "{id:int}"
+@model Ferreteria.Pages.EditarModel
+@{
+    ViewData["Title"] = "Editar producto";
+}
+
+<h1>Editar producto</h1>
+
+@if (Model.Mensaje is not null)
+{
+    <div class="alert alert-danger">@Model.Mensaje</div>
+}
+
+<form method="post" style="max-width: 600px;">
+    <input type="hidden" asp-for="Producto.Id" />
+
+    <div class="mb-3">
+        <label asp-for="Producto.Codigo" class="form-label">Código</label>
+        <input asp-for="Producto.Codigo" class="form-control" />
+        <span asp-validation-for="Producto.Codigo" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Producto.Nombre" class="form-label">Nombre</label>
+        <input asp-for="Producto.Nombre" class="form-control" />
+        <span asp-validation-for="Producto.Nombre" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Producto.Medida" class="form-label">Medida</label>
+        <input asp-for="Producto.Medida" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Producto.PrecioCompra" class="form-label">Precio de compra (x100 und)</label>
+        <input asp-for="Producto.PrecioCompra" class="form-control" />
+        <div class="form-text">
+            Precio de venta automático (compra × 2): $ @((Model.Producto.PrecioCompra * 2m).ToString("N0"))
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Producto.StockMinimo" class="form-label">Stock mínimo</label>
+        <input asp-for="Producto.StockMinimo" class="form-control" />
+        <div class="form-text">
+            El stock se modifica desde la pantalla de Movimientos.
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    <a asp-page="/Productos" class="btn btn-secondary">Cancelar</a>
+</form>

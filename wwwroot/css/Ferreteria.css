@@ -1,0 +1,208 @@
+/* ==========================================================
+   ferreteria.css
+   Sistema visual de la ferretería (tokens, componentes, accesibilidad)
+   Cumple criterios de contraste WCAG 2.1 AA
+   ========================================================== */
+
+/* ---------- 1. Tokens de diseño ---------- */
+:root {
+  --fer-azul: #1d4e89;          /* blanco sobre azul: 8.2:1 */
+  --fer-azul-oscuro: #163b68;   /* encabezados de tabla y foco */
+  --fer-amarillo: #f5b700;      /* acento: se usa solo sobre azul oscuro */
+  --fer-fondo: #f4f6f9;
+  --fer-blanco: #ffffff;
+  --fer-texto: #1f2933;         /* 15:1 sobre blanco */
+  --fer-texto-suave: #4a5568;   /* 7.5:1 sobre blanco */
+  --fer-borde: #d9e2ec;
+  --fer-radio: 12px;
+  --fer-sombra: 0 2px 10px rgba(16, 42, 67, 0.08);
+  --fer-sombra-hover: 0 8px 20px rgba(16, 42, 67, 0.14);
+  --fer-altura-toque: 44px;     /* tamaño mínimo para tocar con dedo */
+}
+
+/* ---------- 2. Base ---------- */
+body {
+  background-color: var(--fer-fondo);
+  color: var(--fer-texto);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+h1, h2, h3 {
+  color: var(--fer-texto);
+  font-weight: 700;
+}
+
+/* Foco visible en todo elemento interactivo */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--fer-azul-oscuro);
+  outline-offset: 2px;
+}
+
+/* ---------- 3. Barra superior ---------- */
+.fer-nav {
+  background-color: var(--fer-azul);
+  color: var(--fer-blanco);
+}
+
+.fer-nav .fer-marca {
+  color: var(--fer-blanco);
+  font-weight: 700;
+  font-size: 1.15rem;
+  text-decoration: none;
+}
+
+.fer-nav a:focus-visible {
+  outline-color: var(--fer-amarillo);
+}
+
+/* ---------- 4. Botones ---------- */
+.btn {
+  min-height: var(--fer-altura-toque);
+  font-weight: 600;
+  border-radius: 8px;
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-fer {
+  background-color: var(--fer-azul);
+  border-color: var(--fer-azul);
+  color: var(--fer-blanco);
+}
+
+.btn-fer:hover,
+.btn-fer:focus {
+  background-color: var(--fer-azul-oscuro);
+  border-color: var(--fer-azul-oscuro);
+  color: var(--fer-blanco);
+}
+
+.btn-fer-outline {
+  background-color: var(--fer-blanco);
+  border: 2px solid var(--fer-azul);
+  color: var(--fer-azul);
+}
+
+.btn-fer-outline:hover,
+.btn-fer-outline:focus {
+  background-color: var(--fer-azul);
+  color: var(--fer-blanco);
+}
+
+/* ---------- 5. Tarjetas ---------- */
+.fer-card {
+  background-color: var(--fer-blanco);
+  border: 1px solid var(--fer-borde);
+  border-radius: var(--fer-radio);
+  box-shadow: var(--fer-sombra);
+}
+
+.fer-card-cuerpo {
+  padding: 1.5rem;
+}
+
+.fer-acceso {
+  display: block;
+  height: 100%;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: var(--fer-texto);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.fer-acceso:hover,
+.fer-acceso:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--fer-sombra-hover);
+  border-color: var(--fer-azul);
+  color: var(--fer-texto);
+}
+
+.fer-acceso .fer-icono {
+  font-size: 2rem;
+  color: var(--fer-azul);
+}
+
+.fer-acceso .fer-descripcion {
+  color: var(--fer-texto-suave);
+  margin-bottom: 0;
+}
+
+/* ---------- 6. Tablas ---------- */
+.fer-tabla thead th {
+  background-color: var(--fer-azul-oscuro);
+  color: var(--fer-blanco);
+  font-weight: 600;
+  padding: 0.9rem;
+  border: none;
+}
+
+.fer-tabla td {
+  padding: 0.9rem;
+  vertical-align: middle;
+}
+
+.fer-tabla .numero-orden {
+  font-weight: 700;
+  color: var(--fer-azul);
+  text-decoration: none;
+}
+
+.fer-tabla .numero-orden:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 7. Estados de pedido (badges) ---------- */
+.estado {
+  display: inline-block;
+  padding: 0.35em 0.8em;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.estado-pendiente    { background-color: #e4e7eb; color: #323f4b; }
+.estado-alistado     { background-color: #d9f0ff; color: #0b4a6f; }
+.estado-en_ruta      { background-color: #fff1c2; color: #6b4a00; }
+.estado-entregado    { background-color: #d3f9d8; color: #0e5b1f; }
+.estado-no_entregado { background-color: #ffd6d6; color: #8a1c1c; }
+.estado-cancelado    { background-color: #ece1f7; color: #4a1d6e; }
+
+/* ---------- 8. Mensajes y vacíos ---------- */
+.fer-vacio {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--fer-texto-suave);
+}
+
+.fer-vacio .bi {
+  font-size: 2.5rem;
+  color: var(--fer-azul);
+}
+
+/* ---------- 9. Impresión ---------- */
+@media print {
+  .fer-nav,
+  .no-imprimir {
+    display: none !important;
+  }
+
+  body {
+    background-color: var(--fer-blanco);
+    font-size: 0.95rem;
+  }
+
+  .fer-card {
+    box-shadow: none;
+  }
+}

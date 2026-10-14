@@ -1,0 +1,51 @@
+@page "{id:int}"
+@model AjustarModel
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ajustar inventario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body { font-size: 1.1rem; }
+        .form-control, .btn { font-size: 1.1rem; min-height: 3rem; }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark px-3">
+    <a class="navbar-brand" href="/Productos">Ferretería</a>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-light btn-sm" href="/Productos">Inventario</a>
+        <a class="btn btn-outline-light btn-sm" href="/Pedidos/Nuevo">Nuevo pedido</a>
+        <a class="btn btn-outline-light btn-sm" href="/Pedidos/Lista">Pedidos</a>
+    </div>
+</nav>
+
+<div class="container py-3" style="max-width: 600px;">
+    <h1 class="h3 mb-1">Ajustar inventario</h1>
+    <p class="mb-3">
+        <strong>@Model.Nombre</strong> @Model.Medida<br />
+        Stock actual: <strong>@Model.StockActual</strong>
+    </p>
+
+    @if (Model.Error != null)
+    {
+        <div class="alert alert-danger">@Model.Error</div>
+    }
+
+    <form method="post" class="bg-white rounded shadow-sm p-3">
+        <div class="mb-3">
+            <label class="form-label fw-semibold" for="NuevoStock">Stock correcto</label>
+            <input asp-for="NuevoStock" type="number" min="0" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold" for="Motivo">Motivo del ajuste</label>
+            <input asp-for="Motivo" class="form-control" placeholder="Ej: conteo físico, producto dañado" />
+        </div>
+        <button type="submit" class="btn btn-success w-100">Guardar ajuste</button>
+    </form>
+    <a class="btn btn-link mt-2" href="/Productos">Cancelar y volver</a>
+</div>
+</body>
+</html>
