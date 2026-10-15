@@ -28,7 +28,6 @@ public class ListaModel : PageModel
         await using var con = new NpgsqlConnection(connStr);
         await con.OpenAsync();
 
-        // Si es vendedor, buscamos su id por nombre de usuario
         int? vendedorId = null;
         if (!EsAdmin)
         {
@@ -45,7 +44,8 @@ public class ListaModel : PageModel
         string filtroVendedor = EsAdmin ? "" : "AND p.vendedor_id = @vid";
 
         string sql = $@"
-            SELECT p.numero            AS Numero,
+            SELECT p.id                AS Id,
+                   p.numero            AS Numero,
                    p.fecha             AS Fecha,
                    c.nombre_ferreteria AS Ferreteria,
                    c.nombre_cliente    AS Cliente,
@@ -64,7 +64,7 @@ public class ListaModel : PageModel
         Pedidos = lista.ToList();
     }
 
-    // ---------- Ayudas para la vista ----------
+    // ---------- Ayudas para las vistas ----------
 
     public static string FormatearFecha(DateTime fecha)
     {
@@ -94,13 +94,13 @@ public class ListaModel : PageModel
     {
         return estado switch
         {
-            "pendiente"    => "bg-secondary",
-            "alistado"     => "bg-info text-dark",
-            "en_ruta"      => "bg-primary",
-            "entregado"    => "bg-success",
-            "no_entregado" => "bg-danger",
-            "cancelado"    => "bg-dark",
-            _              => "bg-light text-dark"
+            "pendiente"    => "estado-pendiente",
+            "alistado"     => "estado-alistado",
+            "en_ruta"      => "estado-en_ruta",
+            "entregado"    => "estado-entregado",
+            "no_entregado" => "estado-no_entregado",
+            "cancelado"    => "estado-cancelado",
+            _              => "estado-pendiente"
         };
     }
 
@@ -108,6 +108,7 @@ public class ListaModel : PageModel
 
     public class PedidoFila
     {
+        public int Id { get; set; }
         public string Numero { get; set; } = "";
         public DateTime Fecha { get; set; }
         public string? Ferreteria { get; set; }

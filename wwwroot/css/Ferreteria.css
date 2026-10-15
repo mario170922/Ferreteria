@@ -1,40 +1,47 @@
 /* ==========================================================
    ferreteria.css
-   Sistema visual de la ferretería (tokens, componentes, accesibilidad)
-   Cumple criterios de contraste WCAG 2.1 AA
+   Tema oscuro: negro carbón + naranja (WCAG 2.1 AA)
    ========================================================== */
 
 /* ---------- 1. Tokens de diseño ---------- */
 :root {
-  --fer-azul: #1d4e89;          /* blanco sobre azul: 8.2:1 */
-  --fer-azul-oscuro: #163b68;   /* encabezados de tabla y foco */
-  --fer-azul-claro: #e8f0fa;    /* fondos suaves de resaltado */
-  --fer-amarillo: #f5b700;      /* acento: solo sobre azul oscuro */
-  --fer-verde: #1e7b3a;         /* blanco sobre verde: 5.4:1 */
-  --fer-rojo: #b42318;          /* blanco sobre rojo: 6.4:1 */
-  --fer-fondo: #f4f6f9;
-  --fer-blanco: #ffffff;
-  --fer-texto: #1f2933;         /* 15:1 sobre blanco */
-  --fer-texto-suave: #4a5568;   /* 7.5:1 sobre blanco */
-  --fer-borde: #d9e2ec;
+  --fer-negro: #0d0d0d;           /* fondo general */
+  --fer-carbon: #171717;          /* encabezados de tabla y barra */
+  --fer-superficie: #1f1f1f;      /* tarjetas */
+  --fer-superficie-2: #272727;    /* campos de formulario y filas alternas */
+  --fer-grafito: #2e2e2e;         /* bordes y hover */
+  --fer-naranja: #ff9f1c;         /* acento principal: 9.4:1 sobre tarjetas */
+  --fer-naranja-oscuro: #e07b00;  /* hover y foco */
+  --fer-naranja-suave: #2b2112;   /* resaltado oscuro con tono naranja */
+  --fer-texto: #f2f2f2;           /* 17:1 sobre tarjetas */
+  --fer-texto-suave: #b8b8b8;     /* 8.8:1 sobre tarjetas */
+  --fer-borde: #3a3a3a;
+  --fer-verde: #22a045;
+  --fer-rojo: #ff6b6b;
   --fer-radio: 12px;
-  --fer-sombra: 0 2px 10px rgba(16, 42, 67, 0.08);
-  --fer-sombra-hover: 0 8px 20px rgba(16, 42, 67, 0.14);
-  --fer-altura-toque: 44px;     /* tamaño mínimo para tocar con dedo */
+  --fer-sombra: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --fer-sombra-hover: 0 8px 22px rgba(0, 0, 0, 0.65);
+  --fer-altura-toque: 44px;       /* tamaño mínimo para tocar con dedo */
 }
 
 /* ---------- 2. Base ---------- */
 body {
-  background-color: var(--fer-fondo);
+  background-color: var(--fer-negro);
   color: var(--fer-texto);
   font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
   font-size: 1.05rem;
   line-height: 1.5;
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4, h5 {
   color: var(--fer-texto);
   font-weight: 700;
+}
+
+/* Textos secundarios: se cambian para que se lean sobre fondo oscuro */
+.text-secondary,
+.text-muted {
+  color: var(--fer-texto-suave) !important;
 }
 
 /* Foco visible en todo elemento interactivo */
@@ -43,25 +50,26 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid var(--fer-azul-oscuro);
+  outline: 3px solid var(--fer-naranja);
   outline-offset: 2px;
+}
+
+a {
+  color: var(--fer-naranja);
 }
 
 /* ---------- 3. Barra superior ---------- */
 .fer-nav {
-  background-color: var(--fer-azul);
-  color: var(--fer-blanco);
+  background-color: #000000;
+  color: var(--fer-texto);
+  border-bottom: 4px solid var(--fer-naranja);
 }
 
 .fer-nav .fer-marca {
-  color: var(--fer-blanco);
-  font-weight: 700;
+  color: var(--fer-naranja);
+  font-weight: 800;
   font-size: 1.15rem;
   text-decoration: none;
-}
-
-.fer-nav a:focus-visible {
-  outline-color: var(--fer-amarillo);
 }
 
 /* ---------- 4. Botones ---------- */
@@ -76,47 +84,50 @@ textarea:focus-visible {
   justify-content: center;
 }
 
+/* Botón principal: naranja con texto negro */
 .btn-fer {
-  background-color: var(--fer-azul);
-  border-color: var(--fer-azul);
-  color: var(--fer-blanco);
+  background-color: var(--fer-naranja);
+  border: 2px solid var(--fer-naranja);
+  color: #000000;
 }
 
 .btn-fer:hover,
 .btn-fer:focus {
-  background-color: var(--fer-azul-oscuro);
-  border-color: var(--fer-azul-oscuro);
-  color: var(--fer-blanco);
+  background-color: var(--fer-naranja-oscuro);
+  border-color: var(--fer-naranja-oscuro);
+  color: #000000;
 }
 
+/* Botón secundario: contorno naranja sobre fondo oscuro */
 .btn-fer-outline {
-  background-color: var(--fer-blanco);
-  border: 2px solid var(--fer-azul);
-  color: var(--fer-azul);
+  background-color: transparent;
+  border: 2px solid var(--fer-naranja);
+  color: var(--fer-naranja);
 }
 
 .btn-fer-outline:hover,
 .btn-fer-outline:focus {
-  background-color: var(--fer-azul);
-  color: var(--fer-blanco);
+  background-color: var(--fer-naranja);
+  border-color: var(--fer-naranja);
+  color: #000000;
 }
 
-/* Botones de tipo (entrada / salida): se ven como botones grandes */
+/* Botones de tipo (entrada / salida) */
 .btn-check:checked + .btn-outline-success {
   background-color: var(--fer-verde);
   border-color: var(--fer-verde);
-  color: var(--fer-blanco);
+  color: #000000;
 }
 
 .btn-check:checked + .btn-outline-danger {
   background-color: var(--fer-rojo);
   border-color: var(--fer-rojo);
-  color: var(--fer-blanco);
+  color: #000000;
 }
 
 .btn-outline-success {
-  color: var(--fer-verde);
-  border-color: var(--fer-verde);
+  color: #4ccc6e;
+  border-color: #4ccc6e;
 }
 
 .btn-outline-danger {
@@ -126,8 +137,10 @@ textarea:focus-visible {
 
 /* ---------- 5. Tarjetas ---------- */
 .fer-card {
-  background-color: var(--fer-blanco);
+  background-color: var(--fer-superficie);
+  color: var(--fer-texto);
   border: 1px solid var(--fer-borde);
+  border-top: 4px solid var(--fer-naranja);
   border-radius: var(--fer-radio);
   box-shadow: var(--fer-sombra);
 }
@@ -149,13 +162,13 @@ textarea:focus-visible {
 .fer-acceso:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--fer-sombra-hover);
-  border-color: var(--fer-azul);
+  border-color: var(--fer-naranja);
   color: var(--fer-texto);
 }
 
 .fer-acceso .fer-icono {
   font-size: 2rem;
-  color: var(--fer-azul);
+  color: var(--fer-naranja);
 }
 
 .fer-acceso .fer-descripcion {
@@ -163,12 +176,13 @@ textarea:focus-visible {
   margin-bottom: 0;
 }
 
-/* Tarjeta de cifra grande (stock, total) */
+/* Cifra grande (stock, total) */
 .fer-cifra {
   text-align: center;
   padding: 1rem;
   border-radius: var(--fer-radio);
-  background-color: var(--fer-azul-claro);
+  background-color: var(--fer-naranja-suave);
+  border: 1px solid #4a3510;
 }
 
 .fer-cifra .fer-cifra-etiqueta {
@@ -182,12 +196,13 @@ textarea:focus-visible {
 .fer-cifra .fer-cifra-valor {
   font-size: 2.25rem;
   font-weight: 800;
-  color: var(--fer-azul-oscuro);
+  color: var(--fer-naranja);
   line-height: 1.1;
 }
 
 .fer-cifra.fer-cifra-alerta {
-  background-color: #fde8e7;
+  background-color: #3a1716;
+  border-color: #6b2a28;
 }
 
 .fer-cifra.fer-cifra-alerta .fer-cifra-valor {
@@ -195,12 +210,22 @@ textarea:focus-visible {
 }
 
 /* ---------- 6. Tablas ---------- */
+.fer-tabla {
+  --bs-table-bg: var(--fer-superficie);
+  --bs-table-color: var(--fer-texto);
+  --bs-table-border-color: var(--fer-borde);
+  --bs-table-hover-bg: var(--fer-naranja-suave);
+  --bs-table-hover-color: var(--fer-texto);
+  color: var(--fer-texto);
+}
+
 .fer-tabla thead th {
-  background-color: var(--fer-azul-oscuro);
-  color: var(--fer-blanco);
-  font-weight: 600;
+  background-color: var(--fer-carbon);
+  color: var(--fer-naranja);
+  font-weight: 700;
   padding: 0.9rem;
   border: none;
+  border-bottom: 3px solid var(--fer-naranja);
 }
 
 .fer-tabla td {
@@ -208,18 +233,23 @@ textarea:focus-visible {
   vertical-align: middle;
 }
 
-.fer-tabla tbody tr:hover {
-  background-color: var(--fer-azul-claro);
+.fer-tabla tfoot th,
+.fer-tabla tfoot td {
+  background-color: var(--fer-carbon);
+  color: var(--fer-texto);
 }
 
 .fer-tabla .numero-orden {
   font-weight: 700;
-  color: var(--fer-azul);
-  text-decoration: none;
+  color: var(--fer-naranja);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 .fer-tabla .numero-orden:hover {
-  text-decoration: underline;
+  color: #000000;
+  background-color: var(--fer-naranja);
 }
 
 /* ---------- 7. Estados de pedido y etiquetas ---------- */
@@ -227,48 +257,73 @@ textarea:focus-visible {
   display: inline-block;
   padding: 0.35em 0.8em;
   border-radius: 999px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.92rem;
   white-space: nowrap;
 }
 
-.estado-pendiente    { background-color: #e4e7eb; color: #323f4b; }
-.estado-alistado     { background-color: #d9f0ff; color: #0b4a6f; }
-.estado-en_ruta      { background-color: #fff1c2; color: #6b4a00; }
-.estado-entregado    { background-color: #d3f9d8; color: #0e5b1f; }
-.estado-no_entregado { background-color: #ffd6d6; color: #8a1c1c; }
-.estado-cancelado    { background-color: #ece1f7; color: #4a1d6e; }
+.estado-pendiente    { background-color: #d9d9d4; color: #1a1a1a; }
+.estado-alistado     { background-color: #bfe6ff; color: #06314d; }
+.estado-en_ruta      { background-color: var(--fer-naranja); color: #000000; }
+.estado-entregado    { background-color: #b9f5c6; color: #0a3d17; }
+.estado-no_entregado { background-color: #ffc9c9; color: #6b1212; }
+.estado-cancelado    { background-color: #4a4a4a; color: #ffffff; }
 
-/* Etiqueta de entrada / salida en el historial */
 .etiqueta-entrada {
-  background-color: #d3f9d8;
-  color: #0e5b1f;
+  background-color: #b9f5c6;
+  color: #0a3d17;
 }
 
 .etiqueta-salida {
-  background-color: #ffd6d6;
-  color: #8a1c1c;
+  background-color: #ffc9c9;
+  color: #6b1212;
 }
 
 /* ---------- 8. Formularios ---------- */
 .form-control,
 .form-select {
   min-height: var(--fer-altura-toque);
-  border-color: #9aa5b1;
+  background-color: var(--fer-superficie-2);
+  color: var(--fer-texto);
+  border: 1px solid #5a5a5a;
+}
+
+.form-control::placeholder {
+  color: #9a9a9a;
+  opacity: 1;
 }
 
 .form-control:focus,
 .form-select:focus {
-  border-color: var(--fer-azul);
-  box-shadow: 0 0 0 0.2rem rgba(29, 78, 137, 0.25);
+  background-color: var(--fer-superficie-2);
+  color: var(--fer-texto);
+  border-color: var(--fer-naranja);
+  box-shadow: 0 0 0 0.2rem rgba(255, 159, 28, 0.35);
 }
 
-.form-label {
+/* Lista desplegable: opciones legibles */
+.form-select option {
+  background-color: #1f1f1f;
+  color: var(--fer-texto);
+}
+
+.form-label,
+legend {
   color: var(--fer-texto);
 }
 
 .form-text {
   color: var(--fer-texto-suave);
+}
+
+.form-check-input {
+  background-color: var(--fer-superficie-2);
+  border-color: #6a6a6a;
+}
+
+.form-check-input:checked {
+  background-color: var(--fer-naranja);
+  border-color: var(--fer-naranja);
 }
 
 /* ---------- 9. Login ---------- */
@@ -277,16 +332,17 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--fer-azul-oscuro) 0%, var(--fer-azul) 100%);
+  background: radial-gradient(circle at top, #2a2a2a 0%, #0d0d0d 60%);
   padding: 1.5rem;
 }
 
 .fer-login-card {
   width: 100%;
   max-width: 420px;
-  background-color: var(--fer-blanco);
+  background-color: var(--fer-superficie);
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  border-top: 6px solid var(--fer-naranja);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
   padding: 2.25rem 2rem;
 }
 
@@ -294,8 +350,8 @@ textarea:focus-visible {
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background-color: var(--fer-amarillo);
-  color: var(--fer-azul-oscuro);
+  background-color: var(--fer-naranja);
+  color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -312,7 +368,39 @@ textarea:focus-visible {
 
 .fer-vacio .bi {
   font-size: 2.5rem;
-  color: var(--fer-azul);
+  color: var(--fer-naranja);
+}
+
+.alert-success {
+  background-color: #14351f;
+  border-color: #22a045;
+  color: #d6f5df;
+}
+
+.alert-danger {
+  background-color: #3a1716;
+  border-color: #ff6b6b;
+  color: #ffd6d6;
+}
+
+.alert-info {
+  background-color: #2b2112;
+  border-color: var(--fer-naranja);
+  color: #ffe2b0;
+}
+
+.alert-secondary {
+  background-color: var(--fer-superficie-2);
+  border-color: var(--fer-borde);
+  color: var(--fer-texto-suave);
+}
+
+.breadcrumb-item a {
+  color: var(--fer-naranja);
+}
+
+.breadcrumb-item.active {
+  color: var(--fer-texto-suave);
 }
 
 /* ---------- 11. Utilidades ---------- */
@@ -323,7 +411,7 @@ textarea:focus-visible {
   z-index: 1000;
 }
 
-/* ---------- 12. Impresión ---------- */
+/* ---------- 12. Impresión (siempre con fondo blanco) ---------- */
 @media print {
   .fer-nav,
   .no-imprimir {
@@ -331,11 +419,22 @@ textarea:focus-visible {
   }
 
   body {
-    background-color: var(--fer-blanco);
+    background-color: #ffffff;
+    color: #000000;
     font-size: 0.95rem;
   }
 
   .fer-card {
+    background-color: #ffffff;
+    color: #000000;
     box-shadow: none;
+    border: 1px solid #cccccc;
+  }
+
+  .fer-tabla thead th,
+  .fer-tabla tfoot th,
+  .fer-tabla tfoot td {
+    background-color: #ffffff;
+    color: #000000;
   }
 }

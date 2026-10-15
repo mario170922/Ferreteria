@@ -1,201 +1,232 @@
 @page
 @model Ferreteria.Pages.ProductosModel
+@using System.Globalization
 @{
-    ViewData["Title"] = "Inventario";
+    Layout = null;
 }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inventario - Ferretería</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="/css/ferreteria.css" />
+    <style>
+        .fila-alerta td {
+            background-color: #3a1716 !important;
+            color: #ffd6d6;
+            font-weight: 600;
+        }
 
-<style>
-    .tabla-inventario th,
-    .tabla-inventario td {
-        padding: 0.9rem 0.8rem;
-        font-size: 1.05rem;
-        vertical-align: middle;
-    }
+        .buscador {
+            position: relative;
+            max-width: 640px;
+        }
 
-    .tabla-inventario thead th {
-        font-size: 1rem;
-    }
+        .sugerencias {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: #1f1f1f;
+            color: #f2f2f2;
+            border: 1px solid #ff9f1c;
+            border-radius: 0 0 0.5rem 0.5rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 420px;
+            overflow-y: auto;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+        }
 
-    .fila-alerta td {
-        background-color: #f8d7da !important;
-        color: #842029;
-        font-weight: 600;
-    }
+        .sugerencias li a {
+            display: block;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid #333;
+        }
 
-    .buscador {
-        position: relative;
-        max-width: 640px;
-    }
+        .sugerencias li a:hover,
+        .sugerencias li a:focus {
+            background: #2b2112;
+        }
 
-    .sugerencias {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        background: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0 0 0.375rem 0.375rem;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        max-height: 420px;
-        overflow-y: auto;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-    }
+        .sugerencias .detalle {
+            font-size: 0.9rem;
+            color: #b8b8b8;
+        }
+    </style>
+</head>
+<body>
 
-    .sugerencias li a {
-        display: block;
-        padding: 0.75rem 1rem;
-        text-decoration: none;
-        color: inherit;
-        border-bottom: 1px solid #eee;
-    }
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
 
-    .sugerencias li a:hover {
-        background: #e9f2ff;
-    }
+<nav class="fer-nav py-3" aria-label="Navegación principal">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <a class="fer-marca" href="/">Ferretería · Inventario y pedidos</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-light" href="/">Inicio</a>
+            <a class="btn btn-light" href="/Pedidos/Lista">Pedidos</a>
+            @if (User.IsInRole("admin"))
+            {
+                <a class="btn btn-light" href="/Usuarios">Usuarios</a>
+                <a class="btn btn-light" href="/Descuentos">Descuentos</a>
+            }
+            <a class="btn btn-outline-light" href="/Salir">Salir</a>
+        </div>
+    </div>
+</nav>
 
-    .sugerencias .detalle {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-</style>
+<main id="contenido" class="container py-4">
 
-<h1>Inventario de tornillería</h1>
-
-@if (User.Identity?.IsAuthenticated == true)
-{
-    <form method="post" asp-page="/Salir" class="mb-3">
-        <span class="me-2">Sesión: @User.Identity.Name</span>
-        <button type="submit" class="btn btn-sm btn-outline-secondary">Salir</button>
-    </form>
-}
-
-@if (Model.Mensaje is not null)
-{
-    <div class="alert alert-warning">@Model.Mensaje</div>
-}
-
-<div class="buscador mb-4">
-    <input type="search" id="buscar" class="form-control form-control-lg"
-           placeholder="Buscar por código, medida o nombre (ej: DW-8 o 8 x 2)"
-           autocomplete="off" />
-    <ul id="sugerencias" class="sugerencias" hidden></ul>
-</div>
-
-@if (User.IsInRole("admin"))
-{
-    <a asp-page="/Nuevo" class="btn btn-primary mb-3">Nuevo producto</a>
-}
-
-<table class="table table-striped tabla-inventario">
-    <thead>
-        <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Medida</th>
-            <th class="text-end">Compra x100</th>
-            <th class="text-end">Venta x100</th>
-            <th class="text-end">Stock</th>
-            <th class="text-end">Mínimo</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var p in Model.Lista)
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Inventario de tornillería</h1>
+            <p class="text-secondary mb-0">Busca por código, medida o nombre. Ej.: DW-8 o 8 x 2.</p>
+        </div>
+        @if (User.IsInRole("admin"))
         {
-            <tr class="@(p.StockBajo ? "fila-alerta" : "")">
-                <td>@p.Codigo</td>
-                <td>@p.Nombre</td>
-                <td>@p.Medida</td>
-                <td class="text-end">$ @p.PrecioCompra.ToString("N0")</td>
-                <td class="text-end">$ @p.PrecioVenta.ToString("N0")</td>
-                <td class="text-end">
-                    @p.Stock
-                    @if (p.StockBajo)
+            <a asp-page="/Nuevo" class="btn btn-fer btn-lg">
+                <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Nuevo producto
+            </a>
+        }
+    </div>
+
+    @if (Model.Mensaje is not null)
+    {
+        <div class="alert alert-warning" role="status">@Model.Mensaje</div>
+    }
+
+    <div class="buscador mb-4">
+        <label for="buscar" class="visually-hidden">Buscar producto</label>
+        <input type="search" id="buscar" class="form-control form-control-lg"
+               placeholder="Buscar por código, medida o nombre (ej: DW-8 o 8 x 2)"
+               autocomplete="off" aria-controls="sugerencias" />
+        <ul id="sugerencias" class="sugerencias" hidden></ul>
+    </div>
+
+    <div class="fer-card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table fer-tabla mb-0">
+                <caption class="visually-hidden">Lista de productos del inventario</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Medida</th>
+                        <th scope="col" class="text-end">Compra x100</th>
+                        <th scope="col" class="text-end">Venta x100</th>
+                        <th scope="col" class="text-end">Stock</th>
+                        <th scope="col" class="text-end">Mínimo</th>
+                        <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Lista)
                     {
-                        <span class="badge bg-danger ms-2">BAJO</span>
+                        <tr class="@(p.StockBajo ? "fila-alerta" : "")">
+                            <td>@p.Codigo</td>
+                            <td>@p.Nombre</td>
+                            <td>@p.Medida</td>
+                            <td class="text-end">$ @p.PrecioCompra.ToString("N0", new CultureInfo("es-CO"))</td>
+                            <td class="text-end">$ @p.PrecioVenta.ToString("N0", new CultureInfo("es-CO"))</td>
+                            <td class="text-end">
+                                @p.Stock
+                                @if (p.StockBajo)
+                                {
+                                    <span class="badge bg-danger ms-2">BAJO</span>
+                                }
+                            </td>
+                            <td class="text-end">@p.StockMinimo</td>
+                            <td class="text-nowrap">
+                                <a asp-page="/Movimientos" asp-route-id="@p.Id" class="btn btn-fer-outline btn-sm">
+                                    Movimientos
+                                </a>
+                                @if (User.IsInRole("admin"))
+                                {
+                                    <a asp-page="/Editar" asp-route-id="@p.Id" class="btn btn-outline-light btn-sm">Editar</a>
+                                    <form method="post" asp-page-handler="Eliminar" asp-route-id="@p.Id" class="d-inline"
+                                          onsubmit="return confirm('¿Eliminar este producto?');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
                     }
-                </td>
-                <td class="text-end">@p.StockMinimo</td>
-                <td class="text-nowrap">
-                <a asp-page="/Movimientos" asp-route-id="@p.Id" class="btn btn-outline-secondary">Movimientos</a>
-                    @if (User.IsInRole("admin"))
-                  {
-                     <a asp-page="/Editar" asp-route-id="@p.Id" class="btn btn-outline-primary">Editar</a>
-                      <form method="post" asp-page-handler="Eliminar" asp-route-id="@p.Id" class="d-inline"
-                              onsubmit="return confirm('¿Eliminar este producto?');">
-                           <button type="submit" class="btn btn-outline-danger">Eliminar</button>
-                    </form>
-                   }
-                </td>
-            </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    const input = document.getElementById('buscar');
+    const lista = document.getElementById('sugerencias');
+    let temporizador;
+
+    const pesos = n => '$ ' + Number(n).toLocaleString('es-CO', { maximumFractionDigits: 0 });
+
+    input.addEventListener('input', () => {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(buscar, 250);
+    });
+
+    async function buscar() {
+        const q = input.value.trim();
+        if (q.length === 0) {
+            lista.hidden = true;
+            return;
         }
-    </tbody>
-</table>
 
-@section Scripts {
-    <script>
-        const input = document.getElementById('buscar');
-        const lista = document.getElementById('sugerencias');
-        let temporizador;
+        const resp = await fetch(`?handler=Buscar&q=${encodeURIComponent(q)}`);
+        const datos = await resp.json();
+        mostrar(datos);
+    }
 
-        const pesos = n => '$ ' + Number(n).toLocaleString('es-CO', { maximumFractionDigits: 0 });
+    function mostrar(datos) {
+        lista.innerHTML = '';
 
-        input.addEventListener('input', () => {
-            clearTimeout(temporizador);
-            temporizador = setTimeout(buscar, 250);
+        if (datos.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'Sin resultados';
+            li.className = 'p-3';
+            lista.appendChild(li);
+        }
+
+        datos.forEach(p => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = `/Editar/${p.id}`;
+
+            const titulo = document.createElement('strong');
+            titulo.textContent = `${p.codigo}  ·  ${p.medida ?? ''}`;
+
+            const detalle = document.createElement('div');
+            detalle.className = 'detalle';
+            detalle.textContent = `Venta: ${pesos(p.precioVenta)}  ·  Stock: ${p.stock}` +
+                                  (p.stockBajo ? '  ·  ⚠ STOCK BAJO' : '');
+
+            a.appendChild(titulo);
+            a.appendChild(detalle);
+            li.appendChild(a);
+            lista.appendChild(li);
         });
 
-        async function buscar() {
-            const q = input.value.trim();
-            if (q.length === 0) {
-                lista.hidden = true;
-                return;
-            }
+        lista.hidden = false;
+    }
 
-            const resp = await fetch(`?handler=Buscar&q=${encodeURIComponent(q)}`);
-            const datos = await resp.json();
-            mostrar(datos);
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.buscador')) {
+            lista.hidden = true;
         }
+    });
+</script>
 
-        function mostrar(datos) {
-            lista.innerHTML = '';
-
-            if (datos.length === 0) {
-                const li = document.createElement('li');
-                li.textContent = 'Sin resultados';
-                li.className = 'p-3 text-muted';
-                lista.appendChild(li);
-            }
-
-            datos.forEach(p => {
-                const li = document.createElement('li');
-                const a = document.createElement('a');
-                a.href = `/Editar/${p.id}`;
-
-                const titulo = document.createElement('strong');
-                titulo.textContent = `${p.codigo}  ·  ${p.medida ?? ''}`;
-
-                const detalle = document.createElement('div');
-                detalle.className = 'detalle';
-                detalle.textContent = `Venta: ${pesos(p.precioVenta)}  ·  Stock: ${p.stock}` +
-                                      (p.stockBajo ? '  ·  ⚠ STOCK BAJO' : '');
-
-                a.appendChild(titulo);
-                a.appendChild(detalle);
-                li.appendChild(a);
-                lista.appendChild(li);
-            });
-
-            lista.hidden = false;
-        }
-
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.buscador')) {
-                lista.hidden = true;
-            }
-        });
-    </script>
-}
+</body>
+</html>
