@@ -1,97 +1,190 @@
 @page "{id:int}"
 @model MovimientosModel
-<!doctype html>
+@using System.Globalization
+@{
+    Layout = null;
+    var stockBajo = Model.Stock <= 0;
+}
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Movimientos</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <style>
-        body { font-size: 1.1rem; }
-        .form-control, .form-select, .btn { font-size: 1.1rem; min-height: 3rem; }
-    </style>
+    <title>Movimientos - Ferretería</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="/css/ferreteria.css" />
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-dark bg-dark px-3">
-    <a class="navbar-brand" href="/Productos">Ferretería</a>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-light btn-sm" href="/Productos">Inventario</a>
-        @if (User.IsInRole("admin"))
-        {
-            <a class="btn btn-outline-light btn-sm" href="/Ajustar/@Model.Id">Ajustar stock</a>
-        }
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+
+<nav class="fer-nav py-3" aria-label="Navegación principal">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <a class="fer-marca" href="/">Ferretería · Inventario y pedidos</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-light" href="/">Inicio</a>
+            <a class="btn btn-light" href="/Productos">Inventario</a>
+            <a class="btn btn-light" href="/Pedidos/Lista">Pedidos</a>
+            @if (User.IsInRole("admin"))
+            {
+                <a class="btn btn-light" href="/Ajustar/@Model.Id">Ajustar stock</a>
+            }
+            <a class="btn btn-outline-light" href="/Salir">Salir</a>
+        </div>
     </div>
 </nav>
 
-<div class="container py-3" style="max-width: 800px;">
-    <h1 class="h3 mb-1">Movimientos</h1>
-    <p class="mb-3">
-        <strong>@Model.Nombre</strong> @Model.Medida<br />
-        Stock actual: <strong>@Model.Stock</strong>
-    </p>
+<main id="contenido" class="container py-4">
 
-    @if (Model.Mensaje != null) { <div class="alert alert-success">@Model.Mensaje</div> }
-    @if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+    <nav aria-label="Ruta de navegación" class="mb-3">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Productos">Inventario</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Movimientos</li>
+        </ol>
+    </nav>
 
-    <form method="post" class="bg-white rounded shadow-sm p-3 mb-4">
-        <div class="row g-2">
-            <div class="col-md-4">
-                <label class="form-label fw-semibold" for="Tipo">Tipo</label>
-                <select asp-for="Tipo" class="form-select">
-                    <option value="entrada">Entrada (compra)</option>
-                    <option value="salida">Salida</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-semibold" for="Cantidad">Cantidad</label>
-                <input asp-for="Cantidad" type="number" min="1" class="form-control" />
-            </div>
-            <div class="col-md-5">
-                <label class="form-label fw-semibold" for="Motivo">Motivo</label>
-                <input asp-for="Motivo" class="form-control" placeholder="Ej: compra a proveedor" />
-            </div>
-        </div>
-        <button type="submit" class="btn btn-success w-100 mt-3">Registrar</button>
-    </form>
-
-    @if (User.IsInRole("admin"))
+    @if (!string.IsNullOrEmpty(Model.Mensaje))
     {
-        <h2 class="h5">Últimos movimientos</h2>
-        @if (Model.Historial.Count == 0)
-        {
-            <div class="alert alert-secondary">Este producto no tiene movimientos.</div>
-        }
-        else
-        {
-            <div class="table-responsive bg-white rounded shadow-sm">
-                <table class="table table-hover mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Tipo</th>
-                            <th class="text-end">Cantidad</th>
-                            <th>Motivo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var m in Model.Historial)
-                    {
-                        <tr>
-                            <td>@m.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>
-                                @if (m.Cantidad >= 0) { <span class="badge bg-success">Entrada</span> }
-                                else { <span class="badge bg-danger">Salida</span> }
-                            </td>
-                            <td class="text-end">@Math.Abs(m.Cantidad)</td>
-                            <td>@m.Motivo</td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-        }
+        <div class="alert alert-success" role="status">@Model.Mensaje</div>
     }
-</div>
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger" role="alert">@Model.Error</div>
+    }
+
+    <header class="mb-4">
+        <h1 class="h2 mb-1">@Model.Nombre</h1>
+        <p class="text-secondary mb-0">Medida: @(string.IsNullOrWhiteSpace(Model.Medida) ? "—" : Model.Medida)</p>
+    </header>
+
+    <div class="row g-4">
+
+        <section class="col-12 col-lg-5" aria-labelledby="titulo-registro">
+            <div class="fer-card h-100">
+                <div class="fer-card-cuerpo">
+
+                    <div class="fer-cifra mb-4 @(stockBajo ? "fer-cifra-alerta" : "")">
+                        <div class="fer-cifra-etiqueta">Stock actual</div>
+                        <div class="fer-cifra-valor">@Model.Stock.ToString("N0", CultureInfo.InvariantCulture)</div>
+                    </div>
+
+                    <h2 id="titulo-registro" class="h5 mb-3">Registrar movimiento</h2>
+
+                    <form method="post">
+                        <fieldset class="mb-4">
+                            <legend class="form-label fw-semibold fs-6">¿Qué pasó con el producto?</legend>
+                            <div class="d-grid gap-2 d-sm-flex">
+                                <input type="radio" class="btn-check" name="Tipo" id="tipo-entrada"
+                                       value="entrada" autocomplete="off" checked="@(Model.Tipo != "salida")" />
+                                <label class="btn btn-outline-success flex-fill" for="tipo-entrada">
+                                    <i class="bi bi-box-arrow-in-down me-2" aria-hidden="true"></i>Entrada
+                                </label>
+
+                                <input type="radio" class="btn-check" name="Tipo" id="tipo-salida"
+                                       value="salida" autocomplete="off" checked="@(Model.Tipo == "salida")" />
+                                <label class="btn btn-outline-danger flex-fill" for="tipo-salida">
+                                    <i class="bi bi-box-arrow-up me-2" aria-hidden="true"></i>Salida
+                                </label>
+                            </div>
+                        </fieldset>
+
+                        <div class="mb-3">
+                            <label for="cantidad" class="form-label fw-semibold">
+                                Cantidad <span class="text-danger" aria-hidden="true">*</span>
+                            </label>
+                            <input id="cantidad" name="Cantidad" type="number"
+                                   class="form-control form-control-lg"
+                                   min="1" max="1000000" step="1" required
+                                   value="@(Model.Cantidad > 0 ? Model.Cantidad.ToString(CultureInfo.InvariantCulture) : "")" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="motivo" class="form-label fw-semibold">Motivo (opcional)</label>
+                            <input id="motivo" name="Motivo" type="text"
+                                   class="form-control form-control-lg"
+                                   maxlength="200" autocomplete="off"
+                                   value="@Model.Motivo"
+                                   placeholder="Ej.: compra a proveedor, daño, conteo" />
+                            <div class="form-text">Si lo dejas vacío, se guarda "Entrada manual" o "Salida manual".</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-fer btn-lg w-100">
+                            <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Registrar movimiento
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </section>
+
+        <section class="col-12 col-lg-7" aria-labelledby="titulo-historial">
+            @if (User.IsInRole("admin"))
+            {
+                <div class="fer-card overflow-hidden h-100">
+                    <div class="fer-card-cuerpo pb-2">
+                        <h2 id="titulo-historial" class="h5 mb-0">Últimos movimientos</h2>
+                    </div>
+
+                    @if (Model.Historial.Count == 0)
+                    {
+                        <div class="fer-vacio">
+                            <i class="bi bi-clock-history" aria-hidden="true"></i>
+                            <p class="mt-3 mb-0">Este producto todavía no tiene movimientos.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table fer-tabla mb-0">
+                                <caption class="visually-hidden">Últimos 50 movimientos del producto</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Fecha</th>
+                                        <th scope="col">Tipo</th>
+                                        <th scope="col" class="text-end">Cantidad</th>
+                                        <th scope="col">Motivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var m in Model.Historial)
+                                    {
+                                        <tr>
+                                            <td>@m.Fecha.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)</td>
+                                            <td>
+                                                @if (m.Cantidad >= 0)
+                                                {
+                                                    <span class="estado etiqueta-entrada">Entrada</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="estado etiqueta-salida">Salida</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">@Math.Abs(m.Cantidad).ToString("N0", CultureInfo.InvariantCulture)</td>
+                                            <td>@m.Motivo</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="fer-card h-100">
+                    <div class="fer-card-cuerpo">
+                        <h2 id="titulo-historial" class="h5 mb-2">Historial</h2>
+                        <p class="text-secondary mb-0">El historial de movimientos lo ve solo el administrador.</p>
+                    </div>
+                </div>
+            }
+        </section>
+
+    </div>
+
+</main>
+
 </body>
 </html>

@@ -8,7 +8,10 @@
 :root {
   --fer-azul: #1d4e89;          /* blanco sobre azul: 8.2:1 */
   --fer-azul-oscuro: #163b68;   /* encabezados de tabla y foco */
-  --fer-amarillo: #f5b700;      /* acento: se usa solo sobre azul oscuro */
+  --fer-azul-claro: #e8f0fa;    /* fondos suaves de resaltado */
+  --fer-amarillo: #f5b700;      /* acento: solo sobre azul oscuro */
+  --fer-verde: #1e7b3a;         /* blanco sobre verde: 5.4:1 */
+  --fer-rojo: #b42318;          /* blanco sobre rojo: 6.4:1 */
   --fer-fondo: #f4f6f9;
   --fer-blanco: #ffffff;
   --fer-texto: #1f2933;         /* 15:1 sobre blanco */
@@ -98,6 +101,29 @@ textarea:focus-visible {
   color: var(--fer-blanco);
 }
 
+/* Botones de tipo (entrada / salida): se ven como botones grandes */
+.btn-check:checked + .btn-outline-success {
+  background-color: var(--fer-verde);
+  border-color: var(--fer-verde);
+  color: var(--fer-blanco);
+}
+
+.btn-check:checked + .btn-outline-danger {
+  background-color: var(--fer-rojo);
+  border-color: var(--fer-rojo);
+  color: var(--fer-blanco);
+}
+
+.btn-outline-success {
+  color: var(--fer-verde);
+  border-color: var(--fer-verde);
+}
+
+.btn-outline-danger {
+  color: var(--fer-rojo);
+  border-color: var(--fer-rojo);
+}
+
 /* ---------- 5. Tarjetas ---------- */
 .fer-card {
   background-color: var(--fer-blanco);
@@ -137,6 +163,37 @@ textarea:focus-visible {
   margin-bottom: 0;
 }
 
+/* Tarjeta de cifra grande (stock, total) */
+.fer-cifra {
+  text-align: center;
+  padding: 1rem;
+  border-radius: var(--fer-radio);
+  background-color: var(--fer-azul-claro);
+}
+
+.fer-cifra .fer-cifra-etiqueta {
+  font-size: 0.9rem;
+  color: var(--fer-texto-suave);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.fer-cifra .fer-cifra-valor {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--fer-azul-oscuro);
+  line-height: 1.1;
+}
+
+.fer-cifra.fer-cifra-alerta {
+  background-color: #fde8e7;
+}
+
+.fer-cifra.fer-cifra-alerta .fer-cifra-valor {
+  color: var(--fer-rojo);
+}
+
 /* ---------- 6. Tablas ---------- */
 .fer-tabla thead th {
   background-color: var(--fer-azul-oscuro);
@@ -151,6 +208,10 @@ textarea:focus-visible {
   vertical-align: middle;
 }
 
+.fer-tabla tbody tr:hover {
+  background-color: var(--fer-azul-claro);
+}
+
 .fer-tabla .numero-orden {
   font-weight: 700;
   color: var(--fer-azul);
@@ -161,7 +222,7 @@ textarea:focus-visible {
   text-decoration: underline;
 }
 
-/* ---------- 7. Estados de pedido (badges) ---------- */
+/* ---------- 7. Estados de pedido y etiquetas ---------- */
 .estado {
   display: inline-block;
   padding: 0.35em 0.8em;
@@ -178,7 +239,71 @@ textarea:focus-visible {
 .estado-no_entregado { background-color: #ffd6d6; color: #8a1c1c; }
 .estado-cancelado    { background-color: #ece1f7; color: #4a1d6e; }
 
-/* ---------- 8. Mensajes y vacíos ---------- */
+/* Etiqueta de entrada / salida en el historial */
+.etiqueta-entrada {
+  background-color: #d3f9d8;
+  color: #0e5b1f;
+}
+
+.etiqueta-salida {
+  background-color: #ffd6d6;
+  color: #8a1c1c;
+}
+
+/* ---------- 8. Formularios ---------- */
+.form-control,
+.form-select {
+  min-height: var(--fer-altura-toque);
+  border-color: #9aa5b1;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--fer-azul);
+  box-shadow: 0 0 0 0.2rem rgba(29, 78, 137, 0.25);
+}
+
+.form-label {
+  color: var(--fer-texto);
+}
+
+.form-text {
+  color: var(--fer-texto-suave);
+}
+
+/* ---------- 9. Login ---------- */
+.fer-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--fer-azul-oscuro) 0%, var(--fer-azul) 100%);
+  padding: 1.5rem;
+}
+
+.fer-login-card {
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--fer-blanco);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  padding: 2.25rem 2rem;
+}
+
+.fer-login-marca {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background-color: var(--fer-amarillo);
+  color: var(--fer-azul-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 1rem;
+}
+
+/* ---------- 10. Mensajes y estados vacíos ---------- */
 .fer-vacio {
   text-align: center;
   padding: 3rem 1.5rem;
@@ -190,7 +315,15 @@ textarea:focus-visible {
   color: var(--fer-azul);
 }
 
-/* ---------- 9. Impresión ---------- */
+/* ---------- 11. Utilidades ---------- */
+.skip-link-visible:focus {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1000;
+}
+
+/* ---------- 12. Impresión ---------- */
 @media print {
   .fer-nav,
   .no-imprimir {

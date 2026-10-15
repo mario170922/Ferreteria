@@ -10,6 +10,8 @@ namespace Ferreteria.Pages;
 [Authorize]
 public class MovimientosModel : PageModel
 {
+    private const int MaxCantidad = 1000000;
+
     private readonly IConfiguration _config;
     public MovimientosModel(IConfiguration config) => _config = config;
 
@@ -23,7 +25,7 @@ public class MovimientosModel : PageModel
 
     [BindProperty] public string Tipo { get; set; } = "entrada";
     [BindProperty] public int Cantidad { get; set; }
-    [BindProperty] public string Motivo { get; set; } = "";
+    [BindProperty] public string? Motivo { get; set; }
 
     public class MovimientoFila
     {
@@ -54,10 +56,21 @@ public class MovimientosModel : PageModel
         {
             Error = "La cantidad debe ser mayor a cero.";
         }
+        else if (Cantidad > MaxCantidad)
+        {
+            Error = $"La cantidad no puede ser mayor a {MaxCantidad:N0}.";
+        }
 
         if (Error == null)
         {
             var delta = Tipo == "salida" ? -Cantidad : Cantidad;
+
+            // Si el motivo llega vacío o nulo, se guarda un texto por defecto.
+            var motivo = (Motivo ?? "").Trim();
+            if (motivo.Length == 0)
+            {
+                motivo = Tipo == "salida" ? "Salida manual" : "Entrada manual";
+            }
 
             using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
             await conn.OpenAsync();
@@ -76,17 +89,22 @@ public class MovimientosModel : PageModel
                 await conn.ExecuteAsync(@"
                     INSERT INTO movimientos_inventario (producto_id, cantidad, motivo)
                     VALUES (@id, @delta, @motivo)",
-                    new { id, delta, motivo = Motivo.Trim() }, tx);
+                    new { id, delta, motivo }, tx);
 
                 await tx.CommitAsync();
                 Mensaje = "Movimiento guardado.";
                 Cantidad = 0;
                 Motivo = "";
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 await tx.RollbackAsync();
                 Error = ex.Message;
+            }
+            catch (Exception)
+            {
+                await tx.RollbackAsync();
+                Error = "No se pudo guardar el movimiento. Intenta de nuevo.";
             }
         }
 
