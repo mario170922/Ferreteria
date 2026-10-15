@@ -351,4 +351,153 @@
             <p class="text-secondary mb-0">Fecha: @ListaModel.FormatearFecha(p.Fecha)</p>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <span class="estado ec-estado @ListaModel.ClaseEstado(p.Estado)">@ListaMod
+            <span class="estado ec-estado @ListaModel.ClaseEstado(p.Estado)">@ListaModel.EtiquetaEstado(p.Estado)</span>
+            <button type="button" class="btn ec-boton-outline no-imprimir" onclick="window.print()">
+                <i class="bi bi-printer me-2" aria-hidden="true"></i>Imprimir
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+
+        <section class="col-12 col-lg-7" aria-labelledby="titulo-cliente">
+            <div class="ec-tarjeta h-100">
+                <div class="fer-card-cuerpo">
+                    <h2 id="titulo-cliente" class="h5 mb-3">Cliente</h2>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Ferretería</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(p.Ferreteria) ? "—" : p.Ferreteria)</dd>
+
+                        <dt class="col-sm-4">Nombre</dt>
+                        <dd class="col-sm-8">@p.Cliente</dd>
+
+                        <dt class="col-sm-4">Dirección</dt>
+                        <dd class="col-sm-8">@p.Direccion</dd>
+
+                        <dt class="col-sm-4">Ubicación</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(p.Ubicacion) ? "—" : p.Ubicacion)</dd>
+
+                        <dt class="col-sm-4">Horario</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(p.Horario) ? "—" : p.Horario)</dd>
+
+                        <dt class="col-sm-4">Celular</dt>
+                        <dd class="col-sm-8">
+                            <a href="tel:@p.Celular1">@p.Celular1</a>
+                            @if (!string.IsNullOrWhiteSpace(p.Celular2))
+                            {
+                                <span> · </span>
+                                <a href="tel:@p.Celular2">@p.Celular2</a>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-12 col-lg-5" aria-labelledby="titulo-resumen">
+            <div class="ec-tarjeta h-100">
+                <div class="fer-card-cuerpo">
+                    <h2 id="titulo-resumen" class="h5 mb-3">Resumen</h2>
+                    <dl class="row mb-0">
+                        @if (Model.EsAdmin)
+                        {
+                            <dt class="col-sm-6">Vendedor</dt>
+                            <dd class="col-sm-6">@p.Vendedor</dd>
+                        }
+                        <dt class="col-sm-6">Descuento del vendedor</dt>
+                        <dd class="col-sm-6">@p.DescuentoPct.ToString("0.##")%</dd>
+
+                        <dt class="col-sm-6">Total del pedido</dt>
+                        <dd class="col-sm-6 fs-4 fw-bold">@ListaModel.Moneda(p.Total)</dd>
+                    </dl>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    @if (Model.EsAdmin)
+    {
+        <section class="ec-tarjeta mb-4 no-imprimir" aria-labelledby="titulo-estado">
+            <div class="fer-card-cuerpo">
+                <h2 id="titulo-estado" class="h5 mb-3">Cambiar estado</h2>
+                <form method="post" asp-page-handler="Estado" asp-route-id="@p.Id" class="row g-3 align-items-end">
+                    <div class="col-md-8">
+                        <label for="nuevoEstado" class="form-label fw-semibold">Nuevo estado</label>
+                        <select id="nuevoEstado" name="estado" class="form-select form-select-lg">
+                            @foreach (var opcion in DetalleModel.OpcionesEstado)
+                            {
+                                <option value="@opcion.Clave" selected="@(opcion.Clave == p.Estado)">@opcion.Etiqueta</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-grid">
+                        <button type="submit" class="btn ec-boton btn-lg">Actualizar estado</button>
+                    </div>
+                </form>
+                <p class="small text-secondary mt-3 mb-0">
+                    Si el pedido pasa a "No entregado" o "Cancelado", el stock vuelve al inventario.
+                    Si vuelve a un estado activo, el stock se descuenta otra vez.
+                </p>
+            </div>
+        </section>
+    }
+
+    <section aria-labelledby="titulo-productos">
+        <h2 id="titulo-productos" class="h5 mb-3">Productos</h2>
+        <div class="ec-tarjeta overflow-hidden">
+            <div class="table-responsive">
+                <table class="table ec-tabla mb-0">
+                    <caption class="visually-hidden">Productos incluidos en el pedido @p.Numero</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col">Medida</th>
+                            <th scope="col" class="text-end">Cantidad</th>
+                            <th scope="col" class="text-end">Precio unitario</th>
+                            <th scope="col" class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.Codigo</td>
+                                <td>@item.Nombre</td>
+                                <td>@item.Medida</td>
+                                <td class="text-end">@item.Cantidad</td>
+                                <td class="text-end">@ListaModel.Moneda(item.PrecioUnitario)</td>
+                                <td class="text-end">@ListaModel.Moneda(item.Subtotal)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th scope="row" colspan="5" class="text-end">Subtotal</th>
+                            <td class="text-end">@ListaModel.Moneda(Model.Subtotal)</td>
+                        </tr>
+                        <tr>
+                            <th scope="row" colspan="5" class="text-end">Descuento (@p.DescuentoPct.ToString("0.##")%)</th>
+                            <td class="text-end">− @ListaModel.Moneda(Model.MontoDescuento)</td>
+                        </tr>
+                        <tr>
+                            <th scope="row" colspan="5" class="text-end fs-5">Total</th>
+                            <td class="text-end fs-5 fw-bold">@ListaModel.Moneda(p.Total)</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <div class="d-flex flex-wrap gap-3 mt-4 no-imprimir">
+        <a href="/Pedidos/Lista" class="btn ec-boton-outline">
+            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver a pedidos
+        </a>
+    </div>
+
+</main>
+
+</body>
+</html>
