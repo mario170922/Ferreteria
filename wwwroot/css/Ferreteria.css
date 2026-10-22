@@ -10,8 +10,8 @@
   --fer-superficie: #1f1f1f;      /* tarjetas */
   --fer-superficie-2: #272727;    /* campos de formulario y filas alternas */
   --fer-grafito: #2e2e2e;         /* bordes y hover */
-  --fer-naranja: #ff9f1c;         /* acento principal: 9.4:1 sobre tarjetas */
-  --fer-naranja-oscuro: #e07b00;  /* hover y foco */
+   --fer-naranja: #FFED00;         /* acento principal: amarillo El Castillo */
+  --fer-naranja-oscuro: #FFED00;  /* hover y foco */
   --fer-naranja-suave: #2b2112;   /* resaltado oscuro con tono naranja */
   --fer-texto: #f2f2f2;           /* 17:1 sobre tarjetas */
   --fer-texto-suave: #b8b8b8;     /* 8.8:1 sobre tarjetas */
@@ -28,7 +28,7 @@
 body {
   background-color: var(--fer-negro);
   color: var(--fer-texto);
-  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Lemon milk, sans-serif;
   font-size: 1.05rem;
   line-height: 1.5;
 }

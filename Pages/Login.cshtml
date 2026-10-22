@@ -19,9 +19,7 @@
 
 <main id="contenido" class="fer-login">
     <section class="fer-login-card" aria-labelledby="titulo-login">
-        <div class="fer-login-marca" aria-hidden="true">
-            <i class="bi bi-tools"></i>
-        </div>
+
         <h1 id="titulo-login" class="h3 text-center mb-1">Ferretería</h1>
         <p class="text-center text-secondary mb-4">Inventario y pedidos</p>
 
@@ -31,6 +29,10 @@
         }
 
         <form method="post">
+            <div class="text-center mb-2">
+                <img src="/img/logo-casita.png" alt="Logo El Castillo Ferretería" style="height:110px;width:auto" />
+            </div>
+
             <div class="mb-3">
                 <label asp-for="NombreUsuario" class="form-label fw-semibold">Usuario</label>
                 <input asp-for="NombreUsuario" class="form-control form-control-lg" autocomplete="username" required />
