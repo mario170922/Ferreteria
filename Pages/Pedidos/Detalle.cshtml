@@ -11,9 +11,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pedido @p.Numero - Ferretería</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="/css/ferreteria.css" />
+    <partial name="_Estilos" />
     <style>
         /* Colores de la marca El Castillo (tomados del letrero) */
         :root {
@@ -300,25 +298,7 @@
 
 <a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
 
-<nav class="ec-nav py-3 no-imprimir" aria-label="Navegación principal">
-    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <a class="d-flex align-items-center gap-3 text-decoration-none" href="/">
-            <img src="/img/logo-casita.png" alt="Logo El Castillo Ferretería" class="ec-logo" />
-            <span class="ec-marca d-none d-md-inline">Inventario y pedidos</span>
-        </a>
-        <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-light" href="/">Inicio</a>
-            <a class="btn btn-light" href="/Productos">Inventario</a>
-            <a class="btn btn-light" href="/Pedidos/Lista">Pedidos</a>
-            @if (Model.EsAdmin)
-            {
-                <a class="btn btn-light" href="/Usuarios">Usuarios</a>
-                <a class="btn btn-light" href="/Descuentos">Descuentos</a>
-            }
-            <a class="btn btn-outline-light" href="/Salir">Salir</a>
-        </div>
-    </div>
-</nav>
+<partial name="_Barra" />
 
 <main id="contenido" class="container py-4">
 
@@ -352,6 +332,18 @@
         </div>
         <div class="d-flex align-items-center gap-3">
             <span class="estado ec-estado @ListaModel.ClaseEstado(p.Estado)">@ListaModel.EtiquetaEstado(p.Estado)</span>
+            @if (Model.EsAdmin && p.Estado == "pendiente")
+            {
+                <a class="btn ec-boton no-imprimir" href="/Pedidos/Alistar/@p.Id">
+                    <i class="bi bi-list-check me-2" aria-hidden="true"></i>Alistar
+                </a>
+            }
+            @if (Model.EsAdmin && p.Estado != "cancelado")
+            {
+                <a class="btn ec-boton-outline no-imprimir" href="/Pedidos/Sticker/@p.Id">
+                    <i class="bi bi-tag me-2" aria-hidden="true"></i>Sticker
+                </a>
+            }
             <button type="button" class="btn ec-boton-outline no-imprimir" onclick="window.print()">
                 <i class="bi bi-printer me-2" aria-hidden="true"></i>Imprimir
             </button>

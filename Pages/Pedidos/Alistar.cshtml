@@ -1,0 +1,160 @@
+@page "/Pedidos/Alistar/{id:int}"
+@model AlistarModel
+@using Ferreteria.Pages.Pedidos
+@{
+    Layout = null;
+    var p = Model.Pedido;
+    bool pendiente = p.Estado == "pendiente";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alistar @p.Numero - Ferretería</title>
+    <partial name="_Estilos" />
+    <style>
+        /* Cada producto es una fila grande que se toca para marcarla */
+        .al-linea {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #e3e3e3;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .al-linea:last-child { border-bottom: 0; }
+
+        .al-linea input {
+            width: 2rem;
+            height: 2rem;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .al-cantidad {
+            min-width: 4.5rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: #111;
+            color: #f5b700;
+            border-radius: 10px;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .al-nombre { font-size: 1.15rem; font-weight: 600; }
+
+        .al-linea.listo { background: #eef8ee; }
+        .al-linea.listo .al-nombre { text-decoration: line-through; color: #5c7a5c; }
+        .al-linea.listo .al-cantidad { background: #2e7d32; color: #fff; }
+
+        .al-progreso { height: 14px; }
+    </style>
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-4" style="max-width:820px">
+
+    <header class="mb-3">
+        <h1 class="h2 mb-1">Alistar pedido @p.Numero</h1>
+        <p class="text-secondary mb-0">
+            @(string.IsNullOrWhiteSpace(p.Ferreteria) ? p.Cliente : p.Cliente + " · " + p.Ferreteria)
+        </p>
+    </header>
+
+    @if (Model.Error is not null)
+    {
+        <div class="alert alert-danger" role="alert">@Model.Error</div>
+    }
+
+    @if (!pendiente)
+    {
+        <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2" role="status">
+            <span>Este pedido está en estado <strong>@ListaModel.EtiquetaEstado(p.Estado)</strong>. Solo se alistan pedidos pendientes.</span>
+            <a class="btn btn-fer" href="/Pedidos/Sticker/@p.Id"><i class="bi bi-printer me-2" aria-hidden="true"></i>Ver sticker</a>
+        </div>
+    }
+    else
+    {
+        <p class="mb-2">Toca cada producto cuando lo tengas listo.</p>
+    }
+
+    <div class="d-flex justify-content-between mb-1">
+        <span class="fw-semibold" id="texto-progreso" aria-live="polite"></span>
+        <span class="text-secondary">@p.TotalUnidades unidades en total</span>
+    </div>
+    <div class="progress al-progreso mb-3" role="presentation">
+        <div class="progress-bar bg-success" id="barra-progreso" style="width:0%"></div>
+    </div>
+
+    <div class="fer-card overflow-hidden mb-4">
+        @foreach (var item in p.Items)
+        {
+            <label class="al-linea">
+                <input type="checkbox" class="form-check-input al-check" checked="@(!pendiente)" disabled="@(!pendiente)" />
+                <span class="al-cantidad">@item.Cantidad</span>
+                <span class="flex-grow-1">
+                    <span class="al-nombre d-block">@item.Nombre</span>
+                    <span class="text-secondary">
+                        @(string.IsNullOrWhiteSpace(item.Medida) ? "" : item.Medida + " · ")Código @item.Codigo
+                    </span>
+                </span>
+            </label>
+        }
+    </div>
+
+    @if (pendiente)
+    {
+        <form method="post" asp-route-id="@p.Id">
+            <button type="submit" id="boton-terminar" class="btn btn-fer btn-lg w-100 py-3" disabled>
+                <i class="bi bi-check2-all me-2" aria-hidden="true"></i>Terminar alistamiento
+            </button>
+            <p class="small text-secondary text-center mt-2 mb-0" id="ayuda-terminar">
+                El botón se activa cuando todos los productos estén marcados.
+            </p>
+        </form>
+    }
+
+    <div class="mt-4">
+        <a href="/Pedidos/Detalle/@p.Id" class="btn btn-fer-outline">
+            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver al pedido
+        </a>
+    </div>
+
+</main>
+
+<script>
+    (function () {
+        var checks = Array.from(document.querySelectorAll('.al-check'));
+        var boton = document.getElementById('boton-terminar');
+        var clave = 'alistar-@p.Id';
+
+        // Recordar lo marcado si se recarga la página (por ejemplo en el celular)
+        try {
+            var guardado = JSON.parse(localStorage.getItem(clave) || '[]');
+            checks.forEach(function (c, i) { if (!c.disabled && guardado[i]) c.checked = true; });
+        } catch (e) { }
+
+        function actualizar() {
+            var listos = checks.filter(function (c) { return c.checked; }).length;
+            checks.forEach(function (c) { c.closest('.al-linea').classList.toggle('listo', c.checked); });
+            document.getElementById('texto-progreso').textContent = listos + ' de ' + checks.length + ' productos listos';
+            document.getElementById('barra-progreso').style.width = (checks.length ? listos * 100 / checks.length : 0) + '%';
+            if (boton) boton.disabled = listos < checks.length;
+            try { localStorage.setItem(clave, JSON.stringify(checks.map(function (c) { return c.checked; }))); } catch (e) { }
+        }
+
+        checks.forEach(function (c) { c.addEventListener('change', actualizar); });
+        actualizar();
+    })();
+</script>
+
+</body>
+</html>

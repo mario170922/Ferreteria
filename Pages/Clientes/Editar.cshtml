@@ -1,0 +1,85 @@
+@page "{id:int?}"
+@model Ferreteria.Pages.Clientes.EditarModel
+@{
+    Layout = null;
+    var titulo = Model.Id is null ? "Nuevo cliente" : "Editar cliente";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@titulo - Ferretería</title>
+    <partial name="_Estilos" />
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-4" style="max-width:720px">
+
+    <header class="mb-4">
+        <h1 class="h2 mb-1">@titulo</h1>
+        <p class="text-secondary mb-0">Los campos con * son obligatorios.</p>
+    </header>
+
+    @if (Model.Error is not null)
+    {
+        <div class="alert alert-danger mb-4" role="alert">@Model.Error</div>
+    }
+
+    <div class="fer-card">
+        <div class="fer-card-cuerpo">
+            <form method="post">
+                <div class="mb-3">
+                    <label asp-for="Form.NombreCliente" class="form-label fw-semibold">Nombre del cliente *</label>
+                    <input asp-for="Form.NombreCliente" class="form-control form-control-lg" autocomplete="off" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Form.NombreFerreteria" class="form-label fw-semibold">Nombre de la ferretería</label>
+                    <input asp-for="Form.NombreFerreteria" class="form-control form-control-lg" autocomplete="off" />
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label asp-for="Form.Celular1" class="form-label fw-semibold">Celular *</label>
+                        <input asp-for="Form.Celular1" type="tel" inputmode="numeric" class="form-control form-control-lg" autocomplete="off" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label asp-for="Form.Celular2" class="form-label fw-semibold">Otro celular</label>
+                        <input asp-for="Form.Celular2" type="tel" inputmode="numeric" class="form-control form-control-lg" autocomplete="off" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Form.Direccion" class="form-label fw-semibold">Dirección *</label>
+                    <input asp-for="Form.Direccion" class="form-control form-control-lg" autocomplete="off" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Form.Ubicacion" class="form-label fw-semibold">Ubicación (barrio o enlace del mapa)</label>
+                    <input asp-for="Form.Ubicacion" class="form-control form-control-lg" autocomplete="off" />
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Form.Horario" class="form-label fw-semibold">Horario de atención</label>
+                    <input asp-for="Form.Horario" class="form-control form-control-lg" placeholder="Ej.: lunes a sábado 8 a.m. a 6 p.m." autocomplete="off" />
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-fer btn-lg flex-grow-1">
+                        <i class="bi bi-check-lg me-2" aria-hidden="true"></i>Guardar
+                    </button>
+                    <a class="btn btn-fer-outline btn-lg" href="/Clientes">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</main>
+
+</body>
+</html>

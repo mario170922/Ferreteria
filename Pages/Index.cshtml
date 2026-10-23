@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     Layout = null;
+    var d = Model.Datos;
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -9,64 +10,109 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Inicio - Ferretería</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="/css/ferreteria.css" />
+    <partial name="_Estilos" />
 </head>
 <body>
 
 <a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
 
-<nav class="fer-nav py-3" aria-label="Navegación principal">
-    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <a class="d-flex align-items-center gap-3 text-decoration-none" href="/">
-            <img src="/img/logo-casita.png" alt="Logo El Castillo Ferretería" style="height:56px;width:auto" />
-            <span class="fer-marca d-none d-md-inline">Inventario y pedidos</span>
-        </a>
-        <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-light" href="/Productos">Inventario</a>
-            <a class="btn btn-light" href="/Pedidos/Lista">Pedidos</a>
-            @if (Model.EsAdmin)
-            {
-                <a class="btn btn-light" href="/Categorias">Categorías</a>
-                <a class="btn btn-light" href="/Usuarios">Usuarios</a>
-                <a class="btn btn-light" href="/Descuentos">Descuentos</a>
-            }
-            <a class="btn btn-outline-light" href="/Salir">Salir</a>
-        </div>
-    </div>
-</nav>
+<partial name="_Barra" />
 
 <main id="contenido" class="container py-4 py-md-5">
 
-    <header class="mb-4">
-        <h1 class="h2 mb-1">Hola, @Model.NombreUsuario</h1>
-        <p class="text-secondary mb-0">¿Qué quieres hacer hoy?</p>
-    </header>
+    <section class="fer-portada mb-4" aria-labelledby="saludo">
+        <img src="/img/logo-casita.png" alt="" class="fer-portada-logo" />
+        <div class="position-relative">
+            <span class="fer-fecha"><i class="bi bi-calendar3" aria-hidden="true"></i>@Model.Fecha</span>
+            <h1 id="saludo" class="fer-saludo">Hola, <span>@Model.NombreUsuario</span></h1>
+            <p class="text-secondary fs-5 mb-4">¿Qué quieres hacer hoy?</p>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-fer btn-lg" href="/Pedidos/Nuevo">
+                    <i class="bi bi-cart-plus me-2" aria-hidden="true"></i>Nuevo pedido
+                </a>
+                <a class="btn btn-fer-outline btn-lg" href="/Productos">
+                    <i class="bi bi-search me-2" aria-hidden="true"></i>Buscar producto
+                </a>
+            </div>
+        </div>
+    </section>
 
+    <h2 class="visually-hidden">Resumen de hoy</h2>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <a class="fer-card fer-dato h-100" href="/Pedidos/Lista">
+                <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                <span>
+                    <span class="fer-dato-valor d-block">@d.Pendientes</span>
+                    <span class="fer-dato-etiqueta">Pedidos pendientes</span>
+                </span>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a class="fer-card fer-dato ok h-100" href="/Pedidos/Lista">
+                <i class="bi bi-bag-check" aria-hidden="true"></i>
+                <span>
+                    <span class="fer-dato-valor d-block">@d.PedidosHoy</span>
+                    <span class="fer-dato-etiqueta">Pedidos de hoy</span>
+                </span>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a class="fer-card fer-dato @(d.StockBajo > 0 ? "alerta" : "ok") h-100" href="/Productos?Bajo=true">
+                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                <span>
+                    <span class="fer-dato-valor d-block">@d.StockBajo</span>
+                    <span class="fer-dato-etiqueta">Productos por agotarse</span>
+                </span>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a class="fer-card fer-dato h-100" href="/Clientes">
+                <i class="bi bi-people" aria-hidden="true"></i>
+                <span>
+                    <span class="fer-dato-valor d-block">@d.Clientes</span>
+                    <span class="fer-dato-etiqueta">Clientes</span>
+                </span>
+            </a>
+        </div>
+    </div>
+
+    <h2 class="h4 mb-3">Accesos</h2>
     <div class="row g-4">
 
         <div class="col-12 col-md-6 col-lg-4">
             <a class="fer-card fer-acceso" href="/Pedidos/Nuevo">
-                <i class="bi bi-cart-plus fer-icono" aria-hidden="true"></i>
-                <h2 class="h5 mt-3">Nuevo pedido</h2>
+                <span class="fer-icono"><i class="bi bi-cart-plus" aria-hidden="true"></i></span>
+                <h2 class="mt-3 mb-1">Nuevo pedido</h2>
                 <p class="fer-descripcion">Registrar la venta a un cliente.</p>
+                <span class="fer-ir">Empezar <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
             </a>
         </div>
 
         <div class="col-12 col-md-6 col-lg-4">
             <a class="fer-card fer-acceso" href="/Pedidos/Lista">
-                <i class="bi bi-receipt fer-icono" aria-hidden="true"></i>
-                <h2 class="h5 mt-3">Pedidos</h2>
+                <span class="fer-icono"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+                <h2 class="mt-3 mb-1">Pedidos</h2>
                 <p class="fer-descripcion">Ver los pedidos de los últimos 3 meses.</p>
+                <span class="fer-ir">Ver pedidos <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
             </a>
         </div>
 
         <div class="col-12 col-md-6 col-lg-4">
             <a class="fer-card fer-acceso" href="/Productos">
-                <i class="bi bi-box-seam fer-icono" aria-hidden="true"></i>
-                <h2 class="h5 mt-3">Inventario</h2>
+                <span class="fer-icono"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
+                <h2 class="mt-3 mb-1">Inventario</h2>
                 <p class="fer-descripcion">Consultar productos, precios y existencias.</p>
+                <span class="fer-ir">Ver inventario <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+            </a>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <a class="fer-card fer-acceso" href="/Clientes">
+                <span class="fer-icono"><i class="bi bi-person-lines-fill" aria-hidden="true"></i></span>
+                <h2 class="mt-3 mb-1">Clientes</h2>
+                <p class="fer-descripcion">Buscar clientes y corregir sus datos.</p>
+                <span class="fer-ir">Ver clientes <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
             </a>
         </div>
 
@@ -74,25 +120,28 @@
         {
             <div class="col-12 col-md-6 col-lg-4">
                 <a class="fer-card fer-acceso" href="/Categorias">
-                    <i class="bi bi-tags fer-icono" aria-hidden="true"></i>
-                    <h2 class="h5 mt-3">Categorías</h2>
+                    <span class="fer-icono"><i class="bi bi-tags" aria-hidden="true"></i></span>
+                    <h2 class="mt-3 mb-1">Categorías</h2>
                     <p class="fer-descripcion">Organizar productos en categorías y subcategorías.</p>
+                    <span class="fer-ir">Organizar <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
                 </a>
             </div>
 
             <div class="col-12 col-md-6 col-lg-4">
                 <a class="fer-card fer-acceso" href="/Usuarios">
-                    <i class="bi bi-people fer-icono" aria-hidden="true"></i>
-                    <h2 class="h5 mt-3">Usuarios</h2>
+                    <span class="fer-icono"><i class="bi bi-person-gear" aria-hidden="true"></i></span>
+                    <h2 class="mt-3 mb-1">Usuarios</h2>
                     <p class="fer-descripcion">Crear vendedores y activar o desactivar cuentas.</p>
+                    <span class="fer-ir">Administrar <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
                 </a>
             </div>
 
             <div class="col-12 col-md-6 col-lg-4">
                 <a class="fer-card fer-acceso" href="/Descuentos">
-                    <i class="bi bi-percent fer-icono" aria-hidden="true"></i>
-                    <h2 class="h5 mt-3">Descuentos</h2>
+                    <span class="fer-icono"><i class="bi bi-percent" aria-hidden="true"></i></span>
+                    <h2 class="mt-3 mb-1">Descuentos</h2>
                     <p class="fer-descripcion">Definir el descuento de cada vendedor.</p>
+                    <span class="fer-ir">Configurar <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
                 </a>
             </div>
         }

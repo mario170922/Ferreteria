@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+  <!-- Patrón de fondo: tuercas y tornillos casi invisibles -->
+  <g fill="none" stroke="#f5b700" stroke-opacity="0.045" stroke-width="2">
+    <!-- Tuerca -->
+    <polygon points="40,18 59,29 59,51 40,62 21,51 21,29" />
+    <circle cx="40" cy="40" r="9" />
+    <!-- Tornillo inclinado -->
+    <g transform="translate(150 40) rotate(35)">
+      <rect x="-13" y="-8" width="26" height="10" rx="2" />
+      <line x1="0" y1="2" x2="0" y2="52" />
+      <path d="M-6 10 L6 14 M-6 18 L6 22 M-6 26 L6 30 M-6 34 L6 38 M-6 42 L6 46" />
+    </g>
+    <!-- Arandela -->
+    <circle cx="70" cy="150" r="16" />
+    <circle cx="70" cy="150" r="7" />
+    <!-- Tuerca pequeña -->
+    <polygon points="170,140 184,148 184,164 170,172 156,164 156,148" />
+    <circle cx="170" cy="156" r="6" />
+    <!-- Cabeza de tornillo con estría -->
+    <circle cx="125" cy="200" r="11" />
+    <path d="M117 200 H133 M125 192 V208" />
+  </g>
+</svg>

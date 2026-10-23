@@ -74,7 +74,7 @@ public class ProductosModel : PageModel
     public string ObtenerRutaImagen(string? imagen, string carpeta)
     {
         if (string.IsNullOrEmpty(imagen)) return "";
-        return $"/img/{carpeta}/{imagen}";
+        if (imagen.Contains('/')) return "/" + imagen.TrimStart('/'); return $"/img/{carpeta}/{imagen}";
     }
 
     public async Task OnGetAsync()

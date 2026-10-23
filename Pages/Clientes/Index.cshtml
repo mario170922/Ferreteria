@@ -1,0 +1,103 @@
+@page
+@model Ferreteria.Pages.Clientes.IndexModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clientes - Ferretería</title>
+    <partial name="_Estilos" />
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-4">
+
+    <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Clientes</h1>
+            <p class="text-secondary mb-0">Busca un cliente para ver o corregir sus datos.</p>
+        </div>
+        <a class="btn btn-fer btn-lg" href="/Clientes/Editar">
+            <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Nuevo cliente
+        </a>
+    </header>
+
+    @if (Model.Mensaje is not null)
+    {
+        <div class="alert alert-success mb-4" role="status">@Model.Mensaje</div>
+    }
+
+    <form method="get" class="mb-4" role="search">
+        <label for="Q" class="form-label fw-semibold">Buscar por nombre, ferretería o celular</label>
+        <div class="d-flex gap-2">
+            <input id="Q" name="Q" value="@Model.Q" class="form-control form-control-lg" placeholder="Ej.: Pedro o 3001234567" autocomplete="off" />
+            <button type="submit" class="btn btn-fer btn-lg">
+                <i class="bi bi-search me-1" aria-hidden="true"></i>Buscar
+            </button>
+        </div>
+    </form>
+
+    <div class="fer-card overflow-hidden">
+        @if (Model.Lista.Count == 0)
+        {
+            <div class="fer-vacio">
+                <i class="bi bi-person-x" aria-hidden="true"></i>
+                <h2>No encontramos clientes</h2>
+                <p class="mb-3">Revisa lo que escribiste o crea el cliente nuevo.</p>
+                <a class="btn btn-fer" href="/Clientes/Editar"><i class="bi bi-person-plus me-2" aria-hidden="true"></i>Nuevo cliente</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table fer-tabla mb-0">
+                    <caption class="visually-hidden">Clientes registrados</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Ferretería</th>
+                            <th scope="col">Celular</th>
+                            <th scope="col">Dirección</th>
+                            <th scope="col">Pedidos</th>
+                            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Lista)
+                        {
+                            <tr>
+                                <td><strong>@c.NombreCliente</strong></td>
+                                <td>@(c.NombreFerreteria ?? "—")</td>
+                                <td>
+                                    @c.Celular1
+                                    @if (!string.IsNullOrEmpty(c.Celular2))
+                                    {
+                                        <br /><span class="text-secondary">@c.Celular2</span>
+                                    }
+                                </td>
+                                <td>@c.Direccion</td>
+                                <td>@c.Pedidos</td>
+                                <td class="text-end">
+                                    <a class="btn btn-fer-outline btn-sm" href="/Clientes/Editar/@c.Id">
+                                        <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+</main>
+
+</body>
+</html>

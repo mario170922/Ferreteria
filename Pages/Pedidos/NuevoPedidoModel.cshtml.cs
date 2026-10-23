@@ -189,6 +189,14 @@ public class NuevoPedidoModel : PageModel
                     }, tx);
             }
 
+            // Cada producto del pedido queda en el historial de inventario como salida.
+            await con.ExecuteAsync(@"
+                INSERT INTO movimientos_inventario (producto_id, cantidad, motivo)
+                SELECT pi.producto_id, -pi.cantidad, 'Salida por pedido ' || p.numero
+                FROM pedido_items pi
+                JOIN pedidos p ON p.id = pi.pedido_id
+                WHERE pi.pedido_id = @id", new { id = pedidoId }, tx);
+
             await tx.CommitAsync();
             return RedirectToPage("/Pedidos/Detalle", new { id = pedidoId });
         }

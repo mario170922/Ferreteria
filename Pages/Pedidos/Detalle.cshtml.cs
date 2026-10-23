@@ -159,6 +159,8 @@ public class DetalleModel : PageModel
                     SET stock = p.stock + pi.cantidad
                     FROM pedido_items pi
                     WHERE pi.pedido_id = @id AND pi.producto_id = p.id", new { id }, tx);
+
+                await RegistrarMovimientosAsync(con, tx, id, 1, $"Devolución: pedido %s pasó a {EtiquetaDe(estado)}");
             }
             // Vuelve a un estado activo: se descuenta el stock otra vez, si hay existencias.
             else if (eraDevuelto && !seraDevuelto)
@@ -180,6 +182,8 @@ public class DetalleModel : PageModel
                     SET stock = p.stock - pi.cantidad
                     FROM pedido_items pi
                     WHERE pi.pedido_id = @id AND pi.producto_id = p.id", new { id }, tx);
+
+                await RegistrarMovimientosAsync(con, tx, id, -1, $"Salida: pedido %s se reactivó como {EtiquetaDe(estado)}");
             }
 
             await con.ExecuteAsync(
@@ -208,6 +212,21 @@ public class DetalleModel : PageModel
     private bool TieneRolAdmin()
     {
         return User.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == "admin");
+    }
+
+    // Anota en movimientos_inventario cada producto del pedido.
+    // signo = 1 es entrada (vuelve al inventario), signo = -1 es salida.
+    // En el motivo, %s se reemplaza por el número del pedido.
+    private static async Task RegistrarMovimientosAsync(
+        NpgsqlConnection con, NpgsqlTransaction tx, int id, int signo, string motivo)
+    {
+        await con.ExecuteAsync(@"
+            INSERT INTO movimientos_inventario (producto_id, cantidad, motivo)
+            SELECT pi.producto_id, @signo * pi.cantidad, format(@motivo, p.numero)
+            FROM pedido_items pi
+            JOIN pedidos p ON p.id = pi.pedido_id
+            WHERE pi.pedido_id = @id",
+            new { id, signo, motivo }, tx);
     }
 
     private static bool EsDevuelto(string estado)

@@ -1,0 +1,472 @@
+@page "/Pedidos/Sticker/{id:int}"
+@model StickerModel
+@using Ferreteria.Pages.Pedidos
+@{
+    Layout = null;
+    var p = Model.Pedido;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sticker @p.Numero - Ferretería</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;600;700&display=swap" />
+    <style>
+        /* Colores de la marca El Castillo (los mismos del detalle del pedido) */
+        :root {
+            --ec-negro: #111111;
+            --ec-amarillo: #f5b700;
+            --ec-amarillo-suave: #fff4cc;
+            --ec-gris: #6b6b6b;
+            --ec-linea: #d9d9d9;
+        }
+
+        body {
+            background: #2a2a2a;
+            font-family: "Barlow", system-ui, sans-serif;
+            color: var(--ec-negro);
+        }
+
+        .titulo-cond { font-family: "Barlow Condensed", "Arial Narrow", sans-serif; }
+
+        /* Barra de botones: solo en pantalla */
+        .barra {
+            max-width: 816px;
+            margin: 0 auto;
+            padding: 1rem 0;
+        }
+
+        .btn-ec {
+            background: var(--ec-amarillo);
+            border: 2px solid var(--ec-amarillo);
+            color: var(--ec-negro);
+            font-weight: 700;
+        }
+
+        .btn-ec:hover { background: #ffd54a; border-color: #ffd54a; }
+
+        .btn-ec-outline {
+            border: 2px solid #bbb;
+            color: #f5f5f5;
+            font-weight: 600;
+        }
+
+        .btn-ec-outline:hover { border-color: var(--ec-amarillo); color: var(--ec-amarillo); }
+
+        /* ---------- El sticker ---------- */
+
+        .sticker {
+            max-width: 816px;
+            margin: 0 auto 2rem;
+            background: #fff;
+            border: 3px solid var(--ec-negro);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+        }
+
+        /* Encabezado negro con logo y número */
+        .st-cabeza {
+            background: var(--ec-negro);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 18px 24px;
+        }
+
+        .st-marca { display: flex; align-items: center; gap: 14px; }
+        .st-marca img { height: 64px; width: auto; }
+
+        .st-marca-nombre {
+            font-size: 30px;
+            font-weight: 800;
+            line-height: .95;
+            letter-spacing: .5px;
+            color: var(--ec-amarillo);
+            text-transform: uppercase;
+        }
+
+        .st-marca-sub {
+            font-size: 13px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #e6e6e6;
+        }
+
+        .st-numero {
+            background: var(--ec-amarillo);
+            color: var(--ec-negro);
+            border-radius: 12px;
+            padding: 6px 18px 8px;
+            text-align: center;
+        }
+
+        .st-numero small {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 3px;
+        }
+
+        .st-numero strong {
+            display: block;
+            font-size: 40px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        /* Franja de advertencia tipo obra */
+        .st-franja {
+            height: 14px;
+            background: repeating-linear-gradient(-45deg, var(--ec-negro) 0 14px, var(--ec-amarillo) 14px 28px);
+        }
+
+        .st-cuerpo { padding: 22px 26px 8px; }
+
+        .st-etiqueta {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--ec-gris);
+            margin-bottom: 2px;
+        }
+
+        .st-cliente {
+            font-size: 44px;
+            font-weight: 800;
+            line-height: 1;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .st-ferreteria {
+            display: inline-block;
+            margin-top: 8px;
+            background: var(--ec-amarillo-suave);
+            border-left: 5px solid var(--ec-amarillo);
+            padding: 2px 10px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Cliente a la izquierda, QR en la esquina derecha */
+        .st-arriba {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .st-qr {
+            flex-shrink: 0;
+            width: 112px;
+            text-align: center;
+        }
+
+        .st-qr-img {
+            border: 2px solid var(--ec-negro);
+            border-radius: 10px;
+            padding: 4px;
+            background: #fff;
+        }
+
+        .st-qr-img svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .st-qr-texto {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--ec-gris);
+            margin-top: 4px;
+            line-height: 1.2;
+        }
+
+        .st-datos {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .st-dato {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            border: 2px solid var(--ec-negro);
+            border-radius: 12px;
+            padding: 10px 14px;
+        }
+
+        .st-dato i {
+            font-size: 26px;
+            color: var(--ec-negro);
+            background: var(--ec-amarillo);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .st-dato-valor { font-size: 20px; font-weight: 700; line-height: 1.15; }
+        .st-dato-extra { font-size: 13px; color: var(--ec-gris); margin-top: 2px; }
+
+        /* Lista de productos */
+        .st-contenido-titulo {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 3px solid var(--ec-negro);
+            margin-top: 22px;
+            padding-bottom: 4px;
+        }
+
+        .st-contenido-titulo h2 {
+            font-size: 22px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .st-tabla { width: 100%; border-collapse: collapse; }
+
+        .st-tabla td {
+            padding: 7px 4px;
+            border-bottom: 1px dashed var(--ec-linea);
+            vertical-align: middle;
+            font-size: 16px;
+        }
+
+        .st-cant {
+            width: 70px;
+            text-align: center;
+        }
+
+        .st-cant span {
+            display: inline-block;
+            min-width: 52px;
+            background: var(--ec-negro);
+            color: var(--ec-amarillo);
+            font-weight: 800;
+            font-size: 20px;
+            border-radius: 8px;
+            padding: 1px 8px;
+        }
+
+        .st-prod strong { font-weight: 700; }
+        .st-prod small { color: var(--ec-gris); }
+
+        .st-caja {
+            width: 34px;
+            text-align: right;
+        }
+
+        .st-caja span {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--ec-negro);
+            border-radius: 5px;
+        }
+
+        /* Pie con fecha y firma */
+        .st-pie {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1rem;
+            padding: 16px 26px 18px;
+            font-size: 14px;
+        }
+
+        .st-firma {
+            min-width: 220px;
+            border-top: 2px solid var(--ec-negro);
+            text-align: center;
+            padding-top: 4px;
+            color: var(--ec-gris);
+        }
+
+        .st-gracias {
+            background: var(--ec-negro);
+            color: var(--ec-amarillo);
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            padding: 8px;
+        }
+
+        @@media (max-width: 640px) {
+            .st-cabeza { flex-direction: column; align-items: flex-start; }
+            .st-datos { grid-template-columns: 1fr; }
+            .st-cliente { font-size: 32px; }
+        }
+
+        @@media print {
+            @@page {
+                size: letter portrait;
+                margin: 10mm;
+            }
+
+            /* Para que se impriman los fondos negro y amarillo */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            body { background: #fff !important; }
+            .no-imprimir { display: none !important; }
+
+            .sticker {
+                max-width: 100%;
+                margin: 0;
+                box-shadow: none;
+            }
+
+            .st-tabla tr { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="barra no-imprimir px-3">
+    @if (Model.Mensaje is not null)
+    {
+        <div class="alert alert-success" role="status">@Model.Mensaje</div>
+    }
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <a href="/Pedidos/Detalle/@p.Id" class="btn btn-ec-outline btn-lg">
+            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver al pedido
+        </a>
+        <button type="button" class="btn btn-ec btn-lg" onclick="window.print()">
+            <i class="bi bi-printer me-2" aria-hidden="true"></i>Imprimir sticker
+        </button>
+    </div>
+    <p class="small mt-2 mb-0" style="color:#bbb">
+        Si al imprimir sale sin colores, activa la opción "Gráficos de fondo" en la ventana de impresión.
+    </p>
+</div>
+
+<article class="sticker" aria-label="Sticker del pedido @p.Numero">
+
+    <header class="st-cabeza">
+        <div class="st-marca">
+            <img src="/img/logo-casita.png" alt="" />
+            <div>
+                <div class="st-marca-nombre titulo-cond">El Castillo</div>
+                <div class="st-marca-sub">Ferretería · Tornillería</div>
+            </div>
+        </div>
+        <div class="st-numero titulo-cond">
+            <small>PEDIDO</small>
+            <strong>@p.Numero.Replace("ORDEN-", "#")</strong>
+        </div>
+    </header>
+
+    <div class="st-franja"></div>
+
+    <div class="st-cuerpo">
+        <div class="st-arriba">
+            <div>
+                <div class="st-etiqueta">Entregar a</div>
+                <h1 class="st-cliente titulo-cond">@p.Cliente</h1>
+                @if (!string.IsNullOrWhiteSpace(p.Ferreteria))
+                {
+                    <div class="st-ferreteria">@p.Ferreteria</div>
+                }
+            </div>
+            <div class="st-qr">
+                <div class="st-qr-img" role="img" aria-label="Código QR del pedido @p.Numero">@Html.Raw(Model.QrSvg)</div>
+                <div class="st-qr-texto">Escanea para ver el pedido</div>
+            </div>
+        </div>
+
+        <div class="st-datos">
+            <div class="st-dato">
+                <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                <div>
+                    <div class="st-etiqueta">Dirección</div>
+                    <div class="st-dato-valor">@p.Direccion</div>
+                    @if (!string.IsNullOrWhiteSpace(p.Ubicacion))
+                    {
+                        <div class="st-dato-extra">@p.Ubicacion</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(p.Horario))
+                    {
+                        <div class="st-dato-extra">Horario: @p.Horario</div>
+                    }
+                </div>
+            </div>
+            <div class="st-dato">
+                <i class="bi bi-telephone-fill" aria-hidden="true"></i>
+                <div>
+                    <div class="st-etiqueta">Celular</div>
+                    <div class="st-dato-valor">@p.Celular1</div>
+                    @if (!string.IsNullOrWhiteSpace(p.Celular2))
+                    {
+                        <div class="st-dato-valor">@p.Celular2</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="st-contenido-titulo">
+            <h2 class="titulo-cond">Contenido</h2>
+            <span class="fw-semibold">@p.Items.Count productos · @p.TotalUnidades unidades</span>
+        </div>
+
+        <table class="st-tabla">
+            <caption class="visually-hidden">Productos del pedido @p.Numero</caption>
+            <tbody>
+                @foreach (var item in p.Items)
+                {
+                    <tr>
+                        <td class="st-cant"><span class="titulo-cond">@item.Cantidad</span></td>
+                        <td class="st-prod">
+                            <strong>@item.Nombre</strong>
+                            @if (!string.IsNullOrWhiteSpace(item.Medida))
+                            {
+                                <span> · @item.Medida</span>
+                            }
+                            <br /><small>Código @item.Codigo</small>
+                        </td>
+                        <td class="st-caja"><span aria-hidden="true"></span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        <div class="st-pie">
+            <div>
+                <div><strong>Pedido:</strong> @ListaModel.FormatearFecha(p.Fecha)</div>
+                <div><strong>Impreso:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
+            </div>
+            <div class="st-firma">Recibido por (nombre y firma)</div>
+        </div>
+        <div class="st-franja"></div>
+        <div class="st-gracias titulo-cond">¡Gracias por su compra!</div>
+    </footer>
+
+</article>
+
+</body>
+</html>

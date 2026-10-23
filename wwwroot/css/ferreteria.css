@@ -1,0 +1,1060 @@
+/* ==========================================================
+   ferreteria.css
+   Estilos de todo el sitio El Castillo Ferretería.
+   Negro + grafito + amarillo de la marca (contraste WCAG 2.1 AA).
+   Las páginas que tienen estilos propios usan estas mismas variables.
+   ========================================================== */
+
+/* ---------- 1. Variables de diseño ---------- */
+:root {
+  /* Fondos */
+  --fer-negro: #111111;           /* fondo general */
+  --fer-carbon: #161616;          /* barra y encabezados de tabla */
+  --fer-superficie: #1c1c1c;      /* tarjetas (grafito de la marca) */
+  --fer-superficie-2: #242424;    /* campos y filas resaltadas */
+  --fer-grafito: #2e2e2e;         /* hover */
+  --fer-borde: #333333;
+
+  /* Marca. Los nombres "naranja" se conservan porque las páginas ya los usan. */
+  --fer-naranja: #f5b700;         /* amarillo El Castillo */
+  --fer-naranja-oscuro: #ffcb2e;  /* hover: un poco más claro sobre fondo oscuro */
+  --fer-naranja-suave: #2a2210;   /* resaltado oscuro con tono amarillo */
+  --fer-amarillo-brillo: rgba(245, 183, 0, 0.35);
+
+  /* Texto */
+  --fer-texto: #f4f4f4;
+  --fer-texto-suave: #b9b9b9;
+
+  /* Estados */
+  --fer-verde: #2fbf5b;
+  --fer-rojo: #ff6b6b;
+  --fer-azul: #6cc4ff;
+
+  /* Forma */
+  --fer-radio: 14px;
+  --fer-radio-sm: 10px;
+  --fer-sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .35);
+  --fer-sombra-hover: 0 2px 4px rgba(0, 0, 0, .45), 0 14px 32px rgba(0, 0, 0, .5);
+  --fer-altura-toque: 46px;       /* tamaño mínimo para tocar con el dedo */
+
+  /* Movimiento: corto y suave */
+  --fer-rapido: 150ms;
+  --fer-medio: 220ms;
+  --fer-curva: cubic-bezier(.2, .7, .2, 1);
+
+  /* Letras */
+  --fer-letra: "Barlow", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --fer-letra-titulo: "Barlow Condensed", "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+
+/* ---------- 2. Base ---------- */
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--fer-negro);
+  /* Brillo amarillo muy sutil arriba y patrón de tornillería al fondo */
+  background-image:
+    radial-gradient(1200px 500px at 85% -10%, rgba(245, 183, 0, .07), transparent 60%),
+    url("/img/patron-tornillos.svg");
+  background-attachment: fixed;
+  background-size: auto, 220px 220px;
+  color: var(--fer-texto);
+  font-family: var(--fer-letra);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5,
+.h1, .h2, .h3, .h4, .h5 {
+  color: var(--fer-texto);
+  font-family: var(--fer-letra-titulo);
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+h1, .h1, h2.h2, .h2 { font-weight: 800; }
+
+::selection { background: var(--fer-naranja); color: #000; }
+
+/* Textos secundarios legibles sobre fondo oscuro */
+.text-secondary,
+.text-muted {
+  color: var(--fer-texto-suave) !important;
+}
+
+/* Foco visible en todo elemento interactivo */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+label:focus-within {
+  outline: 3px solid var(--fer-naranja);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--fer-naranja);
+  transition: color var(--fer-rapido) ease;
+}
+
+a:hover { color: var(--fer-naranja-oscuro); }
+
+/* Encabezado de cada página: título con una raya amarilla */
+main > header h1,
+main header > div > h1 {
+  position: relative;
+  padding-bottom: .35rem;
+}
+
+main > header h1::after,
+main header > div > h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 48px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--fer-naranja);
+}
+
+/* ---------- 3. Barra superior ---------- */
+.fer-nav,
+.ec-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  background-color: rgba(10, 10, 10, .88) !important;
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+  backdrop-filter: saturate(160%) blur(10px);
+  color: var(--fer-texto);
+  border-bottom: 3px solid var(--fer-naranja) !important;
+  transition: box-shadow var(--fer-medio) ease, padding var(--fer-medio) ease;
+}
+
+.fer-nav.con-sombra,
+.ec-nav.con-sombra {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .55);
+}
+
+.fer-nav .fer-marca,
+.ec-nav .ec-marca {
+  color: var(--fer-naranja);
+  font-family: var(--fer-letra-titulo);
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.fer-nav img,
+.ec-nav img {
+  transition: transform var(--fer-medio) var(--fer-curva);
+}
+
+.fer-nav a:hover img,
+.ec-nav a:hover img {
+  transform: rotate(-6deg) scale(1.05);
+}
+
+/* Botones de la barra: píldoras claras, la página actual resaltada */
+.fer-nav .btn-light,
+.ec-nav .btn-light {
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .12);
+  color: var(--fer-texto);
+  font-weight: 600;
+}
+
+.fer-nav .btn-light:hover,
+.ec-nav .btn-light:hover {
+  background: rgba(245, 183, 0, .14);
+  border-color: rgba(245, 183, 0, .5);
+  color: #fff;
+}
+
+.fer-nav .btn-light.activo,
+.ec-nav .btn-light.activo {
+  background: var(--fer-naranja);
+  border-color: var(--fer-naranja);
+  color: #000;
+}
+
+.fer-nav .btn-outline-light,
+.ec-nav .btn-outline-light {
+  border-color: rgba(255, 255, 255, .3);
+  color: var(--fer-texto);
+}
+
+.fer-nav .btn-outline-light:hover,
+.ec-nav .btn-outline-light:hover {
+  background: #3a1716;
+  border-color: var(--fer-rojo);
+  color: #fff;
+}
+
+/* En pantallas medianas y celulares todos los botones quedan a la vista en varias filas,
+   y la barra no se queda pegada arriba para no tapar la página */
+@media (max-width: 1199.98px) {
+  .fer-nav,
+  .ec-nav { position: static; }
+
+  .fer-nav .container > .d-flex:last-child,
+  .ec-nav .container > .d-flex:last-child { width: 100%; }
+}
+
+/* En celular los botones de la barra son un poco más compactos */
+@media (max-width: 767.98px) {
+  .fer-nav .btn,
+  .ec-nav .btn {
+    min-height: 40px;
+    padding: .3rem .75rem;
+    font-size: .95rem;
+    flex: 1 1 auto;
+  }
+}
+
+/* ---------- 4. Botones ---------- */
+.btn {
+  min-height: var(--fer-altura-toque);
+  font-weight: 600;
+  border-radius: var(--fer-radio-sm);
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--fer-rapido) ease,
+    border-color var(--fer-rapido) ease,
+    color var(--fer-rapido) ease,
+    box-shadow var(--fer-medio) ease,
+    transform var(--fer-rapido) ease;
+}
+
+.btn:active:not(:disabled) { transform: translateY(1px) scale(.98); }
+
+.btn-sm { min-height: 38px; }
+
+/* Botón principal: amarillo con texto negro y un brillo que cruza al pasar el mouse */
+.btn-fer,
+.ec-boton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffc61a 0%, var(--fer-naranja) 100%);
+  border: 2px solid var(--fer-naranja);
+  color: #000;
+  box-shadow: 0 4px 14px rgba(245, 183, 0, .22);
+}
+
+.btn-fer::after,
+.ec-boton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .45) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 450ms ease;
+  pointer-events: none;
+}
+
+.btn-fer:hover::after,
+.ec-boton:hover::after { transform: translateX(120%); }
+
+.btn-fer:hover,
+.btn-fer:focus,
+.ec-boton:hover {
+  background: var(--fer-naranja-oscuro);
+  border-color: var(--fer-naranja-oscuro);
+  color: #000;
+  box-shadow: 0 6px 20px var(--fer-amarillo-brillo);
+}
+
+.btn-fer:disabled,
+.btn-fer.disabled {
+  background: #5a4a14;
+  border-color: #5a4a14;
+  color: #c9c0a0;
+  box-shadow: none;
+  opacity: 1;
+}
+
+/* Botón secundario: contorno amarillo */
+.btn-fer-outline,
+.ec-boton-outline {
+  background-color: transparent;
+  border: 2px solid var(--fer-naranja);
+  color: var(--fer-naranja);
+}
+
+.btn-fer-outline:hover,
+.btn-fer-outline:focus,
+.ec-boton-outline:hover {
+  background-color: var(--fer-naranja);
+  border-color: var(--fer-naranja);
+  color: #000;
+  box-shadow: 0 6px 18px var(--fer-amarillo-brillo);
+}
+
+/* Botones de tipo (entrada / salida) */
+.btn-check:checked + .btn-outline-success {
+  background-color: var(--fer-verde);
+  border-color: var(--fer-verde);
+  color: #000;
+}
+
+.btn-check:checked + .btn-outline-danger {
+  background-color: var(--fer-rojo);
+  border-color: var(--fer-rojo);
+  color: #000;
+}
+
+.btn-outline-success { color: #5fd884; border-color: #5fd884; }
+.btn-outline-danger  { color: var(--fer-rojo); border-color: var(--fer-rojo); }
+
+/* Mientras se envía un formulario el botón muestra que está trabajando */
+.btn.enviando {
+  pointer-events: none;
+  opacity: .85;
+}
+
+.btn.enviando .bi { display: none; }
+
+.fer-girando {
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: .5rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: fer-girar .7s linear infinite;
+}
+
+@keyframes fer-girar { to { transform: rotate(360deg); } }
+
+/* ---------- 5. Tarjetas ---------- */
+.fer-card,
+.ec-tarjeta {
+  position: relative;
+  background: linear-gradient(180deg, #202020 0%, var(--fer-superficie) 100%);
+  color: var(--fer-texto);
+  border: 1px solid var(--fer-borde);
+  border-top: 3px solid var(--fer-naranja);
+  border-radius: var(--fer-radio);
+  box-shadow: var(--fer-sombra);
+  transition: box-shadow var(--fer-medio) ease, border-color var(--fer-medio) ease, transform var(--fer-medio) var(--fer-curva);
+}
+
+.fer-card-cuerpo { padding: 1.5rem; }
+
+/* Tarjetas de acceso rápido del inicio */
+.fer-acceso {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: var(--fer-texto);
+  overflow: hidden;
+}
+
+.fer-acceso::before {
+  /* Brillo amarillo que aparece desde la esquina */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(400px 160px at 0% 0%, rgba(245, 183, 0, .16), transparent 70%);
+  opacity: 0;
+  transition: opacity var(--fer-medio) ease;
+  pointer-events: none;
+}
+
+.fer-acceso:hover,
+.fer-acceso:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: var(--fer-sombra-hover);
+  border-color: rgba(245, 183, 0, .55);
+  color: var(--fer-texto);
+}
+
+.fer-acceso:hover::before,
+.fer-acceso:focus-visible::before { opacity: 1; }
+
+.fer-acceso .fer-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  font-size: 1.7rem;
+  color: #000;
+  background: linear-gradient(135deg, #ffd34d, var(--fer-naranja));
+  box-shadow: 0 6px 16px rgba(245, 183, 0, .25);
+  transition: transform var(--fer-medio) var(--fer-curva);
+}
+
+.fer-acceso:hover .fer-icono { transform: scale(1.08) rotate(-4deg); }
+
+.fer-acceso h2 { font-size: 1.45rem; }
+
+.fer-acceso .fer-descripcion {
+  color: var(--fer-texto-suave);
+  margin-bottom: 0;
+}
+
+.fer-acceso .fer-ir {
+  margin-top: auto;
+  padding-top: .75rem;
+  color: var(--fer-naranja);
+  font-weight: 700;
+  font-size: .95rem;
+}
+
+.fer-acceso .fer-ir .bi { transition: transform var(--fer-medio) var(--fer-curva); display: inline-block; }
+.fer-acceso:hover .fer-ir .bi { transform: translateX(5px); }
+
+/* Cifra grande (stock, total) */
+.fer-cifra {
+  text-align: center;
+  padding: 1rem;
+  border-radius: var(--fer-radio);
+  background: linear-gradient(180deg, #2f2610, var(--fer-naranja-suave));
+  border: 1px solid #4a3a10;
+}
+
+.fer-cifra .fer-cifra-etiqueta {
+  font-size: .85rem;
+  color: var(--fer-texto-suave);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.fer-cifra .fer-cifra-valor {
+  font-family: var(--fer-letra-titulo);
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--fer-naranja);
+  line-height: 1.1;
+}
+
+.fer-cifra.fer-cifra-alerta {
+  background: linear-gradient(180deg, #44201f, #3a1716);
+  border-color: #6b2a28;
+}
+
+.fer-cifra.fer-cifra-alerta .fer-cifra-valor { color: var(--fer-rojo); }
+
+/* ---------- 6. Portada del inicio ---------- */
+.fer-portada {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 2rem 1.75rem;
+  background:
+    radial-gradient(600px 300px at 100% 0%, rgba(245, 183, 0, .22), transparent 65%),
+    linear-gradient(135deg, #1f1f1f 0%, #121212 100%);
+  border: 1px solid var(--fer-borde);
+  box-shadow: var(--fer-sombra);
+}
+
+.fer-portada::after {
+  /* Franja de obra en el borde inferior */
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  background: repeating-linear-gradient(-45deg, #111 0 12px, var(--fer-naranja) 12px 24px);
+}
+
+.fer-portada-logo {
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  height: 135%;
+  transform: translateY(-50%) rotate(-8deg);
+  opacity: .1;
+  pointer-events: none;
+}
+
+.fer-portada .fer-saludo {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  margin-bottom: .35rem;
+}
+
+.fer-portada .fer-saludo span { color: var(--fer-naranja); }
+
+.fer-fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem .8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1);
+  color: var(--fer-texto-suave);
+  font-size: .9rem;
+  margin-bottom: .9rem;
+}
+
+/* Cifras del día en el inicio */
+.fer-dato {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: var(--fer-texto);
+  border-top-width: 1px;
+}
+
+.fer-dato:hover { transform: translateY(-3px); box-shadow: var(--fer-sombra-hover); color: var(--fer-texto); }
+
+.fer-dato .bi {
+  font-size: 1.5rem;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(245, 183, 0, .12);
+  color: var(--fer-naranja);
+}
+
+@media (max-width: 575.98px) {
+  .fer-portada { padding: 1.5rem 1.25rem 1.75rem; }
+  .fer-portada-logo { height: 90%; right: -40px; opacity: .06; }
+
+  .fer-dato {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .6rem;
+  }
+
+  .fer-dato .bi { width: 40px; height: 40px; font-size: 1.25rem; }
+}
+
+.fer-dato.alerta .bi { background: rgba(255, 107, 107, .14); color: var(--fer-rojo); }
+.fer-dato.ok .bi     { background: rgba(47, 191, 91, .14); color: var(--fer-verde); }
+
+.fer-dato-valor {
+  font-family: var(--fer-letra-titulo);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.fer-dato-etiqueta {
+  color: var(--fer-texto-suave);
+  font-size: .92rem;
+}
+
+/* ---------- 7. Tablas ---------- */
+.fer-tabla,
+.ec-tabla {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--fer-texto);
+  --bs-table-border-color: var(--fer-borde);
+  --bs-table-hover-bg: var(--fer-naranja-suave);
+  --bs-table-hover-color: var(--fer-texto);
+  color: var(--fer-texto);
+}
+
+.fer-tabla thead th {
+  background-color: var(--fer-carbon);
+  color: var(--fer-naranja);
+  font-family: var(--fer-letra-titulo);
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: .9rem;
+  border: none;
+  border-bottom: 2px solid var(--fer-naranja);
+  white-space: nowrap;
+}
+
+.fer-tabla td {
+  padding: .9rem;
+  vertical-align: middle;
+}
+
+.fer-tabla tbody tr,
+.ec-tabla tbody tr {
+  transition: background-color var(--fer-rapido) ease;
+}
+
+.fer-tabla tbody tr:hover > *,
+.ec-tabla tbody tr:hover > * {
+  background-color: rgba(245, 183, 0, .06);
+}
+
+.fer-tabla tfoot th,
+.fer-tabla tfoot td {
+  background-color: var(--fer-carbon);
+  color: var(--fer-texto);
+}
+
+.fer-tabla .numero-orden {
+  font-weight: 700;
+  color: var(--fer-naranja);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  border-radius: 4px;
+  padding: 0 .2rem;
+  transition: background-color var(--fer-rapido) ease, color var(--fer-rapido) ease;
+}
+
+.fer-tabla .numero-orden:hover {
+  color: #000;
+  background-color: var(--fer-naranja);
+}
+
+/* ---------- 8. Estados de pedido y etiquetas ---------- */
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: .4em;
+  padding: .35em .85em;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .9rem;
+  white-space: nowrap;
+}
+
+.estado::before {
+  content: "";
+  width: .5em;
+  height: .5em;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .7;
+}
+
+.estado-pendiente    { background-color: #dcdcd6; color: #1a1a1a; }
+.estado-alistado     { background-color: #bfe6ff; color: #06314d; }
+.estado-en_ruta      { background-color: var(--fer-naranja); color: #000; }
+.estado-entregado    { background-color: #b9f5c6; color: #0a3d17; }
+.estado-no_entregado { background-color: #ffc9c9; color: #6b1212; }
+.estado-cancelado    { background-color: #4a4a4a; color: #fff; }
+
+/* El pedido en ruta "late" suavemente para que se note */
+.estado-en_ruta::before { animation: fer-latido 1.6s ease-in-out infinite; }
+
+@keyframes fer-latido {
+  0%, 100% { transform: scale(1); opacity: .7; }
+  50% { transform: scale(1.5); opacity: 1; }
+}
+
+.etiqueta-entrada { background-color: #b9f5c6; color: #0a3d17; }
+.etiqueta-salida  { background-color: #ffc9c9; color: #6b1212; }
+
+/* ---------- 9. Formularios ---------- */
+.form-control,
+.form-select {
+  min-height: var(--fer-altura-toque);
+  background-color: var(--fer-superficie-2);
+  color: var(--fer-texto);
+  border: 1px solid #4d4d4d;
+  border-radius: var(--fer-radio-sm);
+  transition: border-color var(--fer-rapido) ease, box-shadow var(--fer-medio) ease, background-color var(--fer-rapido) ease;
+}
+
+.form-control:hover,
+.form-select:hover { border-color: #6a6a6a; }
+
+.form-control::placeholder {
+  color: #8f8f8f;
+  opacity: 1;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: #2a2a2a;
+  color: var(--fer-texto);
+  border-color: var(--fer-naranja);
+  box-shadow: 0 0 0 4px rgba(245, 183, 0, .2);
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: #1a1a1a;
+  color: var(--fer-texto-suave);
+}
+
+.form-select {
+  /* Flecha amarilla */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f5b700' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+.form-select option {
+  background-color: #1f1f1f;
+  color: var(--fer-texto);
+}
+
+.form-label,
+legend {
+  color: var(--fer-texto);
+}
+
+.form-text { color: var(--fer-texto-suave); }
+
+.form-check-input {
+  background-color: var(--fer-superficie-2);
+  border-color: #6a6a6a;
+  transition: background-color var(--fer-rapido) ease, border-color var(--fer-rapido) ease;
+}
+
+.form-check-input:checked {
+  background-color: var(--fer-naranja);
+  border-color: var(--fer-naranja);
+}
+
+.form-check-input:focus {
+  border-color: var(--fer-naranja);
+  box-shadow: 0 0 0 4px rgba(245, 183, 0, .2);
+}
+
+.input-group-text {
+  background-color: var(--fer-carbon);
+  border-color: #4d4d4d;
+  color: var(--fer-texto-suave);
+}
+
+/* Errores de validación */
+.field-validation-error,
+.text-danger { color: var(--fer-rojo) !important; }
+
+.input-validation-error { border-color: var(--fer-rojo) !important; }
+
+/* ---------- 10. Login ---------- */
+.fer-login {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow: hidden;
+  background:
+    radial-gradient(700px 400px at 50% -5%, rgba(245, 183, 0, .18), transparent 65%),
+    radial-gradient(circle at bottom, #1d1d1d 0%, #0b0b0b 70%);
+}
+
+.fer-login::before {
+  /* Franja de obra arriba */
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: repeating-linear-gradient(-45deg, #111 0 14px, var(--fer-naranja) 14px 28px);
+}
+
+.fer-login-card {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  background: linear-gradient(180deg, rgba(36, 36, 36, .92), rgba(24, 24, 24, .95));
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 22px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .7), 0 0 0 1px rgba(245, 183, 0, .08);
+  padding: 2.5rem 2rem 2rem;
+}
+
+.fer-login-logo {
+  display: block;
+  height: 104px;
+  width: auto;
+  margin: 0 auto 1rem;
+  filter: drop-shadow(0 8px 24px rgba(245, 183, 0, .35));
+  animation: fer-flotar 4s ease-in-out infinite;
+}
+
+@keyframes fer-flotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.fer-login-titulo {
+  font-size: 2.2rem;
+  color: var(--fer-naranja);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.fer-login-pie {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: .85rem;
+  color: #8a8a8a;
+}
+
+/* ---------- 11. Mensajes, vacíos y migas ---------- */
+.fer-vacio {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--fer-texto-suave);
+}
+
+.fer-vacio .bi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  margin-bottom: .75rem;
+  border-radius: 50%;
+  font-size: 2.2rem;
+  color: var(--fer-naranja);
+  background: rgba(245, 183, 0, .1);
+  border: 1px dashed rgba(245, 183, 0, .45);
+}
+
+.fer-vacio h2,
+.fer-vacio h3 { font-size: 1.35rem; margin-bottom: .25rem; }
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  border-radius: var(--fer-radio-sm);
+  border-width: 1px;
+  border-left-width: 5px;
+  animation: fer-entrar-alerta var(--fer-medio) var(--fer-curva) both;
+}
+
+/* Ícono automático según el tipo de mensaje */
+.alert::before {
+  font-family: "bootstrap-icons";
+  font-size: 1.2rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.alert-success::before { content: "\f26a"; }  /* check-circle-fill */
+.alert-danger::before  { content: "\f336"; }  /* exclamation-octagon-fill */
+.alert-warning::before { content: "\f33a"; }  /* exclamation-triangle-fill */
+.alert-info::before    { content: "\f430"; }  /* info-circle-fill */
+
+.alert.d-flex::before { align-self: center; }
+
+.alert-success   { background-color: #12301c; border-color: var(--fer-verde); color: #d6f5df; }
+.alert-danger    { background-color: #3a1716; border-color: var(--fer-rojo); color: #ffd6d6; }
+.alert-warning   { background-color: #33290c; border-color: var(--fer-naranja); color: #ffe9a8; }
+.alert-info      { background-color: #2a2210; border-color: var(--fer-naranja); color: #ffe2b0; }
+.alert-secondary { background-color: var(--fer-superficie-2); border-color: var(--fer-borde); color: var(--fer-texto-suave); }
+
+.alert.saliendo {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity var(--fer-medio) ease, transform var(--fer-medio) ease;
+}
+
+@keyframes fer-entrar-alerta {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.breadcrumb {
+  --bs-breadcrumb-divider-color: var(--fer-texto-suave);
+  font-size: .95rem;
+}
+
+.breadcrumb-item a { color: var(--fer-naranja); text-decoration: none; }
+.breadcrumb-item a:hover { text-decoration: underline; }
+.breadcrumb-item.active { color: var(--fer-texto-suave); }
+
+/* Barras de progreso */
+.progress {
+  background-color: var(--fer-superficie-2);
+  border-radius: 999px;
+}
+
+.progress-bar { transition: width var(--fer-medio) var(--fer-curva); }
+
+/* Ventanas emergentes de Bootstrap */
+.modal-content {
+  background-color: var(--fer-superficie);
+  color: var(--fer-texto);
+  border: 1px solid var(--fer-borde);
+  border-top: 3px solid var(--fer-naranja);
+  border-radius: var(--fer-radio);
+}
+
+.modal-header,
+.modal-footer { border-color: var(--fer-borde); }
+
+.btn-close { filter: invert(1) grayscale(1) brightness(2); }
+
+/* ---------- 12. Inventario: detalles extra para las tarjetas de producto ---------- */
+.producto-card { border-radius: var(--fer-radio) !important; }
+
+.producto-card:hover { border-color: rgba(245, 183, 0, .5) !important; }
+
+.producto-imagen img { transition: transform 300ms var(--fer-curva); }
+.producto-card:hover .producto-imagen img { transform: scale(1.06); }
+
+.producto-imagen::after {
+  /* Lupa que aparece sobre la foto */
+  content: "\f62c";
+  font-family: "bootstrap-icons";
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .65);
+  color: var(--fer-naranja);
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity var(--fer-medio) ease, transform var(--fer-medio) var(--fer-curva);
+}
+
+.producto-card:hover .producto-imagen::after { opacity: 1; transform: scale(1); }
+
+.modal-lightbox.activo { animation: fer-aparecer var(--fer-medio) ease both; }
+.modal-lightbox.activo img { animation: fer-crecer var(--fer-medio) var(--fer-curva) both; }
+
+@keyframes fer-aparecer { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fer-crecer { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+
+/* ---------- 13. Animaciones de entrada ---------- */
+
+/* Toda la página aparece suave al abrir */
+body { animation: fer-aparecer 200ms ease both; }
+
+/* Al salir hacia otra página se desvanece rápido */
+body.fer-saliendo {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+/* Elementos que suben al aparecer en pantalla (los marca ferreteria.js) */
+.fer-revelar {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.fer-revelar.visible {
+  opacity: 1;
+  transform: none;
+  transition: opacity 250ms ease, transform 250ms var(--fer-curva);
+  transition-delay: var(--fer-retraso, 0ms);
+}
+
+/* Botón para volver arriba */
+.fer-arriba {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1040;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--fer-naranja);
+  color: #000;
+  font-size: 1.3rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity var(--fer-medio) ease, transform var(--fer-medio) var(--fer-curva);
+}
+
+.fer-arriba.visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.fer-arriba:hover { background: var(--fer-naranja-oscuro); }
+
+/* Barras de desplazamiento oscuras */
+* { scrollbar-color: #444 #151515; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #151515; }
+::-webkit-scrollbar-thumb { background: #3d3d3d; border-radius: 10px; border: 2px solid #151515; }
+::-webkit-scrollbar-thumb:hover { background: #5a5a5a; }
+
+/* Quien prefiere menos movimiento en su equipo no ve animaciones */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .fer-revelar { opacity: 1; transform: none; }
+}
+
+/* ---------- 14. Utilidades ---------- */
+.skip-link-visible:focus {
+  position: fixed;
+  top: .5rem;
+  left: .5rem;
+  z-index: 1100;
+}
+
+/* ---------- 15. Impresión (siempre con fondo blanco) ---------- */
+@media print {
+  .fer-nav,
+  .ec-nav,
+  .no-imprimir,
+  .fer-arriba {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000;
+    font-size: .95rem;
+    animation: none;
+  }
+
+  .fer-revelar { opacity: 1 !important; transform: none !important; }
+
+  .fer-card,
+  .ec-tarjeta {
+    background: #fff;
+    color: #000;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  .fer-tabla thead th,
+  .fer-tabla tfoot th,
+  .fer-tabla tfoot td {
+    background-color: #fff;
+    color: #000;
+  }
+
+  .alert { animation: none; }
+}
