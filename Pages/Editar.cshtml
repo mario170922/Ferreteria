@@ -161,6 +161,32 @@
         </div>
     </form>
 
+    @if (Model.UltimasCompras.Count > 0)
+    {
+        <section class="fer-card overflow-hidden mt-4" aria-labelledby="titulo-compras">
+            <div class="fer-card-cuerpo pb-2">
+                <h2 id="titulo-compras" class="h5 mb-0"><i class="bi bi-receipt me-2" aria-hidden="true"></i>Últimas compras de este producto</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table fer-tabla mb-0">
+                    <thead><tr><th>Fecha</th><th>Proveedor</th><th>Factura</th><th class="text-end">Unidades</th><th class="text-end">Costo por unidad</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model.UltimasCompras)
+                        {
+                            <tr>
+                                <td>@c.Fecha.ToString("dd/MM/yyyy")</td>
+                                <td>@c.Proveedor</td>
+                                <td>@c.Factura</td>
+                                <td class="text-end">@c.Unidades.ToString("0.##")</td>
+                                <td class="text-end">@c.CostoUnidad.ToString("C0", new CultureInfo("es-CO"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+
 </main>
 
 <script>

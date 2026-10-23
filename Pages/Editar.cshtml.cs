@@ -26,6 +26,18 @@ public class EditarModel : PageModel
     public IFormFile? Imagen { get; set; }
 
     public string? ImagenActual { get; set; }
+
+    // Últimas compras de este producto (desde las facturas cargadas), para ver cómo ha cambiado el costo
+    public List<CompraProducto> UltimasCompras { get; set; } = new();
+
+    public class CompraProducto
+    {
+        public DateTime Fecha { get; set; }
+        public string Proveedor { get; set; } = "";
+        public string Factura { get; set; } = "";
+        public decimal Unidades { get; set; }
+        public decimal CostoUnidad { get; set; }
+    }
     public List<CategoriaOpcion> Categorias { get; set; } = new();
     public string? Mensaje { get; set; }
 
@@ -109,6 +121,16 @@ public class EditarModel : PageModel
         };
 
         ImagenActual = p.Imagen;
+        UltimasCompras = (await conn.QueryAsync<CompraProducto>(@"
+            SELECT c.fecha AS Fecha, pv.nombre AS Proveedor, c.numero_factura AS Factura,
+                   i.cantidad * i.unidades_por AS Unidades,
+                   CASE WHEN i.cantidad * i.unidades_por > 0 THEN i.valor_total / (i.cantidad * i.unidades_por) ELSE 0 END AS CostoUnidad
+            FROM compra_items i
+            JOIN compras c ON c.id = i.compra_id
+            JOIN proveedores pv ON pv.id = c.proveedor_id
+            WHERE i.producto_id = @id
+            ORDER BY c.fecha DESC, c.id DESC
+            LIMIT 8", new { id })).ToList();
         await CargarCategoriasAsync(conn);
         return Page();
     }
