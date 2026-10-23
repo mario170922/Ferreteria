@@ -20,9 +20,14 @@ public static class FacturaElectronica
         public DateTime Fecha { get; set; }
         public string ProveedorNit { get; set; } = "";
         public string ProveedorNombre { get; set; } = "";
+        public string Moneda { get; set; } = "COP";
         public decimal Subtotal { get; set; }
         public decimal Impuestos { get; set; }
-        public decimal Total { get; set; }
+        public decimal Descuentos { get; set; }      // descuentos a nivel de factura
+        public decimal Cargos { get; set; }          // cargos adicionales (fletes, etc.)
+        public decimal TotalConImpuestos { get; set; }
+        public decimal Anticipos { get; set; }
+        public decimal Total { get; set; }           // valor a pagar
         public List<Linea> Lineas { get; set; } = new();
     }
 
@@ -34,6 +39,8 @@ public static class FacturaElectronica
         public string Descripcion { get; set; } = "";
         public decimal Cantidad { get; set; }
         public string? Unidad { get; set; }
+        public decimal PrecioUnitario { get; set; }
+        public decimal Descuento { get; set; }
         public decimal ValorSinImpuestos { get; set; }
         public decimal Impuestos { get; set; }
         public decimal ValorTotal => ValorSinImpuestos + Impuestos;
@@ -116,7 +123,12 @@ public static class FacturaElectronica
             ProveedorNombre = Texto(esquema?.Element(Cbc + "RegistrationName"))
                 is { Length: > 0 } nombre ? nombre
                 : Texto(proveedor?.Element(Cac + "PartyName")?.Element(Cbc + "Name")),
+            Moneda = Texto(inv.Element(Cbc + "DocumentCurrencyCode")) is { Length: > 0 } m ? m : "COP",
             Subtotal = Numero(totales?.Element(Cbc + "LineExtensionAmount")),
+            Descuentos = Numero(totales?.Element(Cbc + "AllowanceTotalAmount")),
+            Cargos = Numero(totales?.Element(Cbc + "ChargeTotalAmount")),
+            TotalConImpuestos = Numero(totales?.Element(Cbc + "TaxInclusiveAmount")),
+            Anticipos = Numero(totales?.Element(Cbc + "PrepaidAmount")),
             Total = Numero(totales?.Element(Cbc + "PayableAmount")),
             Impuestos = inv.Elements(Cac + "TaxTotal").Sum(t => Numero(t.Element(Cbc + "TaxAmount")))
         };
@@ -140,6 +152,10 @@ public static class FacturaElectronica
                 Descripcion = Texto(item?.Element(Cbc + "Description")),
                 Cantidad = Numero(cantidad),
                 Unidad = cantidad?.Attribute("unitCode")?.Value,
+                PrecioUnitario = Numero(l.Element(Cac + "Price")?.Element(Cbc + "PriceAmount")),
+                Descuento = l.Elements(Cac + "AllowanceCharge")
+                    .Where(a => Texto(a.Element(Cbc + "ChargeIndicator")) == "false")
+                    .Sum(a => Numero(a.Element(Cbc + "Amount"))),
                 ValorSinImpuestos = Numero(l.Element(Cbc + "LineExtensionAmount")),
                 Impuestos = l.Elements(Cac + "TaxTotal").Sum(t => Numero(t.Element(Cbc + "TaxAmount")))
             });
@@ -150,6 +166,40 @@ public static class FacturaElectronica
         if (factura.Total == 0) factura.Total = factura.Lineas.Sum(x => x.ValorTotal);
         return factura;
     }
+
+    // Revisa que la factura cuadre: suma de líneas, impuestos y total, con una tolerancia
+    // pequeña por los redondeos. Devuelve las alertas para mostrar (vacía si todo cuadra).
+    public static List<string> Validar(Factura f)
+    {
+        var alertas = new List<string>();
+        var tol = 1m + f.Lineas.Count * 0.5m;   // redondeos a peso en cada línea
+
+        var sumaLineas = f.Lineas.Sum(l => l.ValorSinImpuestos);
+        if (Math.Abs(sumaLineas - f.Subtotal) > tol)
+            alertas.Add($"La suma de las líneas ({N(sumaLineas)}) no coincide con el subtotal de la factura ({N(f.Subtotal)}).");
+
+        var sumaImpLineas = f.Lineas.Sum(l => l.Impuestos);
+        if (sumaImpLineas > 0 && Math.Abs(sumaImpLineas - f.Impuestos) > tol)
+            alertas.Add($"Los impuestos de las líneas ({N(sumaImpLineas)}) no coinciden con los impuestos de la factura ({N(f.Impuestos)}).");
+
+        if (f.TotalConImpuestos > 0 && Math.Abs(f.Subtotal + f.Impuestos - f.TotalConImpuestos) > tol)
+            alertas.Add($"Subtotal + impuestos ({N(f.Subtotal + f.Impuestos)}) no coincide con el total con impuestos ({N(f.TotalConImpuestos)}).");
+
+        var esperado = (f.TotalConImpuestos > 0 ? f.TotalConImpuestos : f.Subtotal + f.Impuestos) - f.Descuentos + f.Cargos - f.Anticipos;
+        if (Math.Abs(esperado - f.Total) > tol)
+            alertas.Add($"El total a pagar ({N(f.Total)}) no coincide con lo calculado ({N(esperado)}).");
+
+        foreach (var l in f.Lineas.Where(l => l.PrecioUnitario > 0))
+        {
+            var calculado = l.Cantidad * l.PrecioUnitario - l.Descuento;
+            if (Math.Abs(calculado - l.ValorSinImpuestos) > 1m)
+                alertas.Add($"Línea {l.Numero}: {N(l.Cantidad, 3)} × {N(l.PrecioUnitario, 2)} − descuento {N(l.Descuento)} = {N(calculado)}, pero la factura dice {N(l.ValorSinImpuestos)}.");
+        }
+        return alertas;
+    }
+
+    private static readonly CultureInfo Co = new("es-CO");
+    private static string N(decimal v, int decimales = 0) => v.ToString(decimales == 0 ? "N0" : "0." + new string('#', decimales), Co);
 
     // EAN-8, UPC-A, EAN-13 o GTIN-14: solo números de 8, 12, 13 o 14 dígitos
     private static bool EsCodigoDeBarras(string codigo) =>

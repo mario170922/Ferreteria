@@ -144,6 +144,63 @@ public static class EsquemaBaseDatos
         ("2026-10-23 precio por unidad o por ciento", @"
             ALTER TABLE productos ADD COLUMN precio_por int NOT NULL DEFAULT 1 CHECK (precio_por IN (1, 100));
             UPDATE productos SET precio_por = 100 WHERE negocio = 'tornilleria';"),
+
+        // Homologación de productos de facturas (pedido de Sebastián):
+        // alias por proveedor con descripción original y normalizada, y registro de correcciones.
+        // Se copian los códigos que el sistema ya había aprendido.
+        ("2026-10-23 alias de productos", @"
+            CREATE TABLE producto_alias (
+                id                      serial PRIMARY KEY,
+                producto_id             int NOT NULL REFERENCES productos (id) ON DELETE CASCADE,
+                proveedor_id            int NOT NULL REFERENCES proveedores (id),
+                codigo_proveedor        varchar(60),
+                descripcion_original    varchar(300) NOT NULL,
+                descripcion_normalizada varchar(300) NOT NULL,
+                unidad_proveedor        varchar(20),
+                factor                  int NOT NULL DEFAULT 1 CHECK (factor >= 1),
+                veces                   int NOT NULL DEFAULT 1,
+                ultima_confirmacion     timestamp NOT NULL DEFAULT now(),
+                confirmado_por          int REFERENCES usuarios (id)
+            );
+            CREATE UNIQUE INDEX ux_alias_codigo ON producto_alias (proveedor_id, codigo_proveedor, producto_id)
+                WHERE codigo_proveedor IS NOT NULL;
+            CREATE INDEX ix_alias_descripcion ON producto_alias (proveedor_id, descripcion_normalizada);
+
+            INSERT INTO producto_alias (producto_id, proveedor_id, codigo_proveedor, descripcion_original, descripcion_normalizada, factor)
+            SELECT pc.producto_id, pc.proveedor_id, pc.codigo_proveedor,
+                   COALESCE((SELECT ci.descripcion FROM compra_items ci
+                             WHERE ci.codigo_proveedor = pc.codigo_proveedor AND ci.producto_id = pc.producto_id LIMIT 1),
+                            pc.codigo_proveedor),
+                   '', pc.unidades_por
+            FROM producto_codigos_proveedor pc;
+
+            CREATE TABLE homologacion_correcciones (
+                id                serial PRIMARY KEY,
+                compra_id         int REFERENCES compras (id) ON DELETE SET NULL,
+                proveedor_id      int REFERENCES proveedores (id),
+                codigo_proveedor  varchar(60),
+                descripcion       varchar(300),
+                producto_sugerido int,
+                confianza         int,
+                producto_elegido  int,
+                detalle           varchar(300),
+                usuario_id        int REFERENCES usuarios (id),
+                creado_en         timestamp NOT NULL DEFAULT now()
+            );
+
+            ALTER TABLE compras ADD COLUMN moneda varchar(3) NOT NULL DEFAULT 'COP';
+            ALTER TABLE compras ADD COLUMN descuentos numeric(14, 2) NOT NULL DEFAULT 0;
+            ALTER TABLE compras ADD COLUMN cargos numeric(14, 2) NOT NULL DEFAULT 0;
+            ALTER TABLE compras ADD COLUMN archivo varchar(200);
+            ALTER TABLE compras ADD COLUMN alertas varchar(1000);
+
+            ALTER TABLE compra_items ADD COLUMN unidad varchar(20);
+            ALTER TABLE compra_items ADD COLUMN cantidad_factura numeric(14, 3);
+            ALTER TABLE compra_items ADD COLUMN valor_sin_impuestos numeric(14, 2);
+            ALTER TABLE compra_items ADD COLUMN impuestos numeric(14, 2);
+            ALTER TABLE compra_items ADD COLUMN descuento numeric(14, 2);
+            ALTER TABLE compra_items ADD COLUMN estado_coincidencia varchar(10);
+            ALTER TABLE compra_items ADD COLUMN confianza int;"),
     };
 
     public static async Task ActualizarAsync(IConfiguration config, ILogger logger)

@@ -8,11 +8,14 @@ using Npgsql;
 namespace Ferreteria.Pages.Compras;
 
 // Cargar una factura de compra en dos pasos:
-// 1. "Leer": se sube el .zip (o .xml) del correo del proveedor y se muestran sus productos,
-//    cada uno con el producto nuestro que le corresponde (por código de barras o porque
-//    ya se había usado antes ese código del proveedor).
-// 2. "Guardar": la persona revisa, corrige lo que haga falta y confirma. Se suma al
-//    inventario, se actualiza el precio de compra y la compra queda como egreso.
+// 1. "Leer": se sube el .zip (o .xml) del correo del proveedor. Se revisa que la factura cuadre
+//    y cada línea se compara con el inventario (Services/Homologacion.cs): sale el producto
+//    sugerido con su % de confianza, la explicación y un estado (automático, requiere
+//    aprobación o sin coincidencia). Leer la factura NO toca el inventario.
+// 2. "Guardar": la persona revisa, corrige lo que haga falta (producto, cantidad, unidades por
+//    caja) y confirma. Todo va en una sola transacción: se suma al inventario, se actualiza el
+//    precio de compra, se guardan los alias confirmados y las correcciones, y la compra queda
+//    como egreso. Si algo falla, no queda nada a medias.
 // El archivo se guarda en App_Data/facturas para poder consultarlo después.
 [Authorize(Roles = "admin")]
 [RequestSizeLimit(20_000_000)]
@@ -20,6 +23,7 @@ public class CargarModel : PageModel
 {
     public const int CrearNuevo = 0;
     public const int NoSumar = -1;
+    public const int Elegir = -2;
 
     private readonly IConfiguration _config;
     private readonly IWebHostEnvironment _entorno;
@@ -32,6 +36,8 @@ public class CargarModel : PageModel
 
     public FacturaElectronica.Factura? Factura { get; set; }
     public List<ProductoOpcion> Productos { get; set; } = new();
+    public List<Homologacion.Resultado> Resultados { get; set; } = new();
+    public List<string> Alertas { get; set; } = new();
     public string? Error { get; set; }
 
     [BindProperty] public string? Archivo { get; set; }          // nombre del archivo guardado en el paso 1
@@ -39,8 +45,11 @@ public class CargarModel : PageModel
 
     public class LineaForm
     {
-        public int ProductoId { get; set; }
+        public int ProductoId { get; set; } = Elegir;
         public int UnidadesPor { get; set; } = 1;
+        public decimal? Cantidad { get; set; }         // corregible si la lectura quedó mal
+        public bool Aprobado { get; set; }
+        public bool GuardarAlias { get; set; } = true;
         public string? CodigoNuevo { get; set; }
         public string? NombreNuevo { get; set; }
     }
@@ -52,10 +61,17 @@ public class CargarModel : PageModel
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public string? CodigoBarras { get; set; }
+        public int Stock { get; set; }
         public string Texto => $"{Nombre}{(string.IsNullOrWhiteSpace(Medida) ? "" : " · " + Medida)} ({Codigo})";
     }
 
     private string Carpeta => Path.Combine(_entorno.ContentRootPath, "App_Data", "facturas");
+
+    private Homologacion.Umbrales Umbrales => new()
+    {
+        Automatico = int.TryParse(_config["Homologacion:Automatico"], out var a) ? a : 90,
+        Sugerir = int.TryParse(_config["Homologacion:Sugerir"], out var s) ? s : 60
+    };
 
     public void OnGet() { }
 
@@ -103,7 +119,9 @@ public class CargarModel : PageModel
         }
 
         await CargarProductosAsync(con, negocio);
-        Lineas = await SugerenciasAsync(con, negocio, Factura);
+        Alertas = FacturaElectronica.Validar(Factura);
+        Resultados = await HomologarAsync(con, negocio, Factura);
+        Lineas = ValoresIniciales(Factura, Resultados);
         return Page();
     }
 
@@ -126,32 +144,64 @@ public class CargarModel : PageModel
         var negocio = User.NegocioActual();
         await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
         await con.OpenAsync();
+        await CargarProductosAsync(con, negocio);
+        Alertas = FacturaElectronica.Validar(Factura);
+        Resultados = await HomologarAsync(con, negocio, Factura);
 
         if (Lineas.Count != Factura.Lineas.Count)
         {
             Error = "Los productos no coinciden con la factura. Vuelve a cargarla.";
-            await CargarProductosAsync(con, negocio);
             return Page();
         }
+
+        // Nada entra al inventario sin una decisión segura
+        var faltan = new List<string>();
+        for (var i = 0; i < Lineas.Count; i++)
+        {
+            var (form, res, n) = (Lineas[i], Resultados[i], Factura.Lineas[i].Numero);
+            if (form.ProductoId == Elegir)
+                faltan.Add($"Línea {n}: elige el producto, créalo nuevo o marca \"No sumar\".");
+            else if (res.Estado == Homologacion.Aprobar && form.ProductoId == res.ProductoId && !form.Aprobado)
+                faltan.Add($"Línea {n}: marca \"Aprobado\" para confirmar la sugerencia ({res.Confianza} % de confianza).");
+            if (form.Cantidad is <= 0)
+                faltan.Add($"Línea {n}: la cantidad debe ser mayor que cero.");
+        }
+        if (faltan.Count > 0)
+        {
+            Error = string.Join(" ", faltan);
+            return Page();
+        }
+
+        var usuarioId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var u) ? u : (int?)null;
 
         await using var tx = await con.BeginTransactionAsync();
         try
         {
+            // Si dos personas guardan la misma factura al tiempo, la segunda espera aquí
+            // y luego la detecta como repetida.
+            await con.ExecuteAsync("SELECT pg_advisory_xact_lock(hashtext(@llave))",
+                new { llave = Nit(Factura) + "|" + Factura.Numero }, tx);
+
             if (await YaCargadaAsync(con, Factura, tx) is { } aviso)
                 throw new InvalidOperationException(aviso);
 
             var proveedorId = await con.ExecuteScalarAsync<int>(@"
                 INSERT INTO proveedores (nit, nombre) VALUES (@nit, @nombre)
                 ON CONFLICT (nit) DO UPDATE SET nombre = EXCLUDED.nombre
-                RETURNING id", new { nit = Nit(Factura), nombre = Factura.ProveedorNombre }, tx);
-
-            var usuarioId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var u) ? u : (int?)null;
+                RETURNING id", new { nit = Nit(Factura), nombre = Recortar(Factura.ProveedorNombre, 200) }, tx);
 
             var compraId = await con.ExecuteScalarAsync<int>(@"
-                INSERT INTO compras (negocio, proveedor_id, numero_factura, cufe, fecha, subtotal, impuestos, total, usuario_id)
-                VALUES (@negocio, @proveedorId, @Numero, @Cufe, @Fecha, @Subtotal, @Impuestos, @Total, @usuarioId)
+                INSERT INTO compras (negocio, proveedor_id, numero_factura, cufe, fecha, subtotal, impuestos, total,
+                                     usuario_id, moneda, descuentos, cargos, archivo, alertas)
+                VALUES (@negocio, @proveedorId, @Numero, @Cufe, @Fecha, @Subtotal, @Impuestos, @Total,
+                        @usuarioId, @Moneda, @Descuentos, @Cargos, @Archivo, @alertas)
                 RETURNING id",
-                new { negocio, proveedorId, Factura.Numero, Factura.Cufe, Factura.Fecha, Factura.Subtotal, Factura.Impuestos, Factura.Total, usuarioId }, tx);
+                new
+                {
+                    negocio, proveedorId, Factura.Numero, Factura.Cufe, Factura.Fecha, Factura.Subtotal, Factura.Impuestos, Factura.Total,
+                    usuarioId, Moneda = Recortar(Factura.Moneda, 3), Factura.Descuentos, Factura.Cargos, Archivo,
+                    alertas = Alertas.Count == 0 ? null : Recortar(string.Join(" ", Alertas), 1000)
+                }, tx);
 
             var sumados = 0;
             var creados = 0;
@@ -163,12 +213,14 @@ public class CargarModel : PageModel
             {
                 var linea = Factura.Lineas[i];
                 var form = Lineas[i];
+                var res = Resultados[i];
                 var unidadesPor = Math.Max(1, form.UnidadesPor);
+                var cantidadFactura = form.Cantidad is > 0 ? form.Cantidad.Value : linea.Cantidad;
                 int? productoId = null;
 
                 if (form.ProductoId != NoSumar)
                 {
-                    var unidades = linea.Cantidad * unidadesPor;
+                    var unidades = cantidadFactura * unidadesPor;
                     if (unidades != Math.Floor(unidades))
                         throw new InvalidOperationException($"Línea {linea.Numero}: la cantidad ({unidades:0.###}) no da unidades enteras. Revisa \"unidades por cada una\".");
                     var cantidad = (int)unidades;
@@ -190,7 +242,7 @@ public class CargarModel : PageModel
                     else
                     {
                         productoId = await con.ExecuteScalarAsync<int?>(
-                            "SELECT id FROM productos WHERE id = @id AND negocio = @negocio",
+                            "SELECT id FROM productos WHERE id = @id AND negocio = @negocio FOR UPDATE",
                             new { id = form.ProductoId, negocio }, tx)
                             ?? throw new InvalidOperationException($"Línea {linea.Numero}: el producto elegido no existe en este negocio.");
                     }
@@ -205,30 +257,46 @@ public class CargarModel : PageModel
                     await con.ExecuteAsync(@"
                         INSERT INTO movimientos_inventario (producto_id, cantidad, motivo)
                         VALUES (@productoId, @cantidad, @motivo)",
-                        new { productoId, cantidad, motivo = $"Compra: factura {Factura.Numero} de {Factura.ProveedorNombre}" }, tx);
+                        new { productoId, cantidad, motivo = Recortar($"Compra: factura {Factura.Numero} de {Factura.ProveedorNombre}", 200) }, tx);
 
-                    // Se recuerda para la próxima factura de este proveedor
-                    if (linea.CodigoProveedor.Length > 0)
-                    {
-                        await con.ExecuteAsync(@"
-                            DELETE FROM producto_codigos_proveedor pc
-                            USING productos p
-                            WHERE pc.producto_id = p.id AND p.negocio = @negocio
-                              AND pc.proveedor_id = @proveedorId AND pc.codigo_proveedor = @codigo;
-                            INSERT INTO producto_codigos_proveedor (proveedor_id, codigo_proveedor, producto_id, unidades_por)
-                            VALUES (@proveedorId, @codigo, @productoId, @unidadesPor)",
-                            new { negocio, proveedorId, codigo = linea.CodigoProveedor, productoId, unidadesPor }, tx);
-                    }
+                    // Lo que la persona confirmó se guarda como alias para las próximas facturas
+                    if (form.GuardarAlias)
+                        await GuardarAliasAsync(con, tx, proveedorId, productoId.Value, linea, unidadesPor, usuarioId);
                     sumados++;
                 }
 
+                // Correcciones frente a lo que sugirió el sistema (para mejorar la homologación)
+                var detalles = new List<string>();
+                if (res.ProductoId is not null && form.ProductoId != res.ProductoId)
+                    detalles.Add(form.ProductoId switch { CrearNuevo => "creó un producto nuevo", NoSumar => "no lo sumó al inventario", _ => "eligió otro producto" });
+                if (cantidadFactura != linea.Cantidad) detalles.Add($"cantidad corregida de {linea.Cantidad:0.###} a {cantidadFactura:0.###}");
+                if (unidadesPor != res.Factor) detalles.Add($"unidades por cada una: {res.Factor} → {unidadesPor}");
+                if (detalles.Count > 0)
+                {
+                    await con.ExecuteAsync(@"
+                        INSERT INTO homologacion_correcciones (compra_id, proveedor_id, codigo_proveedor, descripcion,
+                            producto_sugerido, confianza, producto_elegido, detalle, usuario_id)
+                        VALUES (@compraId, @proveedorId, @codigo, @descripcion, @sugerido, @confianza, @elegido, @detalle, @usuarioId)",
+                        new
+                        {
+                            compraId, proveedorId, codigo = Nulo(Recortar(linea.CodigoProveedor, 60)), descripcion = Recortar(linea.Descripcion, 300),
+                            sugerido = res.ProductoId, confianza = res.Confianza, elegido = productoId,
+                            detalle = Recortar(string.Join("; ", detalles), 300), usuarioId
+                        }, tx);
+                }
+
                 await con.ExecuteAsync(@"
-                    INSERT INTO compra_items (compra_id, producto_id, codigo_proveedor, descripcion, cantidad, unidades_por, valor_total)
-                    VALUES (@compraId, @productoId, @codigo, @descripcion, @cantidad, @unidadesPor, @valor)",
+                    INSERT INTO compra_items (compra_id, producto_id, codigo_proveedor, descripcion, cantidad, unidades_por, valor_total,
+                                              unidad, cantidad_factura, valor_sin_impuestos, impuestos, descuento, estado_coincidencia, confianza)
+                    VALUES (@compraId, @productoId, @codigo, @descripcion, @cantidad, @unidadesPor, @valor,
+                            @unidad, @cantidadLeida, @sinImpuestos, @impuestos, @descuento, @estado, @confianza)",
                     new
                     {
-                        compraId, productoId, codigo = linea.CodigoProveedor,
-                        descripcion = Recortar(linea.Descripcion, 300), cantidad = linea.Cantidad, unidadesPor, valor = linea.ValorTotal
+                        compraId, productoId, codigo = Recortar(linea.CodigoProveedor, 60),
+                        descripcion = Recortar(linea.Descripcion, 300), cantidad = cantidadFactura, unidadesPor, valor = linea.ValorTotal,
+                        unidad = Nulo(Recortar(linea.Unidad ?? "", 20)), cantidadLeida = linea.Cantidad,
+                        sinImpuestos = linea.ValorSinImpuestos, impuestos = linea.Impuestos, descuento = linea.Descuento,
+                        estado = res.Estado, confianza = res.Confianza
                     }, tx);
             }
 
@@ -266,7 +334,6 @@ public class CargarModel : PageModel
             Error = "No se pudo guardar la compra. Revisa que los códigos y nombres no sean demasiado largos e intenta de nuevo.";
         }
 
-        await CargarProductosAsync(con, negocio);
         return Page();
     }
 
@@ -299,46 +366,84 @@ public class CargarModel : PageModel
     private async Task CargarProductosAsync(NpgsqlConnection con, string negocio)
     {
         Productos = (await con.QueryAsync<ProductoOpcion>(@"
-            SELECT id AS Id, codigo AS Codigo, nombre AS Nombre, medida AS Medida, codigo_barras AS CodigoBarras
+            SELECT id AS Id, codigo AS Codigo, nombre AS Nombre, medida AS Medida, codigo_barras AS CodigoBarras, stock AS Stock
             FROM productos WHERE negocio = @negocio ORDER BY nombre, medida", new { negocio })).ToList();
     }
 
-    // Por cada línea: el producto que ya se usó antes con ese código del proveedor,
-    // o el que tiene el mismo código de barras. Si no hay, se propone crearlo.
-    private async Task<List<LineaForm>> SugerenciasAsync(NpgsqlConnection con, string negocio, FacturaElectronica.Factura f)
+    // Compara cada línea con el inventario usando los alias confirmados de este proveedor
+    private async Task<List<Homologacion.Resultado>> HomologarAsync(NpgsqlConnection con, string negocio, FacturaElectronica.Factura f)
     {
-        var resultado = new List<LineaForm>();
-        foreach (var l in f.Lineas)
+        var alias = (await con.QueryAsync<(int ProductoId, string? Codigo, string Normalizada, int Factor)>(@"
+            SELECT a.producto_id, a.codigo_proveedor, a.descripcion_normalizada, a.factor
+            FROM producto_alias a
+            JOIN proveedores pv ON pv.id = a.proveedor_id
+            JOIN productos p ON p.id = a.producto_id
+            WHERE pv.nit = @nit AND p.negocio = @negocio
+            ORDER BY a.ultima_confirmacion DESC", new { nit = Nit(f), negocio }))
+            .Select(a => new Homologacion.Alias(a.ProductoId, a.Codigo, a.Normalizada, a.Factor)).ToList();
+
+        var productos = Productos.Select(p => new Homologacion.Producto(p.Id, p.Nombre, p.Medida, p.CodigoBarras)).ToList();
+        var umbrales = Umbrales;
+        return f.Lineas.Select(l => Homologacion.Identificar(
+            l.CodigoProveedor, l.CodigoBarras, l.Descripcion, alias, productos, umbrales)).ToList();
+    }
+
+    // Lo que sale marcado al abrir la revisión
+    private static List<LineaForm> ValoresIniciales(FacturaElectronica.Factura f, List<Homologacion.Resultado> res)
+    {
+        var lista = new List<LineaForm>();
+        for (var i = 0; i < f.Lineas.Count; i++)
         {
-            var aprendido = await con.QueryFirstOrDefaultAsync<(int ProductoId, int UnidadesPor)?>(@"
-                SELECT pc.producto_id, pc.unidades_por
-                FROM producto_codigos_proveedor pc
-                JOIN proveedores pv ON pv.id = pc.proveedor_id
-                JOIN productos p ON p.id = pc.producto_id
-                WHERE pv.nit = @nit AND pc.codigo_proveedor = @codigo AND p.negocio = @negocio
-                LIMIT 1", new { nit = Nit(f), codigo = l.CodigoProveedor, negocio });
+            var l = f.Lineas[i];
+            var r = res[i];
 
-            int? porBarras = l.CodigoBarras is null ? null : Productos.FirstOrDefault(p => p.CodigoBarras == l.CodigoBarras)?.Id;
-            // Si el producto viene repetido en la factura, la segunda línea toma lo mismo que la primera
+            // Si el producto viene repetido en la factura (por ejemplo una línea de obsequio),
+            // la segunda línea toma lo mismo que la primera
             var anterior = l.CodigoProveedor.Length > 0
-                ? resultado.Zip(f.Lineas).FirstOrDefault(x => x.Second.CodigoProveedor == l.CodigoProveedor).First
+                ? Enumerable.Range(0, i).Where(j => f.Lineas[j].CodigoProveedor == l.CodigoProveedor).Select(j => lista[j]).FirstOrDefault()
                 : null;
-            if (anterior is not null && aprendido is null && porBarras is null)
-            {
-                resultado.Add(new LineaForm { ProductoId = anterior.ProductoId, UnidadesPor = anterior.UnidadesPor,
-                    CodigoNuevo = anterior.CodigoNuevo, NombreNuevo = anterior.NombreNuevo });
-                continue;
-            }
 
-            resultado.Add(new LineaForm
+            lista.Add(new LineaForm
             {
-                ProductoId = aprendido?.ProductoId ?? porBarras ?? CrearNuevo,
-                UnidadesPor = aprendido?.UnidadesPor ?? 1,
+                ProductoId = anterior?.ProductoId ?? (r.Estado == Homologacion.SinCoincidencia ? Elegir : r.ProductoId ?? Elegir),
+                UnidadesPor = anterior?.UnidadesPor ?? r.Factor,
+                Cantidad = l.Cantidad,
+                Aprobado = anterior?.Aprobado ?? false,
+                GuardarAlias = true,
                 CodigoNuevo = Recortar(l.CodigoProveedor, 30),
                 NombreNuevo = Recortar(l.Descripcion, 150)
             });
         }
-        return resultado;
+        return lista;
+    }
+
+    private static async Task GuardarAliasAsync(NpgsqlConnection con, NpgsqlTransaction tx, int proveedorId, int productoId,
+        FacturaElectronica.Linea linea, int factor, int? usuarioId)
+    {
+        var datos = new
+        {
+            productoId, proveedorId, codigo = Nulo(Recortar(linea.CodigoProveedor, 60)),
+            original = Recortar(linea.Descripcion, 300), normal = Recortar(Homologacion.Normalizar(linea.Descripcion), 300),
+            unidad = Nulo(Recortar(linea.Unidad ?? "", 20)), factor, usuarioId
+        };
+
+        // Se actualiza el alias si ya existía para este proveedor, código (o descripción) y producto
+        var filas = await con.ExecuteAsync(@"
+            UPDATE producto_alias SET descripcion_original = @original, descripcion_normalizada = @normal,
+                unidad_proveedor = @unidad, factor = @factor, veces = veces + 1,
+                ultima_confirmacion = now(), confirmado_por = @usuarioId
+            WHERE proveedor_id = @proveedorId AND producto_id = @productoId
+              AND (codigo_proveedor = @codigo OR (@codigo IS NULL AND codigo_proveedor IS NULL AND descripcion_normalizada = @normal))",
+            datos, tx);
+
+        if (filas == 0)
+        {
+            await con.ExecuteAsync(@"
+                INSERT INTO producto_alias (producto_id, proveedor_id, codigo_proveedor, descripcion_original,
+                    descripcion_normalizada, unidad_proveedor, factor, confirmado_por)
+                VALUES (@productoId, @proveedorId, @codigo, @original, @normal, @unidad, @factor, @usuarioId)",
+                datos, tx);
+        }
     }
 
     private static async Task<int> CrearProductoAsync(NpgsqlConnection con, NpgsqlTransaction tx, string negocio,
@@ -359,4 +464,6 @@ public class CargarModel : PageModel
     }
 
     private static string Recortar(string texto, int largo) => texto.Length <= largo ? texto : texto[..largo];
+
+    private static string? Nulo(string texto) => string.IsNullOrWhiteSpace(texto) ? null : texto;
 }

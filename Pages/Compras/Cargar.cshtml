@@ -31,6 +31,9 @@
         .cf-estado { font-size: .8rem; font-weight: 700; border-radius: 999px; padding: .15rem .6rem; }
         .cf-estado.ok { background: #b9f5c6; color: #0a3d17; }
         .cf-estado.nuevo { background: #ffe9a8; color: #4a3800; }
+        .cf-estado.aprobar { background: #ffe9a8; color: #4a3800; }
+        .cf-estado.sin { background: #ffc9c9; color: #6b1212; }
+        .cf-linea.pendiente { box-shadow: inset 4px 0 0 var(--fer-rojo); }
     </style>
 </head>
 <body>
@@ -85,6 +88,22 @@
             </div>
         </section>
 
+        @if (Model.Alertas.Count > 0)
+        {
+            <div class="alert alert-warning" role="alert">
+                <div>
+                    <strong>La factura no cuadra. Revísala antes de guardar:</strong>
+                    <ul class="mb-0 mt-1">
+                        @foreach (var a in Model.Alertas) { <li>@a</li> }
+                    </ul>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success" role="status">Los totales de la factura cuadran: líneas, impuestos y total a pagar.</div>
+        }
+
         <form method="post" asp-page-handler="Guardar">
             <input type="hidden" asp-for="Archivo" />
 
@@ -92,8 +111,10 @@
                 <div class="fer-card-cuerpo pb-2">
                     <h2 class="h5 mb-1">Productos de la factura (@f.Lineas.Count)</h2>
                     <p class="text-secondary small mb-0">
-                        Revisa a qué producto del inventario corresponde cada uno. Si el proveedor vende por caja o paquete,
-                        escribe cuántas unidades trae cada una. El sistema lo recuerda para la próxima factura.
+                        Revisa a qué producto del inventario corresponde cada uno. <strong>Automático</strong>: el sistema está seguro.
+                        <strong>Requiere aprobación</strong>: marca "Aprobado" si la sugerencia es correcta.
+                        <strong>Sin coincidencia</strong>: elige el producto o créalo. Nada entra al inventario hasta que guardes.
+                        Si el proveedor vende por caja o paquete, escribe cuántas unidades trae cada una.
                     </p>
                 </div>
 
@@ -101,43 +122,81 @@
                 {
                     var l = f.Lineas[i];
                     var form = Model.Lineas.Count > i ? Model.Lineas[i] : new CargarModel.LineaForm();
+                    var res = Model.Resultados.Count > i ? Model.Resultados[i] : null;
                     var clase = form.ProductoId == CargarModel.CrearNuevo ? "crear" : form.ProductoId == CargarModel.NoSumar ? "no-sumar" : "";
-                    <div class="cf-linea @clase" data-linea>
+                    var cantidad = form.Cantidad ?? l.Cantidad;
+                    <div class="cf-linea @clase" data-linea data-sugerido="@(res?.ProductoId ?? 0)" data-estado="@res?.Estado">
                         <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
                             <div>
-                                <div class="cf-desc">@l.Descripcion</div>
+                                <div class="cf-desc">@l.Numero. @l.Descripcion</div>
                                 <div class="cf-detalle">
                                     Código del proveedor @l.CodigoProveedor
                                     @if (l.CodigoBarras is not null) { <span> · <i class="bi bi-upc" aria-hidden="true"></i> @l.CodigoBarras</span> }
+                                    · Facturado: @l.Cantidad.ToString("0.###", cultura) @l.Unidad
+                                    @if (l.PrecioUnitario > 0) { <span> × @ListaModel.Moneda(l.PrecioUnitario)</span> }
+                                    @if (l.Descuento > 0) { <span> · descuento @ListaModel.Moneda(l.Descuento)</span> }
                                 </div>
                             </div>
                             <div class="text-end">
-                                <div><strong>@l.Cantidad.ToString("0.###", cultura)</strong> @l.Unidad</div>
-                                <div class="cf-detalle">@ListaModel.Moneda(l.ValorTotal) con impuestos</div>
+                                <div class="fw-bold">@ListaModel.Moneda(l.ValorTotal)</div>
+                                <div class="cf-detalle">con impuestos (@ListaModel.Moneda(l.Impuestos))</div>
                             </div>
                         </div>
 
+                        @if (res is not null)
+                        {
+                            var (claseEstado, textoEstado) = res.Estado switch
+                            {
+                                Homologacion.Automatico => ("ok", "Automático"),
+                                Homologacion.Aprobar => ("aprobar", "Requiere aprobación"),
+                                _ => ("sin", "Sin coincidencia")
+                            };
+                            <div class="cf-coincidencia mb-2">
+                                <span class="cf-estado @claseEstado">@textoEstado · @res.Confianza %</span>
+                                <span class="cf-detalle ms-1">@res.Motivo</span>
+                            </div>
+                        }
+
                         <div class="row g-2 align-items-end">
-                            <div class="col-md-8">
-                                <label class="form-label small fw-semibold" for="prod-@i">
-                                    Producto del inventario
-                                    @if (form.ProductoId > 0) { <span class="cf-estado ok ms-1">Encontrado</span> }
-                                    else if (form.ProductoId == CargarModel.CrearNuevo) { <span class="cf-estado nuevo ms-1">Nuevo</span> }
-                                </label>
+                            <div class="col-lg-6">
+                                <label class="form-label small fw-semibold" for="prod-@i">Producto del inventario</label>
                                 <select id="prod-@i" name="Lineas[@i].ProductoId" class="form-select js-producto">
+                                    <option value="@CargarModel.Elegir" selected="@(form.ProductoId == CargarModel.Elegir)">— Elige qué producto es —</option>
                                     <option value="@CargarModel.CrearNuevo" selected="@(form.ProductoId == CargarModel.CrearNuevo)">➕ Crear producto nuevo</option>
                                     <option value="@CargarModel.NoSumar" selected="@(form.ProductoId == CargarModel.NoSumar)">No sumar al inventario (servicio, flete, etc.)</option>
                                     @foreach (var p in Model.Productos)
                                     {
-                                        <option value="@p.Id" selected="@(form.ProductoId == p.Id)">@p.Texto</option>
+                                        <option value="@p.Id" data-stock="@p.Stock" selected="@(form.ProductoId == p.Id)">@p.Texto@(p.Id == res?.ProductoId ? "  ★ sugerido" : "")</option>
                                     }
                                 </select>
+                                <div class="form-text js-existencia"></div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-6 col-lg-2">
+                                <label class="form-label small fw-semibold" for="cant-@i">Cantidad</label>
+                                <input id="cant-@i" name="Lineas[@i].Cantidad" type="number" min="0.001" step="any" inputmode="decimal"
+                                       value="@cantidad.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control js-cantidad" />
+                            </div>
+                            <div class="col-6 col-lg-2">
                                 <label class="form-label small fw-semibold" for="unid-@i">Unidades por cada una</label>
                                 <input id="unid-@i" name="Lineas[@i].UnidadesPor" type="number" min="1" step="1" inputmode="numeric"
-                                       value="@form.UnidadesPor" class="form-control js-unidades" data-cantidad="@l.Cantidad.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
-                                <div class="form-text js-total-unidades"></div>
+                                       value="@form.UnidadesPor" class="form-control js-unidades" />
+                            </div>
+                            <div class="col-lg-2">
+                                <div class="form-text js-total-unidades" data-valor="@l.ValorTotal.ToString(System.Globalization.CultureInfo.InvariantCulture)"></div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-3 mt-2">
+                            @if (res?.Estado == Homologacion.Aprobar)
+                            {
+                                <div class="form-check js-aprobar">
+                                    <input class="form-check-input" type="checkbox" name="Lineas[@i].Aprobado" value="true" id="apr-@i" checked="@form.Aprobado" />
+                                    <label class="form-check-label fw-semibold" for="apr-@i">Aprobado: sí es este producto</label>
+                                </div>
+                            }
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="Lineas[@i].GuardarAlias" value="true" id="ali-@i" checked="@form.GuardarAlias" />
+                                <label class="form-check-label" for="ali-@i">Recordar para las próximas facturas de este proveedor</label>
                             </div>
                         </div>
 
@@ -158,7 +217,7 @@
             <p class="small text-secondary">
                 Al guardar: se suma la cantidad al inventario, el precio de compra de cada producto queda con lo que costó
                 cada unidad en esta factura (impuestos incluidos) y la compra cuenta como egreso en el Resumen.
-                Los productos nuevos quedan con precio de venta por definir: revísalos en Inventario.
+                Los productos nuevos quedan con el precio de venta según su ganancia (100 % por defecto): revísalos en Inventario.
             </p>
 
             <div class="d-flex flex-wrap gap-2 justify-content-end">
@@ -174,20 +233,30 @@
 </main>
 
 <script>
-    // Muestra los campos de "producto nuevo" solo cuando se elige crear uno,
-    // y cuántas unidades van a entrar al inventario.
+    // Por cada línea: muestra los campos de producto nuevo solo si se elige crear uno, la existencia
+    // actual del producto elegido, cuántas unidades van a entrar y el costo por unidad.
     document.querySelectorAll('[data-linea]').forEach(function (linea) {
         var select = linea.querySelector('.js-producto');
+        var cantidad = linea.querySelector('.js-cantidad');
         var unidades = linea.querySelector('.js-unidades');
         var ayuda = linea.querySelector('.js-total-unidades');
+        var existencia = linea.querySelector('.js-existencia');
+        var aprobar = linea.querySelector('.js-aprobar');
+        var pesos = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
         function actualizar() {
-            linea.classList.toggle('crear', select.value === '0');
-            linea.classList.toggle('no-sumar', select.value === '-1');
-            var total = parseFloat(unidades.dataset.cantidad) * (parseInt(unidades.value, 10) || 1);
-            ayuda.textContent = select.value === '-1' ? 'No entra al inventario' : 'Entran ' + total.toLocaleString('es-CO') + ' unidades';
+            var v = select.value;
+            linea.classList.toggle('crear', v === '0');
+            linea.classList.toggle('no-sumar', v === '-1');
+            linea.classList.toggle('pendiente', v === '-2');
+            var opcion = select.options[select.selectedIndex];
+            existencia.textContent = opcion && opcion.dataset.stock !== undefined ? 'Hay ' + Number(opcion.dataset.stock).toLocaleString('es-CO') + ' en inventario' : '';
+            if (aprobar) aprobar.hidden = v !== linea.dataset.sugerido;
+            var total = (parseFloat(cantidad.value) || 0) * (parseInt(unidades.value, 10) || 1);
+            var costo = total > 0 ? parseFloat(ayuda.dataset.valor) / total : 0;
+            ayuda.textContent = v === '-1' ? 'No entra al inventario'
+                : 'Entran ' + total.toLocaleString('es-CO') + ' unidades · ' + pesos.format(costo) + ' c/u';
         }
-        select.addEventListener('change', actualizar);
-        unidades.addEventListener('input', actualizar);
+        [select, cantidad, unidades].forEach(function (e) { e.addEventListener('input', actualizar); e.addEventListener('change', actualizar); });
         actualizar();
     });
 </script>
