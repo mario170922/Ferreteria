@@ -16,6 +16,7 @@
         nombre = p.Nombre,
         medida = p.Medida ?? "",
         precio = p.PrecioVenta,
+        precioPor = p.PrecioPor,
         stock = p.Stock,
         sinFoto = Ferreteria.Services.DibujoSinFoto.Ruta(p.Nombre),
         imagen = string.IsNullOrEmpty(p.Imagen) ? ""
@@ -561,7 +562,8 @@
             const info = el('span', 'flex-grow-1');
             info.appendChild(el('span', 'np-nombre d-block', nombreCompleto(p)));
             info.appendChild(el('span', 'np-detalle d-block', 'Código ' + p.codigo + ' · Stock ' + numero.format(p.stock)));
-            info.appendChild(el('span', 'np-precio d-block', formato.format(p.precio)));
+            info.appendChild(el('span', 'np-precio d-block', formato.format(p.precio) + ' c/u'
+                + (p.precioPor === 100 ? ' · ' + formato.format(p.precio * 100) + ' x100' : '')));
 
             const mas = el('span', 'np-mas');
             mas.appendChild(icono(lineas.some(l => l.id === p.id) ? 'bi-check-lg' : 'bi-plus-lg'));

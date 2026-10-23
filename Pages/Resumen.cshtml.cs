@@ -114,7 +114,7 @@ public class ResumenModel : PageModel
                 (SELECT count(*) FROM pedidos
                   WHERE negocio = @negocio AND estado NOT IN ('cancelado', 'no_entregado')
                     AND fecha >= @desde AND fecha < @hasta)                                   AS Pedidos,
-                (SELECT COALESCE(SUM(pi.cantidad * pr.precio_compra), 0)
+                (SELECT COALESCE(SUM(pi.cantidad * pr.precio_compra / pr.precio_por), 0)
                    FROM pedido_items pi
                    JOIN pedidos p    ON p.id = pi.pedido_id
                    JOIN productos pr ON pr.id = pi.producto_id
@@ -122,7 +122,7 @@ public class ResumenModel : PageModel
                     AND p.fecha >= @desde AND p.fecha < @hasta)                               AS CostoVendido,
                 (SELECT COALESCE(SUM(total), 0) FROM compras
                   WHERE negocio = @negocio AND fecha >= @desde AND fecha < @hasta)
-                + (SELECT COALESCE(SUM(m.cantidad * pr.precio_compra), 0)
+                + (SELECT COALESCE(SUM(m.cantidad * pr.precio_compra / pr.precio_por), 0)
                    FROM movimientos_inventario m
                    JOIN productos pr ON pr.id = m.producto_id
                   WHERE pr.negocio = @negocio AND m.cantidad > 0

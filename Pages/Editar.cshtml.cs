@@ -50,6 +50,7 @@ public class EditarModel : PageModel
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
         public decimal MargenPct { get; set; } = 100;
+        public int PrecioPor { get; set; } = 1;
         public int StockMinimo { get; set; }
         public List<int> CategoriaIds { get; set; } = new();
         public List<int> SubcategoriaIds { get; set; } = new();
@@ -77,6 +78,7 @@ public class EditarModel : PageModel
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
         public decimal MargenPct { get; set; }
+        public int PrecioPor { get; set; }
         public int StockMinimo { get; set; }
         public string? Imagen { get; set; }
     }
@@ -96,6 +98,7 @@ public class EditarModel : PageModel
             SELECT id, codigo, codigo_barras AS CodigoBarras, nombre, medida,
                    precio_compra AS PrecioCompra,
                    margen_pct    AS MargenPct,
+                   precio_por    AS PrecioPor,
                    stock_minimo  AS StockMinimo,
                    imagen
             FROM productos
@@ -113,6 +116,7 @@ public class EditarModel : PageModel
             Medida = p.Medida,
             PrecioCompra = p.PrecioCompra,
             MargenPct = p.MargenPct,
+            PrecioPor = p.PrecioPor,
             StockMinimo = p.StockMinimo,
             CategoriaIds = (await conn.QueryAsync<int>(
                 "SELECT categoria_id FROM producto_categorias WHERE producto_id = @id", new { id })).ToList(),
@@ -149,6 +153,8 @@ public class EditarModel : PageModel
             errores.Add("El precio de compra no puede ser negativo.");
         if (Form.StockMinimo < 0)
             errores.Add("El stock mínimo no puede ser negativo.");
+        if (Form.PrecioPor is not (1 or 100))
+            Form.PrecioPor = 1;
         if (Form.MargenPct < 0 || Form.MargenPct > 1000)
             errores.Add("El margen de ganancia debe estar entre 0 % y 1000 %.");
 
@@ -191,6 +197,7 @@ public class EditarModel : PageModel
                     medida        = @Medida,
                     precio_compra = @PrecioCompra,
                     margen_pct    = @MargenPct,
+                    precio_por    = @PrecioPor,
                     stock_minimo  = @StockMinimo,
                     imagen        = COALESCE(@nuevaRuta, imagen)
                 WHERE id = @Id AND negocio = @negocio",
@@ -204,6 +211,7 @@ public class EditarModel : PageModel
                     Form.Medida,
                     Form.PrecioCompra,
                     Form.MargenPct,
+                    Form.PrecioPor,
                     Form.StockMinimo,
                     nuevaRuta
                 }, tx);

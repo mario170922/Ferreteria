@@ -22,7 +22,7 @@ public class ReposicionModel : PageModel
         await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
         Filas = (await con.QueryAsync<Fila>(@"
             SELECT p.id AS Id, p.codigo AS Codigo, p.nombre AS Nombre, p.medida AS Medida,
-                   p.stock AS Stock, p.stock_minimo AS StockMinimo, p.precio_compra AS PrecioCompra,
+                   p.stock AS Stock, p.stock_minimo AS StockMinimo, round(p.precio_compra / p.precio_por, 2) AS PrecioCompra,
                    COALESCE((SELECT SUM(pi.cantidad) FROM pedido_items pi JOIN pedidos pe ON pe.id = pi.pedido_id
                              WHERE pi.producto_id = p.id AND pe.fecha >= now() - interval '30 days'
                                AND pe.estado NOT IN ('cancelado', 'no_entregado')), 0) AS Vendidas30,

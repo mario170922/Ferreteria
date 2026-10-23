@@ -51,6 +51,7 @@ public class ProductosModel : PageModel
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
         public decimal PrecioVenta { get; set; }
+        public int PrecioPor { get; set; } = 1;    // precios por 1 unidad o por 100
         public int Stock { get; set; }
         public int StockMinimo { get; set; }
         public string? Imagen { get; set; }
@@ -191,6 +192,7 @@ public class ProductosModel : PageModel
             SELECT p.id AS Id, p.codigo AS Codigo, p.codigo_barras AS CodigoBarras, p.nombre AS Nombre, p.medida AS Medida,
                    p.precio_compra AS PrecioCompra,
                    p.precio_venta  AS PrecioVenta,
+                   p.precio_por    AS PrecioPor,
                    p.stock AS Stock, p.stock_minimo AS StockMinimo,
                    p.imagen AS Imagen,
                    COALESCE((SELECT string_agg(c.nombre, ', ' ORDER BY c.nombre)

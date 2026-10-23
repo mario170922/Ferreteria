@@ -62,7 +62,7 @@
                 <div class="et-etiqueta">
                     <div class="d-flex justify-content-between gap-2">
                         <span class="n">@p.Nombre@(string.IsNullOrWhiteSpace(p.Medida) ? "" : " · " + p.Medida)</span>
-                        @if (Model.ConPrecio) { <span class="p">@ListaModel.Moneda(p.PrecioVenta)</span> }
+                        @if (Model.ConPrecio) { <span class="p">@ListaModel.Moneda(p.PrecioVenta)@(p.PrecioPor == 100 ? " x100" : "")</span> }
                     </div>
                     @Html.Raw(CodigoBarrasSvg.Dibujar(p.CodigoBarras))
                     <div class="c">@p.CodigoBarras</div>

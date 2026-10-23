@@ -236,7 +236,8 @@ public class CargarModel : PageModel
             foreach (var (id, (unidadesTotales, valor)) in acumulado)
             {
                 if (unidadesTotales <= 0) continue;
-                await con.ExecuteAsync("UPDATE productos SET precio_compra = @costo WHERE id = @id",
+                // El costo calculado es por unidad; si el producto maneja precio por ciento, se multiplica
+                await con.ExecuteAsync("UPDATE productos SET precio_compra = @costo * precio_por WHERE id = @id",
                     new { costo = Math.Round(valor / unidadesTotales, 2), id }, tx);
             }
 

@@ -81,14 +81,22 @@
                 <input asp-for="Form.Medida" class="form-control" maxlength="100" />
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-semibold" for="Form_PrecioCompra">Precio de compra (x100 und)</label>
+                <label class="form-label fw-semibold" for="Form_PrecioCompra">Precio de compra</label>
                 <input asp-for="Form.PrecioCompra" type="number" step="0.01" min="0" class="form-control js-precio-compra" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold" for="Form_PrecioPor">El precio es por</label>
+                <select asp-for="Form.PrecioPor" class="form-select js-precio-por">
+                    <option value="1">Unidad</option>
+                    <option value="100">100 unidades (ciento)</option>
+                </select>
+                <div class="form-text">En los pedidos se cobra por unidad: si es por 100, se divide entre 100.</div>
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold" for="Form_MargenPct">Ganancia (%)</label>
                 <input asp-for="Form.MargenPct" type="number" step="1" min="0" max="1000" class="form-control js-margen" />
                 <div class="form-text">
-                    Precio de venta: <strong class="js-precio-venta">$ @((Model.Form.PrecioCompra * (1 + Model.Form.MargenPct / 100m)).ToString("N0", new CultureInfo("es-CO")))</strong>
+                    Precio de venta<span class="js-por">@(Model.Form.PrecioPor == 100 ? " x100" : "")</span>: <strong class="js-precio-venta">$ @((Model.Form.PrecioCompra * (1 + Model.Form.MargenPct / 100m)).ToString("N0", new CultureInfo("es-CO")))</strong>
                     <span class="d-block">100 % = el doble del precio de compra.</span>
                 </div>
             </div>
@@ -199,8 +207,13 @@
         function calcular() {
             var v = (parseFloat(compra.value) || 0) * (1 + (parseFloat(margen.value) || 0) / 100);
             venta.textContent = '$ ' + Math.round(v).toLocaleString('es-CO');
+            var por = document.querySelector('.js-precio-por'), etiqueta = document.querySelector('.js-por');
+            if (por && etiqueta) etiqueta.textContent = por.value === '100'
+                ? ' x100 (' + '$ ' + Math.round(v / 100).toLocaleString('es-CO') + ' c/u)' : '';
         }
         compra.addEventListener('input', calcular);
+        var porSel = document.querySelector('.js-precio-por');
+        if (porSel) porSel.addEventListener('change', calcular);
         margen.addEventListener('input', calcular);
     })();
 </script>

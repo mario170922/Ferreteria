@@ -666,12 +666,20 @@
 
                         <div class="producto-precios">
                             <div class="precio-item">
-                                <span class="precio-label">Venta</span>
+                                <span class="precio-label">Venta@(producto.PrecioPor == 100 ? " x100" : "")</span>
                                 <span class="precio-valor">@producto.PrecioVenta.ToString("C0")</span>
+                                @if (producto.PrecioPor == 100)
+                                {
+                                    <span class="precio-label">@((producto.PrecioVenta / 100m).ToString("C0")) c/u</span>
+                                }
                             </div>
                             <div class="precio-item">
-                                <span class="precio-label">Compra</span>
+                                <span class="precio-label">Compra@(producto.PrecioPor == 100 ? " x100" : "")</span>
                                 <span class="precio-valor">@producto.PrecioCompra.ToString("C0")</span>
+                                @if (producto.PrecioPor == 100)
+                                {
+                                    <span class="precio-label">@((producto.PrecioCompra / 100m).ToString("C2")) c/u</span>
+                                }
                             </div>
                         </div>
 

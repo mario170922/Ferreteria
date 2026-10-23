@@ -25,7 +25,7 @@ public class EtiquetasModel : PageModel
         await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
         Productos = (await con.QueryAsync<ProductoEtiqueta>(@"
             SELECT id AS Id, codigo AS Codigo, codigo_barras AS CodigoBarras, nombre AS Nombre,
-                   medida AS Medida, precio_venta AS PrecioVenta, stock AS Stock
+                   medida AS Medida, precio_venta AS PrecioVenta, precio_por AS PrecioPor, stock AS Stock
             FROM productos
             WHERE negocio = @negocio AND codigo_barras IS NOT NULL
             ORDER BY nombre, medida", new { negocio = User.NegocioActual() })).ToList();
@@ -52,6 +52,7 @@ public class EtiquetasModel : PageModel
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioVenta { get; set; }
+        public int PrecioPor { get; set; } = 1;
         public int Stock { get; set; }
         public int Copias { get; set; }
     }

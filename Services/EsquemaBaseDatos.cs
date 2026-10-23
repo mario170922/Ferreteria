@@ -137,6 +137,13 @@ public static class EsquemaBaseDatos
             DROP INDEX IF EXISTS ux_productos_codigo_barras;
             CREATE UNIQUE INDEX ux_productos_codigo_barras
                 ON productos (negocio, codigo_barras) WHERE codigo_barras IS NOT NULL;"),
+
+        // Los precios de compra y venta pueden ser por unidad (1) o por ciento (100).
+        // Los de Tornillería ya estaban cargados por 100 unidades. En el pedido siempre
+        // se cobra por unidad: precio / precio_por.
+        ("2026-10-23 precio por unidad o por ciento", @"
+            ALTER TABLE productos ADD COLUMN precio_por int NOT NULL DEFAULT 1 CHECK (precio_por IN (1, 100));
+            UPDATE productos SET precio_por = 100 WHERE negocio = 'tornilleria';"),
     };
 
     public static async Task ActualizarAsync(IConfiguration config, ILogger logger)

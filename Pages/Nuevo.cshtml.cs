@@ -25,11 +25,13 @@ public class NuevoModel : PageModel
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
         public decimal MargenPct { get; set; } = 100;
+        public int PrecioPor { get; set; } = 1;
         public int Stock { get; set; }
         public int StockMinimo { get; set; }
     }
 
-    public void OnGet() { }
+    // En Tornillería los precios se manejan por ciento; en Ferretería, por unidad
+    public void OnGet() => Producto.PrecioPor = User.NegocioActual() == Negocio.Tornilleria ? 100 : 1;
 
     public async Task<IActionResult> OnPostAsync()
     {
@@ -52,7 +54,9 @@ public class NuevoModel : PageModel
             Error = "El precio de compra es demasiado alto.";
         else if (Producto.Stock < 0 || Producto.StockMinimo < 0)
             Error = "El stock no puede ser negativo.";
-        else if (Producto.MargenPct < 0 || Producto.MargenPct > 1000)
+
+        if (Producto.PrecioPor is not (1 or 100)) Producto.PrecioPor = 1;
+        if (Error == null && (Producto.MargenPct < 0 || Producto.MargenPct > 1000))
             Error = "La ganancia debe estar entre 0 % y 1000 %.";
 
         Producto.CodigoBarras = CodigoBarras.Limpiar(Producto.CodigoBarras);
@@ -71,8 +75,8 @@ public class NuevoModel : PageModel
                 Producto.CodigoBarras = await CodigoBarras.GenerarAsync(conn, tx);
 
             int id = await conn.ExecuteScalarAsync<int>(@"
-                INSERT INTO productos (negocio, codigo, codigo_barras, nombre, medida, precio_compra, margen_pct, stock, stock_minimo)
-                VALUES (@negocio, @Codigo, @CodigoBarras, @Nombre, @Medida, @PrecioCompra, @MargenPct, @Stock, @StockMinimo)
+                INSERT INTO productos (negocio, codigo, codigo_barras, nombre, medida, precio_compra, margen_pct, precio_por, stock, stock_minimo)
+                VALUES (@negocio, @Codigo, @CodigoBarras, @Nombre, @Medida, @PrecioCompra, @MargenPct, @PrecioPor, @Stock, @StockMinimo)
                 RETURNING id",
                 new
                 {
@@ -83,6 +87,7 @@ public class NuevoModel : PageModel
                     Producto.Medida,
                     Producto.PrecioCompra,
                     Producto.MargenPct,
+                    Producto.PrecioPor,
                     Producto.Stock,
                     Producto.StockMinimo
                 }, tx);

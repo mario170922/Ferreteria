@@ -240,7 +240,7 @@ public class NuevoPedidoModel : PageModel
             {
                 var prod = await con.QueryFirstOrDefaultAsync<ProductoStock>(@"
                     SELECT nombre        AS Nombre,
-                           precio_venta  AS PrecioVenta,
+                           round(precio_venta / precio_por, 2) AS PrecioVenta,
                            stock         AS Stock
                     FROM productos
                     WHERE id = @id AND negocio = @negocio
@@ -361,7 +361,8 @@ public class NuevoPedidoModel : PageModel
                    codigo_barras AS CodigoBarras,
                    nombre       AS Nombre,
                    medida       AS Medida,
-                   precio_venta AS PrecioVenta,
+                   round(precio_venta / precio_por, 2) AS PrecioVenta,
+                   precio_por   AS PrecioPor,
                    stock        AS Stock,
                    imagen       AS Imagen
             FROM productos
@@ -548,7 +549,8 @@ public class NuevoPedidoModel : PageModel
         public string? CodigoBarras { get; set; }
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
-        public decimal PrecioVenta { get; set; }
+        public decimal PrecioVenta { get; set; }   // por unidad
+        public int PrecioPor { get; set; } = 1;
         public int Stock { get; set; }
         public string? Imagen { get; set; }
     }
