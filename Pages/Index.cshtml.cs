@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Security.Claims;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +22,11 @@ public class IndexModel : PageModel
 
     // Cifras rápidas que se muestran arriba
     public Resumen Datos { get; set; } = new();
+
+    // Datos de las gráficas (últimos 7 días de ventas, estados y más vendidos)
+    public List<VentaDia> Ventas7Dias { get; set; } = new();
+    public List<ConteoEstado> Estados { get; set; } = new();
+    public List<MasVendido> MasVendidos { get; set; } = new();
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -53,6 +58,8 @@ public class IndexModel : PageModel
                     (SELECT count(*) FROM clientes)                                               AS Clientes
                 FROM (SELECT (SELECT id FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre)) AS id) u",
                 new { esAdmin = EsAdmin, nombre = NombreUsuario });
+
+            await CargarGraficasAsync(con);
         }
         catch (NpgsqlException)
         {
@@ -60,6 +67,65 @@ public class IndexModel : PageModel
         }
 
         return Page();
+    }
+
+    // Las gráficas usan los mismos filtros: el vendedor solo ve sus pedidos.
+    // Los pedidos cancelados y no entregados no cuentan como venta.
+    private async Task CargarGraficasAsync(NpgsqlConnection con)
+    {
+        var filtro = new { esAdmin = EsAdmin, nombre = NombreUsuario };
+        const string soloMios = @"(@esAdmin OR p.vendedor_id =
+            (SELECT id FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre)))";
+
+        var ventas = (await con.QueryAsync<VentaDia>($@"
+            SELECT d::date AS Dia,
+                   COALESCE(SUM(p.total), 0) AS Total,
+                   COUNT(p.id) AS Pedidos
+            FROM generate_series(current_date - 6, current_date, interval '1 day') d
+            LEFT JOIN pedidos p ON p.fecha::date = d::date
+                               AND p.estado NOT IN ('cancelado', 'no_entregado')
+                               AND {soloMios}
+            GROUP BY d
+            ORDER BY d", filtro)).ToList();
+        Ventas7Dias = ventas;
+
+        Estados = (await con.QueryAsync<ConteoEstado>($@"
+            SELECT p.estado AS Estado, COUNT(*) AS Cantidad
+            FROM pedidos p
+            WHERE p.fecha >= current_date - 29 AND {soloMios}
+            GROUP BY p.estado", filtro)).ToList();
+
+        MasVendidos = (await con.QueryAsync<MasVendido>($@"
+            SELECT pr.nombre AS Nombre, pr.medida AS Medida, SUM(pi.cantidad) AS Cantidad
+            FROM pedido_items pi
+            JOIN pedidos p    ON p.id = pi.pedido_id
+            JOIN productos pr ON pr.id = pi.producto_id
+            WHERE p.fecha >= current_date - 29
+              AND p.estado NOT IN ('cancelado', 'no_entregado')
+              AND {soloMios}
+            GROUP BY pr.id, pr.nombre, pr.medida
+            ORDER BY SUM(pi.cantidad) DESC
+            LIMIT 5", filtro)).ToList();
+    }
+
+    public class VentaDia
+    {
+        public DateTime Dia { get; set; }
+        public decimal Total { get; set; }
+        public long Pedidos { get; set; }
+    }
+
+    public class ConteoEstado
+    {
+        public string Estado { get; set; } = "";
+        public long Cantidad { get; set; }
+    }
+
+    public class MasVendido
+    {
+        public string Nombre { get; set; } = "";
+        public string? Medida { get; set; }
+        public long Cantidad { get; set; }
     }
 
     public class Resumen

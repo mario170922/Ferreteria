@@ -1,0 +1,109 @@
+@* Gráficas del inicio: ventas de 7 días, pedidos por estado y lo más vendido.
+   Hechas solo con HTML y CSS (ferreteria.css, "Gráficas del inicio"), funcionan sin internet.
+   Se usa en Index.cshtml con: <partial name="_GraficasInicio" model="Model" /> *@
+@model Ferreteria.Pages.IndexModel
+@{
+    var cultura = new System.Globalization.CultureInfo("es-CO");
+    // $1.250.000 → "$1,3 M"; $350.000 → "$350 mil"
+    string Corto(decimal v) => v >= 1_000_000 ? "$" + (v / 1_000_000).ToString("0.#", cultura) + " M"
+                             : v >= 1_000 ? "$" + (v / 1_000).ToString("0", cultura) + " mil"
+                             : "$" + v.ToString("0", cultura);
+
+    var ventas = Model.Ventas7Dias;
+    var maxVenta = ventas.Count > 0 ? ventas.Max(v => v.Total) : 0;
+    var totalSemana = ventas.Sum(v => v.Total);
+
+    var ordenEstados = new[] { "pendiente", "alistado", "en_ruta", "entregado", "no_entregado", "cancelado" };
+    var estados = ordenEstados
+        .Select(e => (Clave: e, Cantidad: Model.Estados.FirstOrDefault(x => x.Estado == e)?.Cantidad ?? 0))
+        .ToList();
+    var totalEstados = estados.Sum(e => e.Cantidad);
+    var maxEstado = estados.Count > 0 ? estados.Max(e => e.Cantidad) : 0;
+
+    var maxVendido = Model.MasVendidos.Count > 0 ? Model.MasVendidos.Max(m => m.Cantidad) : 0;
+}
+
+<h2 class="h4 mb-3">@(Model.EsAdmin ? "Cómo va la ferretería" : "Cómo van tus ventas")</h2>
+<div class="row g-3 mb-4">
+
+    <section class="col-12 col-lg-5" aria-labelledby="graf-ventas">
+        <div class="fer-card fer-grafica h-100">
+            <h3 id="graf-ventas" class="fer-grafica-titulo">Ventas de los últimos 7 días</h3>
+            <p class="fer-grafica-total">@Corto(totalSemana) <span>en total</span></p>
+            <ol class="fer-barras" aria-label="Ventas por día">
+                @foreach (var v in ventas)
+                {
+                    var alto = maxVenta > 0 ? (double)(v.Total / maxVenta) * 100 : 0;
+                    var esHoy = v.Dia.Date == DateTime.Today;
+                    var nombreDia = esHoy ? "Hoy" : v.Dia.ToString("ddd", cultura).TrimEnd('.');
+                    var detalle = $"{v.Dia.ToString("dddd d 'de' MMMM", cultura)}: {Ferreteria.Pages.Pedidos.ListaModel.Moneda(v.Total)} en {v.Pedidos} {(v.Pedidos == 1 ? "pedido" : "pedidos")}";
+                    <li class="fer-barra @(esHoy ? "hoy" : "")" title="@detalle">
+                        <span class="fer-barra-pista">
+                            <span class="fer-barra-relleno" style="height:@(alto.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%">
+                                <span class="fer-barra-valor">@(v.Total > 0 ? Corto(v.Total) : "")</span>
+                            </span>
+                        </span>
+                        <span class="fer-barra-dia">@nombreDia</span>
+                        <span class="visually-hidden">@detalle</span>
+                    </li>
+                }
+            </ol>
+        </div>
+    </section>
+
+    <section class="col-12 col-md-6 col-lg-3" aria-labelledby="graf-estados">
+        <div class="fer-card fer-grafica h-100">
+            <h3 id="graf-estados" class="fer-grafica-titulo">Pedidos del último mes</h3>
+            <p class="fer-grafica-total">@totalEstados <span>@(totalEstados == 1 ? "pedido" : "pedidos")</span></p>
+            @if (totalEstados == 0)
+            {
+                <p class="text-secondary mb-0">Todavía no hay pedidos este mes.</p>
+            }
+            else
+            {
+                <ul class="fer-filas list-unstyled mb-0">
+                    @foreach (var e in estados.Where(e => e.Cantidad > 0))
+                    {
+                        var ancho = maxEstado > 0 ? (double)e.Cantidad / maxEstado * 100 : 0;
+                        <li class="fer-fila" title="@Ferreteria.Pages.Pedidos.ListaModel.EtiquetaEstado(e.Clave): @e.Cantidad">
+                            <span class="fer-fila-texto">
+                                <span class="estado @Ferreteria.Pages.Pedidos.ListaModel.ClaseEstado(e.Clave)">@Ferreteria.Pages.Pedidos.ListaModel.EtiquetaEstado(e.Clave)</span>
+                                <strong>@e.Cantidad</strong>
+                            </span>
+                            <span class="fer-fila-pista"><span class="fer-fila-relleno @Ferreteria.Pages.Pedidos.ListaModel.ClaseEstado(e.Clave)" style="width:@(ancho.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></span></span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </section>
+
+    <section class="col-12 col-md-6 col-lg-4" aria-labelledby="graf-vendidos">
+        <div class="fer-card fer-grafica h-100">
+            <h3 id="graf-vendidos" class="fer-grafica-titulo">Lo más vendido del mes</h3>
+            @if (Model.MasVendidos.Count == 0)
+            {
+                <p class="text-secondary mb-0 mt-3">Todavía no hay ventas este mes.</p>
+            }
+            else
+            {
+                <ol class="fer-filas list-unstyled mb-0 mt-3">
+                    @foreach (var m in Model.MasVendidos)
+                    {
+                        var ancho = maxVendido > 0 ? (double)m.Cantidad / maxVendido * 100 : 0;
+                        var nombre = m.Nombre + (string.IsNullOrWhiteSpace(m.Medida) ? "" : " · " + m.Medida);
+                        <li class="fer-fila" title="@nombre: @m.Cantidad unidades">
+                            <span class="fer-fila-texto">
+                                <span class="text-truncate">@nombre</span>
+                                <strong>@m.Cantidad.ToString("N0", cultura)</strong>
+                            </span>
+                            <span class="fer-fila-pista"><span class="fer-fila-relleno marca" style="width:@(ancho.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></span></span>
+                        </li>
+                    }
+                </ol>
+            }
+        </div>
+    </section>
+
+</div>
+

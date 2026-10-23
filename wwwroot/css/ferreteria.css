@@ -546,6 +546,65 @@ main h1:not(.fer-saludo):not(.fer-login-titulo)::after {
   .fer-dato .bi { width: 40px; height: 40px; font-size: 1.25rem; }
 }
 
+/* Gráficas del inicio (solo HTML y CSS) */
+.fer-grafica { padding: 1.1rem 1.2rem 1.2rem; }
+.fer-grafica-titulo { font-size: 1.1rem; color: var(--fer-texto-suave); font-family: var(--fer-letra); font-weight: 600; margin: 0; }
+.fer-grafica-total { font-family: var(--fer-letra-titulo); font-size: 1.9rem; font-weight: 800; margin: .1rem 0 .8rem; line-height: 1.1; }
+.fer-grafica-total span { font-family: var(--fer-letra); font-size: .95rem; font-weight: 500; color: var(--fer-texto-suave); }
+
+/* Barras verticales: una por día */
+.fer-barras {
+  display: flex;
+  gap: 6px;
+  height: 195px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fer-barra {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+/* La cifra va pegada encima de su barra; la pista deja espacio arriba para la más alta */
+.fer-barra-valor {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: .72rem;
+  line-height: 1;
+  color: var(--fer-texto-suave);
+  white-space: nowrap;
+}
+.fer-barra-pista { flex: 1; width: 100%; display: flex; justify-content: center; align-items: flex-end; padding-top: 1.1rem; border-bottom: 1px solid var(--fer-borde); }
+.fer-barra-relleno {
+  position: relative;
+  width: 100%;
+  max-width: 38px;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: #8a6a00;
+  transition: background var(--fer-rapido) ease;
+}
+.fer-barra.hoy .fer-barra-relleno,
+.fer-barra:hover .fer-barra-relleno { background: var(--fer-naranja); }
+.fer-barra.hoy .fer-barra-valor { color: var(--fer-texto); font-weight: 700; }
+.fer-barra-dia { margin-top: .4rem; font-size: .8rem; color: var(--fer-texto-suave); text-transform: capitalize; }
+.fer-barra.hoy .fer-barra-dia { color: var(--fer-naranja); font-weight: 700; }
+
+/* Barras horizontales: estados y más vendidos */
+.fer-filas { display: flex; flex-direction: column; gap: .7rem; }
+.fer-fila-texto { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .3rem; font-size: .95rem; }
+.fer-fila-texto .estado { font-size: .78rem; padding: .2em .7em; }
+.fer-fila-pista { display: block; height: 8px; border-radius: 4px; background: var(--fer-superficie-2); overflow: hidden; }
+.fer-fila-relleno { display: block; height: 100%; border-radius: 4px; }
+.fer-fila-relleno.marca { background: var(--fer-naranja); }
+
 .fer-dato.alerta .bi { background: rgba(255, 107, 107, .14); color: var(--fer-rojo); }
 .fer-dato.ok .bi     { background: rgba(47, 191, 91, .14); color: var(--fer-verde); }
 
