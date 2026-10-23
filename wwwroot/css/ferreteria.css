@@ -726,6 +726,78 @@ main h1:not(.fer-saludo):not(.fer-login-titulo)::after {
 .etiqueta-entrada { background-color: #b9f5c6; color: #0a3d17; }
 .etiqueta-salida  { background-color: #ffc9c9; color: #6b1212; }
 
+/* Línea de pasos del pedido (_PasosPedido): círculos unidos por una raya */
+.ec-pasos-lista {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ec-paso {
+  flex: 1 1 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  text-align: center;
+  color: var(--fer-texto-suave);
+  font-weight: 600;
+}
+
+/* Raya que une cada paso con el anterior */
+.ec-paso + .ec-paso::before {
+  content: "";
+  position: absolute;
+  top: 22px;
+  right: 50%;
+  width: 100%;
+  height: 4px;
+  background: var(--fer-borde);
+  z-index: 0;
+}
+
+.ec-paso-circulo {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid var(--fer-borde);
+  background: var(--fer-superficie-2);
+  font-size: 1.3rem;
+  transition: background var(--fer-medio) var(--fer-curva), border-color var(--fer-medio) var(--fer-curva);
+}
+
+.ec-paso.hecho .ec-paso-circulo { background: var(--fer-verde); border-color: var(--fer-verde); color: #06250f; }
+.ec-paso.hecho + .ec-paso::before { background: var(--fer-verde); }
+.ec-paso.hecho { color: var(--fer-texto); }
+
+.ec-paso.actual .ec-paso-circulo {
+  background: var(--fer-naranja);
+  border-color: var(--fer-naranja);
+  color: #000;
+  box-shadow: 0 0 0 6px var(--fer-amarillo-brillo);
+}
+.ec-paso.actual { color: var(--fer-naranja); font-weight: 800; }
+.ec-paso.hecho.actual .ec-paso-circulo { background: var(--fer-verde); border-color: var(--fer-verde); color: #06250f; box-shadow: 0 0 0 6px rgba(47, 191, 91, .3); }
+.ec-paso.hecho.actual { color: var(--fer-verde); }
+
+.ec-paso.fallo .ec-paso-circulo { background: var(--fer-rojo); border-color: var(--fer-rojo); color: #3a0000; }
+.ec-paso.fallo { color: var(--fer-rojo); font-weight: 800; }
+
+.ec-pasos-cancelado .ec-pasos-lista { opacity: .45; }
+.ec-pasos-aviso { color: var(--fer-rojo); font-weight: 700; }
+
+@media (max-width: 575.98px) {
+  .ec-paso { font-size: .85rem; }
+  .ec-paso-circulo { width: 40px; height: 40px; font-size: 1.1rem; }
+  .ec-paso + .ec-paso::before { top: 18px; }
+}
+
 /* ---------- 9. Formularios ---------- */
 .form-control,
 .form-select {

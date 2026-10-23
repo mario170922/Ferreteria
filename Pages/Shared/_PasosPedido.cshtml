@@ -1,0 +1,54 @@
+@* Línea de pasos del pedido: Pendiente → Alistado → En ruta → Entregado.
+   Los pasos ya cumplidos salen con chulito, el actual resaltado en amarillo.
+   "No entregado" marca en rojo el último paso y "Cancelado" apaga toda la línea.
+   Se usa con: <partial name="_PasosPedido" model="p.Estado" /> *@
+@model string
+@{
+    var pasos = new[]
+    {
+        (Clave: "pendiente", Etiqueta: "Pendiente", Icono: "bi-hourglass-split"),
+        (Clave: "alistado",  Etiqueta: "Alistado",  Icono: "bi-box-seam"),
+        (Clave: "en_ruta",   Etiqueta: "En ruta",   Icono: "bi-truck"),
+        (Clave: "entregado", Etiqueta: "Entregado", Icono: "bi-house-check")
+    };
+
+    var estado = Model ?? "pendiente";
+    var cancelado = estado == "cancelado";
+    var noEntregado = estado == "no_entregado";
+
+    // "No entregado" ocurre en el último paso: el camión salió pero no se pudo entregar.
+    var actual = noEntregado ? pasos.Length - 1 : Array.FindIndex(pasos, x => x.Clave == estado);
+    if (actual < 0) actual = 0;
+}
+<div class="ec-pasos @(cancelado ? "ec-pasos-cancelado" : "")">
+    @if (cancelado)
+    {
+        <p class="ec-pasos-aviso mb-2"><i class="bi bi-x-octagon me-2" aria-hidden="true"></i>Este pedido fue cancelado.</p>
+    }
+    <ol class="ec-pasos-lista" aria-label="Avance del pedido">
+        @for (var i = 0; i < pasos.Length; i++)
+        {
+            var paso = pasos[i];
+            var clase = "";
+            var icono = paso.Icono;
+            var etiqueta = paso.Etiqueta;
+            var leyenda = "";
+
+            if (!cancelado)
+            {
+                if (i < actual) { clase = "hecho"; icono = "bi-check-lg"; leyenda = "listo"; }
+                else if (i == actual && noEntregado) { clase = "fallo"; icono = "bi-x-lg"; etiqueta = "No entregado"; leyenda = "paso actual"; }
+                else if (i == actual) { clase = i == pasos.Length - 1 ? "hecho actual" : "actual"; leyenda = "paso actual"; if (i == pasos.Length - 1) icono = "bi-check-lg"; }
+            }
+
+            <li class="ec-paso @clase" aria-current="@(clase.Contains("actual") || clase == "fallo" ? "step" : null)">
+                <span class="ec-paso-circulo"><i class="bi @icono" aria-hidden="true"></i></span>
+                <span class="ec-paso-texto">@etiqueta</span>
+                @if (leyenda != "")
+                {
+                    <span class="visually-hidden">(@leyenda)</span>
+                }
+            </li>
+        }
+    </ol>
+</div>
