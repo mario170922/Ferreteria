@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Extensión eléctrica sin foto">
+  <!-- Extensión eléctrica con clavija, para productos sin foto. Fondo transparente. -->
+  <ellipse cx="100" cy="176" rx="64" ry="7" fill="#000" opacity=".35"/>
+  <path d="M60 150 C 20 140, 30 90, 70 96 S 120 120, 140 90" fill="none" stroke="#e8e8e8" stroke-width="7" stroke-linecap="round"/>
+  <rect x="118" y="120" width="60" height="34" rx="8" fill="#f4f4f4" stroke="#bdbdbd" stroke-width="2"/>
+  <circle cx="136" cy="137" r="4" fill="#444"/><circle cx="160" cy="137" r="4" fill="#444"/>
+  <g transform="translate(140 90) rotate(-30)">
+    <rect x="-12" y="-14" width="24" height="22" rx="4" fill="#f5b700"/>
+    <rect x="-8" y="-28" width="4" height="14" fill="#b5b5b5"/><rect x="4" y="-28" width="4" height="14" fill="#b5b5b5"/>
+  </g>
+  <g transform="translate(140 28)" fill="none" stroke="#f5b700" stroke-width="4" stroke-linecap="round" opacity=".8">
+    <rect x="0" y="8" width="40" height="28" rx="6"/><path d="M12 8 L16 1 H24 L28 8"/><circle cx="20" cy="22" r="7"/><line x1="-4" y1="40" x2="44" y2="4"/>
+  </g>
+</svg>

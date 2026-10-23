@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Interruptor sin foto">
+  <!-- Placa de interruptor o toma eléctrica, para productos sin foto. Fondo transparente. -->
+  <ellipse cx="100" cy="180" rx="50" ry="7" fill="#000" opacity=".35"/>
+  <rect x="58" y="46" width="84" height="128" rx="10" fill="#f4f4f4"/>
+  <rect x="58" y="46" width="84" height="128" rx="10" fill="none" stroke="#cfcfcf" stroke-width="3"/>
+  <rect x="80" y="62" width="40" height="44" rx="5" fill="#e2e2e2" stroke="#bdbdbd" stroke-width="2"/>
+  <rect x="86" y="68" width="28" height="18" rx="3" fill="#f5b700"/>
+  <circle cx="88" cy="132" r="5" fill="#555"/>
+  <circle cx="112" cy="132" r="5" fill="#555"/>
+  <rect x="96" y="144" width="8" height="10" rx="2" fill="#555"/>
+  <g transform="translate(140 28)" fill="none" stroke="#f5b700" stroke-width="4" stroke-linecap="round" opacity=".8">
+    <rect x="0" y="8" width="40" height="28" rx="6"/><path d="M12 8 L16 1 H24 L28 8"/><circle cx="20" cy="22" r="7"/><line x1="-4" y1="40" x2="44" y2="4"/>
+  </g>
+</svg>

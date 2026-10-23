@@ -17,7 +17,15 @@ public static class DibujoSinFoto
         ("chazo",    new[] { "chazo", "taco", "anclaje", "expansivo" }),
         ("broca",    new[] { "broca" }),
         ("puntilla", new[] { "puntilla", "clavo" }),
-        ("tornillo", new[] { "tornillo", "perno", "drywall", "autoperforante", "tirafondo", "esparrago", "varilla roscada", "remache" })
+        ("tornillo", new[] { "tornillo", "perno", "drywall", "autoperforante", "tirafondo", "esparrago", "varilla roscada", "remache" }),
+
+        // Ferretería
+        ("bulto",       new[] { "pega", "concolor", "boquilla", "cemento", "estuco", "mortero", "bulto" }),
+        ("pegante",     new[] { "bonder", "pegante", "adhesivo", "colbon", "superglue" }),
+        ("silicona",    new[] { "silicona", "sista", "sellador", "antihongos" }),
+        ("lavaplatos",  new[] { "lavaplatos", "lavamanos", "poceta", "lav " }),
+        ("interruptor", new[] { "interruptor", "inter/", "intertripl", "toma ", "toma+", "tomacorriente", "conmutable", "enchufe" }),
+        ("extension",   new[] { "extension", "ext/", "multitoma", "cable" })
     };
 
     public static string Ruta(string? nombre, string? categorias = null)
@@ -25,16 +33,18 @@ public static class DibujoSinFoto
         var texto = SinTildes($"{nombre} {categorias}".ToLowerInvariant());
 
         string elegido = "otro";
-        int primeraPosicion = int.MaxValue;
+        int primeraPosicion = int.MaxValue, largoElegido = 0;
 
         foreach (var (tipo, palabras) in Tipos)
         {
             foreach (var palabra in palabras)
             {
                 var posicion = texto.IndexOf(palabra, StringComparison.Ordinal);
-                if (posicion >= 0 && posicion < primeraPosicion)
+                // Si dos palabras empiezan en el mismo sitio gana la más larga ("pegante" antes que "pega")
+                if (posicion >= 0 && (posicion < primeraPosicion || (posicion == primeraPosicion && palabra.Length > largoElegido)))
                 {
                     primeraPosicion = posicion;
+                    largoElegido = palabra.Length;
                     elegido = tipo;
                 }
             }
