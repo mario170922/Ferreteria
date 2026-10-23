@@ -1,6 +1,5 @@
 @page
-@model Ferreteria.Pages.ProductosModel
-@using System.Globalization
+@model ProductosModel
 @{
     Layout = null;
 }
@@ -14,69 +13,357 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="/css/ferreteria.css" />
     <style>
-        .fila-alerta td {
-            background-color: #3a1716 !important;
-            color: #ffd6d6;
+        .productos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem 0;
+        }
+        .producto-card {
+            background: var(--fer-superficie);
+            border: 1px solid var(--fer-borde);
+            border-radius: var(--fer-radio);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .producto-card:hover {
+            box-shadow: var(--fer-sombra-hover);
+            transform: translateY(-2px);
+        }
+        .producto-imagen {
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--fer-superficie-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--fer-texto-suave);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .producto-imagen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .producto-imagen-vacia {
+            font-size: 2.5rem;
+            opacity: 0.5;
+        }
+        .producto-info {
+            padding: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .producto-nombre {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--fer-texto);
+            margin-bottom: 0.3rem;
+            line-height: 1.3;
+        }
+        .producto-codigo {
+            font-size: 0.85rem;
+            color: var(--fer-texto-suave);
+            margin-bottom: 0.5rem;
+        }
+        .producto-categorias {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .cat-badge {
+            display: inline-block;
+            background: rgba(255, 237, 0, 0.15);
+            color: var(--fer-naranja);
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        .producto-precios {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+        }
+        .precio-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .precio-label {
+            color: var(--fer-texto-suave);
+            font-size: 0.75rem;
+        }
+        .precio-valor {
+            font-weight: 600;
+            color: var(--fer-naranja);
+        }
+        .producto-stock {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: var(--fer-superficie-2);
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .stock-valor {
             font-weight: 600;
         }
-
-        .buscador {
-            position: relative;
-            max-width: 640px;
+        .stock-minimo {
+            color: var(--fer-texto-suave);
+            font-size: 0.75rem;
         }
-
-        .sugerencias {
-            position: absolute;
-            top: 100%;
+        .badge-bajo {
+            background: var(--fer-rojo);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .producto-acciones {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-accion {
+            flex: 1;
+            min-width: 60px;
+            font-size: 0.8rem;
+            padding: 0.4rem 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-movimientos {
+            background: var(--fer-superficie-2);
+            color: var(--fer-texto);
+        }
+        .btn-movimientos:hover {
+            background: var(--fer-borde);
+        }
+        .btn-editar {
+            background: var(--fer-naranja);
+            color: var(--fer-negro);
+            font-weight: 600;
+        }
+        .btn-editar:hover {
+            opacity: 0.9;
+        }
+        .btn-eliminar {
+            background: var(--fer-rojo);
+            color: white;
+        }
+        .btn-eliminar:hover {
+            opacity: 0.9;
+        }
+        .filtros-contenedor {
+            background: var(--fer-superficie);
+            border: 1px solid var(--fer-borde);
+            border-radius: var(--fer-radio);
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .busqueda-input {
+            background: var(--fer-superficie-2);
+            border: 1px solid var(--fer-borde);
+            color: var(--fer-texto);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            width: 100%;
+        }
+        .busqueda-input::placeholder {
+            color: var(--fer-texto-suave);
+        }
+        .busqueda-input:focus {
+            outline: none;
+            border-color: var(--fer-naranja);
+            box-shadow: 0 0 0 3px rgba(255, 237, 0, 0.1);
+        }
+        .chips-contenedor {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--fer-superficie-2);
+            border: 1px solid var(--fer-borde);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            text-decoration: none;
+            color: var(--fer-texto);
+        }
+        .chip:hover {
+            border-color: var(--fer-naranja);
+            background: rgba(255, 237, 0, 0.1);
+        }
+        .chip.activo {
+            background: var(--fer-naranja);
+            color: var(--fer-negro);
+            border-color: var(--fer-naranja);
+            font-weight: 600;
+        }
+        .chip-imagen {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--fer-superficie);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .chip-imagen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .chip-cantidad {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0 0.35rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .resumen {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--fer-texto-suave);
+        }
+        .resumen-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .btn-limpiar {
+            background: var(--fer-rojo);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-limpiar:hover {
+            opacity: 0.9;
+        }
+        .paginacion {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        .pag-btn {
+            background: var(--fer-superficie-2);
+            border: 1px solid var(--fer-borde);
+            color: var(--fer-texto);
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .pag-btn:hover {
+            border-color: var(--fer-naranja);
+            background: rgba(255, 237, 0, 0.1);
+        }
+        .pag-btn.activa {
+            background: var(--fer-naranja);
+            color: var(--fer-negro);
+            font-weight: 600;
+            border-color: var(--fer-naranja);
+        }
+        .pag-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .vacio {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--fer-texto-suave);
+        }
+        .vacio i {
+            font-size: 3rem;
+            opacity: 0.3;
+            margin-bottom: 1rem;
+        }
+        .modal-lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            background: #1f1f1f;
-            color: #f2f2f2;
-            border: 1px solid #ff9f1c;
-            border-radius: 0 0 0.5rem 0.5rem;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            max-height: 420px;
-            overflow-y: auto;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1050;
+            align-items: center;
+            justify-content: center;
         }
-
-        .sugerencias li a {
-            display: block;
-            padding: 0.75rem 1rem;
-            text-decoration: none;
-            color: inherit;
-            border-bottom: 1px solid #333;
+        .modal-lightbox.activo {
+            display: flex;
         }
-
-        .sugerencias li a:hover,
-        .sugerencias li a:focus {
-            background: #2b2112;
+        .modal-lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
         }
-
-        .sugerencias .detalle {
-            font-size: 0.9rem;
-            color: #b8b8b8;
+        .modal-lightbox img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+        .modal-lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        .modal-lightbox-close:hover {
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
 
-<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
-
 <nav class="fer-nav py-3" aria-label="Navegación principal">
     <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
         <a class="d-flex align-items-center gap-3 text-decoration-none" href="/">
-             <img src="/img/logo-casita.png" alt="Logo El Castillo Ferretería" style="height:56px;width:auto" />
-              <span class="fer-marca d-none d-md-inline">Inventario y pedidos</span>
+            <img src="/img/logo-casita.png" alt="Logo El Castillo Ferretería" style="height:56px;width:auto" />
+            <span class="fer-marca d-none d-md-inline">Inventario y pedidos</span>
         </a>
         <div class="d-flex flex-wrap gap-2">
             <a class="btn btn-light" href="/">Inicio</a>
+            <a class="btn btn-light" href="/Productos">Inventario</a>
             <a class="btn btn-light" href="/Pedidos/Lista">Pedidos</a>
-            @if (User.IsInRole("admin"))
+            @if (User.HasClaim(c => c.Type == "role" && c.Value == "admin"))
             {
+                <a class="btn btn-light" href="/Categorias">Categorías</a>
                 <a class="btn btn-light" href="/Usuarios">Usuarios</a>
                 <a class="btn btn-light" href="/Descuentos">Descuentos</a>
             }
@@ -85,150 +372,265 @@
     </div>
 </nav>
 
-<main id="contenido" class="container py-4">
+<main class="container py-4">
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div>
-            <h1 class="h2 mb-1">Inventario de tornillería</h1>
-            <p class="text-secondary mb-0">Busca por código, medida o nombre. Ej.: DW-8 o 8 x 2.</p>
-        </div>
-        @if (User.IsInRole("admin"))
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Inventario</h1>
+        @if (User.HasClaim(c => c.Type == "role" && c.Value == "admin"))
         {
-            <a asp-page="/Nuevo" class="btn btn-fer btn-lg">
-                <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Nuevo producto
+            <a class="btn btn-fer" href="/Nuevo">
+                <i class="bi bi-plus-circle"></i> Nuevo producto
             </a>
         }
     </div>
 
-    @if (Model.Mensaje is not null)
+    @if (!string.IsNullOrEmpty(Model.Mensaje))
     {
-        <div class="alert alert-warning" role="status">@Model.Mensaje</div>
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @Model.Mensaje
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
 
-    <div class="buscador mb-4">
-        <label for="buscar" class="visually-hidden">Buscar producto</label>
-        <input type="search" id="buscar" class="form-control form-control-lg"
-               placeholder="Buscar por código, medida o nombre (ej: DW-8 o 8 x 2)"
-               autocomplete="off" aria-controls="sugerencias" />
-        <ul id="sugerencias" class="sugerencias" hidden></ul>
-    </div>
+    <div class="filtros-contenedor">
+        <form role="search" class="mb-0">
+            <input type="text" class="busqueda-input" name="q" value="@Model.Q" placeholder="Buscar por código, nombre o medida..." />
+        </form>
 
-    <div class="fer-card overflow-hidden">
-        <div class="table-responsive">
-            <table class="table fer-tabla mb-0">
-                <caption class="visually-hidden">Lista de productos del inventario</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Código</th>
-                        <th scope="col">Nombre</th>
-                        <th scope="col">Medida</th>
-                        <th scope="col" class="text-end">Compra x100</th>
-                        <th scope="col" class="text-end">Venta x100</th>
-                        <th scope="col" class="text-end">Stock</th>
-                        <th scope="col" class="text-end">Mínimo</th>
-                        <th scope="col"><span class="visually-hidden">Acciones</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var p in Model.Lista)
+        <div class="chips-contenedor">
+            <a href="@Model.Enlace(null, null, false, 1)" class="chip @(Model.Categoria is null ? "activo" : "")">
+                <i class="bi bi-collection"></i>
+                Todas <span class="chip-cantidad">@Model.TotalGeneral</span>
+            </a>
+
+            @foreach (var cat in Model.Categorias)
+            {
+                <a href="@Model.Enlace(cat.Id, null, false, 1)" class="chip @(Model.Categoria == cat.Id ? "activo" : "")" data-categoria="@cat.Id">
+                    @if (cat.Imagen is not null)
                     {
-                        <tr class="@(p.StockBajo ? "fila-alerta" : "")">
-                            <td>@p.Codigo</td>
-                            <td>@p.Nombre</td>
-                            <td>@p.Medida</td>
-                            <td class="text-end">$ @p.PrecioCompra.ToString("N0", new CultureInfo("es-CO"))</td>
-                            <td class="text-end">$ @p.PrecioVenta.ToString("N0", new CultureInfo("es-CO"))</td>
-                            <td class="text-end">
-                                @p.Stock
-                                @if (p.StockBajo)
-                                {
-                                    <span class="badge bg-danger ms-2">BAJO</span>
-                                }
-                            </td>
-                            <td class="text-end">@p.StockMinimo</td>
-                            <td class="text-nowrap">
-                                <a asp-page="/Movimientos" asp-route-id="@p.Id" class="btn btn-fer-outline btn-sm">
-                                    Movimientos
-                                </a>
-                                @if (User.IsInRole("admin"))
-                                {
-                                    <a asp-page="/Editar" asp-route-id="@p.Id" class="btn btn-outline-light btn-sm">Editar</a>
-                                    <form method="post" asp-page-handler="Eliminar" asp-route-id="@p.Id" class="d-inline"
-                                          onsubmit="return confirm('¿Eliminar este producto?');">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
-                                    </form>
-                                }
-                            </td>
-                        </tr>
+                        <div class="chip-imagen">
+                            <img src="@Model.ObtenerRutaImagen(cat.Imagen, "categorias")" alt="@cat.Nombre" />
+                        </div>
                     }
-                </tbody>
-            </table>
+                    @cat.Nombre
+                    <span class="chip-cantidad">@cat.Cantidad</span>
+                </a>
+            }
+        </div>
+
+        @if (Model.Categoria is not null && Model.Subcategorias.Count > 0)
+        {
+            <div class="chips-contenedor mt-2">
+                <a href="@Model.Enlace(Model.Categoria, null, false, 1)" class="chip @(Model.Sub is null ? "activo" : "")">
+                    <i class="bi bi-funnel"></i>
+                    Todas <span class="chip-cantidad">@Model.Subcategorias.Sum(s => s.Cantidad)</span>
+                </a>
+                @foreach (var sub in Model.Subcategorias)
+                {
+                    <a href="@Model.Enlace(Model.Categoria, sub.Id, false, 1)" class="chip @(Model.Sub == sub.Id ? "activo" : "")">
+                        @sub.Nombre
+                        <span class="chip-cantidad">@sub.Cantidad</span>
+                    </a>
+                }
+            </div>
+        }
+
+        <div class="chips-contenedor mt-2">
+            <a href="@Model.Enlace(Model.Categoria, Model.Sub, !Model.Bajo, 1)" class="chip @(Model.Bajo ? "activo" : "")">
+                <i class="bi bi-exclamation-circle"></i>
+                Stock bajo <span class="chip-cantidad">@Model.TotalBajo</span>
+            </a>
+
+            @if (Model.HayFiltros)
+            {
+                <a href="/Productos" class="btn btn-limpiar">
+                    <i class="bi bi-x-circle"></i> Limpiar filtros
+                </a>
+            }
         </div>
     </div>
 
+    @if (Model.HayFiltros)
+    {
+        <div class="resumen">
+            <span class="resumen-item">
+                <i class="bi bi-funnel"></i>
+                Mostrando <strong>@Model.TotalFiltrado</strong> de <strong>@Model.TotalGeneral</strong> productos
+            </span>
+            @if (Model.Pagina > 1)
+            {
+                <span class="resumen-item">
+                    Página <strong>@Model.Pagina</strong> de <strong>@Model.TotalPaginas</strong>
+                </span>
+            }
+        </div>
+    }
+
+    @if (Model.Lista.Count == 0)
+    {
+        <div class="vacio">
+            <i class="bi bi-inbox"></i>
+            <h2 class="h5">No hay productos</h2>
+            <p>@(Model.HayFiltros ? "Intenta cambiar los filtros" : "Comienza creando el primer producto")</p>
+        </div>
+    }
+    else
+    {
+        <div class="productos-grid">
+            @foreach (var producto in Model.Lista)
+            {
+                <div class="producto-card">
+                    <div class="producto-imagen" onclick="abrirLightbox('@(producto.Imagen is not null ? Model.ObtenerRutaImagen(producto.Imagen, "categorias") : "")')">
+                        @if (producto.Imagen is not null)
+                        {
+                            <img src="@Model.ObtenerRutaImagen(producto.Imagen, "categorias")" alt="@producto.Nombre" />
+                        }
+                        else
+                        {
+                            <div class="producto-imagen-vacia">
+                                <i class="bi bi-image"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="producto-info">
+                        <div class="producto-nombre">@producto.Nombre</div>
+                        <div class="producto-codigo">
+                            @producto.Codigo
+                            @if (!string.IsNullOrEmpty(producto.Medida))
+                            {
+                                <span> · @producto.Medida</span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(producto.Categorias))
+                        {
+                            <div class="producto-categorias">
+                                @foreach (var cat in producto.Categorias.Split(',').Select(c => c.Trim()))
+                                {
+                                    <span class="cat-badge">@cat</span>
+                                }
+                            </div>
+                        }
+
+                        <div class="producto-precios">
+                            <div class="precio-item">
+                                <span class="precio-label">Venta</span>
+                                <span class="precio-valor">@producto.PrecioVenta.ToString("C0")</span>
+                            </div>
+                            <div class="precio-item">
+                                <span class="precio-label">Compra</span>
+                                <span class="precio-valor">@producto.PrecioCompra.ToString("C0")</span>
+                            </div>
+                        </div>
+
+                        <div class="producto-stock">
+                            <div>
+                                <span class="stock-valor">@producto.Stock</span>
+                                @if (producto.StockMinimo > 0)
+                                {
+                                    <span class="stock-minimo">/ mín: @producto.StockMinimo</span>
+                                }
+                            </div>
+                            @if (producto.StockBajo)
+                            {
+                                <span class="badge-bajo">BAJO</span>
+                            }
+                        </div>
+
+                        <div class="producto-acciones">
+                            <a href="/Movimientos?productId=@producto.Id" class="btn-accion btn-movimientos" title="Ver movimientos">
+                                <i class="bi bi-arrow-left-right"></i>
+                            </a>
+                            @if (User.HasClaim(c => c.Type == "role" && c.Value == "admin"))
+                            {
+                                <a href="/Editar/@producto.Id" class="btn-accion btn-editar" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post" action="/Productos?handler=Eliminar" style="flex: 1;">
+                                    <input type="hidden" name="id" value="@producto.Id" />
+                                    <input type="hidden" name="retorno" value="@Model.EnlaceActual()" />
+                                    <button type="submit" class="btn-accion btn-eliminar" onclick="return confirm('¿Eliminar este producto?')" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.TotalPaginas > 1)
+        {
+            <div class="paginacion">
+                @if (Model.Pagina > 1)
+                {
+                    <a href="@Model.Enlace(Model.Categoria, Model.Sub, Model.Bajo, Model.Pagina - 1)" class="pag-btn">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </a>
+                }
+
+                @for (int i = 1; i <= Model.TotalPaginas; i++)
+                {
+                    @if (i == Model.Pagina)
+                    {
+                        <button class="pag-btn activa" disabled>@i</button>
+                    }
+                    else if (i <= Model.Pagina + 2 && i >= Model.Pagina - 2)
+                    {
+                        <a href="@Model.Enlace(Model.Categoria, Model.Sub, Model.Bajo, i)" class="pag-btn">@i</a>
+                    }
+                }
+
+                @if (Model.Pagina < Model.TotalPaginas)
+                {
+                    <a href="@Model.Enlace(Model.Categoria, Model.Sub, Model.Bajo, Model.Pagina + 1)" class="pag-btn">
+                        Siguiente <i class="bi bi-chevron-right"></i>
+                    </a>
+                }
+            </div>
+        }
+    }
+
 </main>
 
+<div id="lightbox" class="modal-lightbox">
+    <div class="modal-lightbox-content">
+        <button class="modal-lightbox-close" onclick="cerrarLightbox()">✕</button>
+        <img id="lightbox-imagen" src="" alt="Imagen ampliada" />
+    </div>
+</div>
+
 <script>
-    const input = document.getElementById('buscar');
-    const lista = document.getElementById('sugerencias');
-    let temporizador;
+function abrirLightbox(src) {
+    if (!src) return;
+    const lightbox = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-imagen');
+    img.src = src;
+    lightbox.classList.add('activo');
+}
 
-    const pesos = n => '$ ' + Number(n).toLocaleString('es-CO', { maximumFractionDigits: 0 });
+function cerrarLightbox() {
+    document.getElementById('lightbox').classList.remove('activo');
+}
 
-    input.addEventListener('input', () => {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(buscar, 250);
-    });
+document.getElementById('lightbox').addEventListener('click', (e) => {
+    if (e.target.id === 'lightbox') cerrarLightbox();
+});
 
-    async function buscar() {
-        const q = input.value.trim();
-        if (q.length === 0) {
-            lista.hidden = true;
-            return;
-        }
+const busqueda = document.querySelector('.busqueda-input');
+let timeoutId;
+busqueda.addEventListener('input', () => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+        busqueda.closest('form').submit();
+    }, 500);
+});
 
-        const resp = await fetch(`?handler=Buscar&q=${encodeURIComponent(q)}`);
-        const datos = await resp.json();
-        mostrar(datos);
-    }
-
-    function mostrar(datos) {
-        lista.innerHTML = '';
-
-        if (datos.length === 0) {
-            const li = document.createElement('li');
-            li.textContent = 'Sin resultados';
-            li.className = 'p-3';
-            lista.appendChild(li);
-        }
-
-        datos.forEach(p => {
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            a.href = `/Editar/${p.id}`;
-
-            const titulo = document.createElement('strong');
-            titulo.textContent = `${p.codigo}  ·  ${p.medida ?? ''}`;
-
-            const detalle = document.createElement('div');
-            detalle.className = 'detalle';
-            detalle.textContent = `Venta: ${pesos(p.precioVenta)}  ·  Stock: ${p.stock}` +
-                                  (p.stockBajo ? '  ·  ⚠ STOCK BAJO' : '');
-
-            a.appendChild(titulo);
-            a.appendChild(detalle);
-            li.appendChild(a);
-            lista.appendChild(li);
-        });
-
-        lista.hidden = false;
-    }
-
-    document.addEventListener('click', e => {
-        if (!e.target.closest('.buscador')) {
-            lista.hidden = true;
-        }
-    });
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') cerrarLightbox();
+});
 </script>
 
 </body>

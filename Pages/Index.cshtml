@@ -28,6 +28,7 @@
             <a class="btn btn-light" href="/Pedidos/Lista">Pedidos</a>
             @if (Model.EsAdmin)
             {
+                <a class="btn btn-light" href="/Categorias">Categorías</a>
                 <a class="btn btn-light" href="/Usuarios">Usuarios</a>
                 <a class="btn btn-light" href="/Descuentos">Descuentos</a>
             }
@@ -71,6 +72,14 @@
 
         @if (Model.EsAdmin)
         {
+            <div class="col-12 col-md-6 col-lg-4">
+                <a class="fer-card fer-acceso" href="/Categorias">
+                    <i class="bi bi-tags fer-icono" aria-hidden="true"></i>
+                    <h2 class="h5 mt-3">Categorías</h2>
+                    <p class="fer-descripcion">Organizar productos en categorías y subcategorías.</p>
+                </a>
+            </div>
+
             <div class="col-12 col-md-6 col-lg-4">
                 <a class="fer-card fer-acceso" href="/Usuarios">
                     <i class="bi bi-people fer-icono" aria-hidden="true"></i>

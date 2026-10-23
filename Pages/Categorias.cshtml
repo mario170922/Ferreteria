@@ -1,0 +1,423 @@
+@page
+@model Ferreteria.Pages.CategoriasModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Categorías - Ferretería</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="/css/ferreteria.css" />
+    <style>
+        .cat-encabezado {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .cat-encabezado .fer-icono-titulo {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background-color: var(--fer-naranja-suave);
+            border: 1px solid #4a3510;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            color: var(--fer-naranja);
+            flex-shrink: 0;
+        }
+
+        .zona-imagen {
+            position: relative;
+            border: 2px dashed #5a5a5a;
+            border-radius: var(--fer-radio);
+            background-color: var(--fer-superficie-2);
+            padding: 1.25rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+            min-height: var(--fer-altura-toque);
+        }
+
+        .zona-imagen:hover,
+        .zona-imagen.arrastrando {
+            border-color: var(--fer-naranja);
+            background-color: var(--fer-naranja-suave);
+        }
+
+        .zona-imagen input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .zona-imagen .zona-imagen-icono {
+            font-size: 1.5rem;
+            color: var(--fer-naranja);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .zona-imagen .zona-imagen-texto {
+            color: var(--fer-texto-suave);
+            font-size: 0.9rem;
+        }
+
+        .zona-imagen .zona-imagen-nombre {
+            color: var(--fer-texto);
+            font-weight: 600;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .zona-imagen-vista {
+            width: 100%;
+            max-height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: none;
+        }
+
+        .rejilla-categorias {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .tarjeta-categoria {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .portada-categoria {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #272727;
+            overflow: hidden;
+        }
+
+        .portada-categoria img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.25s ease;
+        }
+
+        .tarjeta-categoria:hover .portada-categoria img {
+            transform: scale(1.04);
+        }
+
+        .portada-vacia {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            background: repeating-linear-gradient(135deg, #1f1f1f, #1f1f1f 12px, #242424 12px, #242424 24px);
+            color: var(--fer-texto-suave);
+        }
+
+        .portada-vacia .bi {
+            font-size: 1.8rem;
+            color: #5a5a5a;
+        }
+
+        .capa-cambiar-imagen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.1) 55%, transparent 100%);
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 0.6rem;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .portada-categoria:hover .capa-cambiar-imagen,
+        .portada-categoria:focus-within .capa-cambiar-imagen {
+            opacity: 1;
+        }
+
+        .boton-camara {
+            position: relative;
+            background-color: rgba(13, 13, 13, 0.85);
+            border: 1px solid var(--fer-naranja);
+            color: var(--fer-naranja);
+            border-radius: 999px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.05rem;
+            margin: 0;
+        }
+
+        .boton-camara:hover {
+            background-color: var(--fer-naranja);
+            color: #000000;
+        }
+
+        .boton-camara input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .cuerpo-categoria {
+            padding: 1.1rem 1.25rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .conteos-categoria {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .pastilla-conteo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background-color: var(--fer-superficie-2);
+            border: 1px solid var(--fer-borde);
+            color: var(--fer-texto-suave);
+            border-radius: 999px;
+            padding: 0.2rem 0.65rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .pastilla-conteo .bi {
+            color: var(--fer-naranja);
+        }
+
+        .toast-mensaje {
+            animation: deslizar-abajo 0.25s ease;
+        }
+
+        @@keyframes deslizar-abajo {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fer-vacio-general {
+            border: 2px dashed var(--fer-borde);
+            border-radius: var(--fer-radio);
+        }
+    </style>
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+
+<nav class="fer-nav py-3" aria-label="Navegación principal">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <a class="d-flex align-items-center gap-3 text-decoration-none" href="/">
+            <img src="/img/logo-casita.png" alt="Logo El Castillo Ferretería" style="height:56px;width:auto" />
+            <span class="fer-marca d-none d-md-inline">Inventario y pedidos</span>
+        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-light" href="/">Inicio</a>
+            <a class="btn btn-light" href="/Productos">Inventario</a>
+            <a class="btn btn-light" href="/Pedidos/Lista">Pedidos</a>
+            @if (User.IsInRole("admin"))
+            {
+                <a class="btn btn-fer-outline" href="/Categorias">Categorías</a>
+                <a class="btn btn-light" href="/Usuarios">Usuarios</a>
+                <a class="btn btn-light" href="/Descuentos">Descuentos</a>
+            }
+            <a class="btn btn-outline-light" href="/Salir">Salir</a>
+        </div>
+    </div>
+</nav>
+
+<main id="contenido" class="container py-4">
+
+    <div class="cat-encabezado">
+        <div class="fer-icono-titulo"><i class="bi bi-tags-fill" aria-hidden="true"></i></div>
+        <div>
+            <h1 class="h2 mb-1">Categorías</h1>
+            <p class="text-secondary mb-0">
+                Entra a una categoría para ver sus subcategorías y productos. Por ahora las categorías no se pueden eliminar.
+            </p>
+        </div>
+    </div>
+
+    @if (Model.Mensaje is not null)
+    {
+        <div class="alert @(Model.EsError ? "alert-danger" : "alert-success") toast-mensaje d-flex align-items-center gap-2"
+             role="status" id="mensajeFlash">
+            <i class="bi @(Model.EsError ? "bi-exclamation-triangle-fill" : "bi-check-circle-fill")" aria-hidden="true"></i>
+            <span>@Model.Mensaje</span>
+        </div>
+    }
+
+    <form method="post" asp-page-handler="CrearCategoria" enctype="multipart/form-data" class="fer-card p-4 mb-4">
+        <h2 class="h5 mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle-fill" style="color: var(--fer-naranja);" aria-hidden="true"></i>
+            Nueva categoría
+        </h2>
+        <div class="row g-3 align-items-stretch">
+            <div class="col-md-5">
+                <label class="form-label fw-semibold" for="nuevaCategoriaNombre">Nombre</label>
+                <input id="nuevaCategoriaNombre" name="nombre" class="form-control" maxlength="100"
+                       placeholder="Ej.: Tornillería" required />
+            </div>
+            <div class="col-md-5">
+                <label class="form-label fw-semibold">Imagen (opcional)</label>
+                <label class="zona-imagen js-zona-imagen d-block" tabindex="0">
+                    <img class="zona-imagen-vista js-vista-previa" alt="" />
+                    <span class="js-contenido-zona">
+                        <i class="bi bi-cloud-arrow-up zona-imagen-icono" aria-hidden="true"></i>
+                        <span class="zona-imagen-texto d-block">Toca para elegir una foto</span>
+                    </span>
+                    <input type="file" name="imagen" accept="image/*" class="js-input-imagen" />
+                </label>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-fer w-100">
+                    <i class="bi bi-check-lg me-1" aria-hidden="true"></i>Crear
+                </button>
+            </div>
+        </div>
+    </form>
+
+    @if (Model.Categorias.Count == 0)
+    {
+        <div class="fer-vacio fer-vacio-general">
+            <i class="bi bi-box-seam d-block" aria-hidden="true"></i>
+            <p class="mt-2 mb-0">Todavía no hay categorías. Crea la primera arriba.</p>
+        </div>
+    }
+    else
+    {
+        <div class="rejilla-categorias">
+            @foreach (var cat in Model.Categorias)
+            {
+                <article class="fer-card tarjeta-categoria">
+
+                    <div class="portada-categoria">
+                        @if (!string.IsNullOrEmpty(cat.Imagen))
+                        {
+                            <img src="/@cat.Imagen" alt="Imagen de @cat.Nombre" />
+                        }
+                        else
+                        {
+                            <div class="portada-vacia">
+                                <i class="bi bi-image" aria-hidden="true"></i>
+                                <span class="small">Sin imagen</span>
+                            </div>
+                        }
+
+                        <div class="capa-cambiar-imagen">
+                            <form method="post" asp-page-handler="CambiarImagen" enctype="multipart/form-data"
+                                  class="js-form-auto-envio m-0">
+                                <input type="hidden" name="id" value="@cat.Id" />
+                                <label class="boton-camara" title="Cambiar imagen de @cat.Nombre">
+                                    <i class="bi bi-camera-fill" aria-hidden="true"></i>
+                                    <input type="file" name="imagen" accept="image/*" class="js-input-auto-envio" required />
+                                </label>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="cuerpo-categoria">
+                        <h2 class="h5 mb-2">@cat.Nombre</h2>
+
+                        <div class="conteos-categoria">
+                            <span class="pastilla-conteo">
+                                <i class="bi bi-box-seam" aria-hidden="true"></i>@cat.Productos.Count producto(s)
+                            </span>
+                            <span class="pastilla-conteo">
+                                <i class="bi bi-diagram-3" aria-hidden="true"></i>@cat.Subcategorias.Count subcategoría(s)
+                            </span>
+                        </div>
+
+                        <a asp-page="/Categorias/Ver" asp-route-id="@cat.Id" class="btn btn-fer w-100 mt-auto">
+                            Entrar a la categoría <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+
+</main>
+
+<script>
+    // Vista previa de la imagen en "Nueva categoría" (no se envía nada todavía)
+    document.querySelectorAll('.js-zona-imagen').forEach(zona => {
+        const input = zona.querySelector('.js-input-imagen');
+        const vista = zona.querySelector('.js-vista-previa');
+        const contenido = zona.querySelector('.js-contenido-zona');
+
+        input.addEventListener('change', () => {
+            const archivo = input.files && input.files[0];
+            if (!archivo) return;
+
+            const lector = new FileReader();
+            lector.onload = e => {
+                vista.src = e.target.result;
+                vista.style.display = 'block';
+                contenido.innerHTML = `<span class="zona-imagen-nombre">${archivo.name}</span>
+                                        <span class="zona-imagen-texto d-block mt-1">Toca para cambiar</span>`;
+            };
+            lector.readAsDataURL(archivo);
+        });
+
+        ['dragenter', 'dragover'].forEach(ev =>
+            zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add('arrastrando'); }));
+        ['dragleave', 'drop'].forEach(ev =>
+            zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('arrastrando'); }));
+        zona.addEventListener('drop', e => {
+            if (e.dataTransfer.files.length) {
+                input.files = e.dataTransfer.files;
+                input.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+
+    // Al elegir una foto con el botón de cámara, se envía el formulario solo
+    document.querySelectorAll('.js-input-auto-envio').forEach(input => {
+        input.addEventListener('change', () => {
+            if (input.files && input.files.length) {
+                input.closest('.js-form-auto-envio').submit();
+            }
+        });
+    });
+
+    // El mensaje de éxito se desvanece solo después de unos segundos
+    const flash = document.getElementById('mensajeFlash');
+    if (flash && !flash.classList.contains('alert-danger')) {
+        setTimeout(() => {
+            flash.style.transition = 'opacity 0.5s ease';
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 500);
+        }, 4000);
+    }
+</script>
+
+</body>
+</html>

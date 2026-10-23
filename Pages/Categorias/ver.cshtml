@@ -1,0 +1,427 @@
+@page "{id:int}"
+@model Ferreteria.Pages.VerCategoriaModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@Model.Categoria.Nombre - Ferretería</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="/css/ferreteria.css" />
+    <style>
+        .banner-categoria {
+            position: relative;
+            height: 220px;
+            border-radius: var(--fer-radio);
+            overflow: hidden;
+            border: 1px solid var(--fer-borde);
+            background-color: #272727;
+            margin-bottom: 1.5rem;
+        }
+
+        .banner-categoria img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .banner-categoria .velo {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.25) 60%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 1.25rem;
+        }
+
+        .banner-vacio {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: repeating-linear-gradient(135deg, #1f1f1f, #1f1f1f 14px, #242424 14px, #242424 28px);
+            color: var(--fer-texto-suave);
+        }
+
+        .filtros {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .chip-filtro {
+            background: var(--fer-superficie-2);
+            border: 1px solid var(--fer-borde);
+            color: var(--fer-texto);
+            border-radius: 999px;
+            padding: 0.4rem 0.95rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-height: 40px;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .chip-filtro:hover {
+            border-color: var(--fer-naranja);
+        }
+
+        .chip-filtro.activo {
+            background: var(--fer-naranja);
+            border-color: var(--fer-naranja);
+            color: #000000;
+        }
+
+        .buscador-productos {
+            min-width: 260px;
+            flex: 0 1 340px;
+        }
+
+        .rejilla-productos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .tarjeta-producto {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            text-decoration: none;
+            color: var(--fer-texto);
+            background-color: var(--fer-superficie);
+            border: 1px solid var(--fer-borde);
+            border-radius: var(--fer-radio);
+            box-shadow: var(--fer-sombra);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .tarjeta-producto:hover,
+        .tarjeta-producto:focus-visible {
+            transform: translateY(-3px);
+            box-shadow: var(--fer-sombra-hover);
+            border-color: var(--fer-naranja);
+            color: var(--fer-texto);
+        }
+
+        .tarjeta-producto .foto {
+            aspect-ratio: 1 / 1;
+            background-color: #272727;
+        }
+
+        .tarjeta-producto .foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .tarjeta-producto .sin-foto {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            color: var(--fer-texto-suave);
+            font-size: 0.85rem;
+            background: repeating-linear-gradient(135deg, #1f1f1f, #1f1f1f 12px, #242424 12px, #242424 24px);
+        }
+
+        .tarjeta-producto .sin-foto .bi {
+            font-size: 1.6rem;
+            color: #5a5a5a;
+        }
+
+        .tarjeta-producto .cuerpo {
+            padding: 0.8rem 0.9rem 1rem;
+        }
+
+        .tarjeta-producto .nombre {
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 0.2rem;
+        }
+
+        .tarjeta-producto .codigo {
+            font-size: 0.8rem;
+            color: var(--fer-texto-suave);
+        }
+
+        .etiqueta-sub {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background-color: var(--fer-naranja-suave);
+            border: 1px solid #4a3510;
+            color: var(--fer-texto);
+            border-radius: 999px;
+            padding: 0.1rem 0.55rem;
+            margin-top: 0.45rem;
+        }
+
+        .oculto {
+            display: none !important;
+        }
+
+        .admin-subs summary {
+            cursor: pointer;
+            font-weight: 700;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: var(--fer-altura-toque);
+        }
+
+        .admin-subs summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .admin-subs[open] summary .bi-chevron-down {
+            transform: rotate(180deg);
+        }
+
+        .fila-sub {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-top: 1px solid var(--fer-borde);
+        }
+
+        .fer-vacio-general {
+            border: 2px dashed var(--fer-borde);
+            border-radius: var(--fer-radio);
+        }
+    </style>
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+
+<nav class="fer-nav py-3" aria-label="Navegación principal">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <a class="d-flex align-items-center gap-3 text-decoration-none" href="/">
+            <img src="/img/logo-casita.png" alt="Logo El Castillo Ferretería" style="height:56px;width:auto" />
+            <span class="fer-marca d-none d-md-inline">Inventario y pedidos</span>
+        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-light" href="/">Inicio</a>
+            <a class="btn btn-light" href="/Productos">Inventario</a>
+            <a class="btn btn-light" href="/Pedidos/Lista">Pedidos</a>
+            @if (User.IsInRole("admin"))
+            {
+                <a class="btn btn-fer-outline" href="/Categorias">Categorías</a>
+                <a class="btn btn-light" href="/Usuarios">Usuarios</a>
+                <a class="btn btn-light" href="/Descuentos">Descuentos</a>
+            }
+            <a class="btn btn-outline-light" href="/Salir">Salir</a>
+        </div>
+    </div>
+</nav>
+
+<main id="contenido" class="container py-4">
+
+    <a asp-page="/Categorias" class="btn btn-outline-light btn-sm mb-3">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver a categorías
+    </a>
+
+    @if (Model.Mensaje is not null)
+    {
+        <div class="alert @(Model.EsError ? "alert-danger" : "alert-success") d-flex align-items-center gap-2" role="status">
+            <i class="bi @(Model.EsError ? "bi-exclamation-triangle-fill" : "bi-check-circle-fill")" aria-hidden="true"></i>
+            <span>@Model.Mensaje</span>
+        </div>
+    }
+
+    <div class="banner-categoria">
+        @if (!string.IsNullOrEmpty(Model.Categoria.Imagen))
+        {
+            <img src="/@Model.Categoria.Imagen" alt="Imagen de @Model.Categoria.Nombre" />
+        }
+        else
+        {
+            <div class="banner-vacio">
+                <span><i class="bi bi-image me-2" aria-hidden="true"></i>Sin imagen</span>
+            </div>
+        }
+        <div class="velo">
+            <h1 class="h2 mb-1">@Model.Categoria.Nombre</h1>
+            <p class="mb-0 text-secondary">
+                @Model.Productos.Count producto(s) · @Model.Subcategorias.Count subcategoría(s)
+            </p>
+        </div>
+    </div>
+
+    @if (Model.Productos.Count == 0)
+    {
+        <div class="fer-vacio fer-vacio-general">
+            <i class="bi bi-box-seam d-block" aria-hidden="true"></i>
+            <p class="mt-2 mb-0">
+                Esta categoría todavía no tiene productos. Asígnalos desde Inventario, en la opción Editar de cada producto.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
+            <div class="filtros" role="group" aria-label="Filtrar por subcategoría">
+                <button type="button" class="chip-filtro activo" data-filtro="" aria-pressed="true">
+                    Todos (@Model.Productos.Count)
+                </button>
+                <button type="button" class="chip-filtro" data-filtro="none" aria-pressed="false">
+                    Sin subcategoría (@(Model.Productos.Count(p => string.IsNullOrEmpty(p.SubIds))))
+                </button>
+                @foreach (var sub in Model.Subcategorias)
+                {
+                    <button type="button" class="chip-filtro" data-filtro="@sub.Id" aria-pressed="false">
+                        @sub.Nombre (@sub.Cantidad)
+                    </button>
+                }
+            </div>
+
+            <div class="buscador-productos">
+                <label class="visually-hidden" for="buscarProducto">Buscar en esta categoría</label>
+                <input id="buscarProducto" type="search" class="form-control"
+                       placeholder="Buscar por nombre, código o medida" autocomplete="off" />
+            </div>
+        </div>
+
+        <p id="sinResultados" class="text-secondary oculto">No hay productos con ese filtro.</p>
+
+        <div class="rejilla-productos" id="rejillaProductos">
+            @foreach (var p in Model.Productos)
+            {
+                <a class="tarjeta-producto js-producto" href="/Editar/@p.Id"
+                   data-subs="@p.SubIds" data-texto="@p.Texto" title="Editar @p.Nombre">
+                    <div class="foto">
+                        @if (!string.IsNullOrEmpty(p.Imagen))
+                        {
+                            <img src="/@p.Imagen" alt="@p.Nombre" loading="lazy" />
+                        }
+                        else
+                        {
+                            <div class="sin-foto">
+                                <i class="bi bi-image" aria-hidden="true"></i>
+                                <span>Sin imagen</span>
+                            </div>
+                        }
+                    </div>
+                    <div class="cuerpo">
+                        <div class="nombre">@p.Nombre</div>
+                        <div class="codigo">
+                            @p.Codigo@(string.IsNullOrEmpty(p.Medida) ? "" : " · " + p.Medida)
+                        </div>
+                        @if (!string.IsNullOrEmpty(p.SubNombres))
+                        {
+                            <span class="etiqueta-sub">@p.SubNombres</span>
+                        }
+                    </div>
+                </a>
+            }
+        </div>
+    }
+
+    <details class="fer-card p-3 mt-4 admin-subs">
+        <summary>
+            <span>
+                <i class="bi bi-diagram-3 me-2" style="color: var(--fer-naranja);" aria-hidden="true"></i>
+                Administrar subcategorías (@Model.Subcategorias.Count)
+            </span>
+            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+        </summary>
+
+        <div class="mt-2">
+            @if (Model.Subcategorias.Count == 0)
+            {
+                <p class="text-secondary small mb-2">Todavía no hay subcategorías.</p>
+            }
+
+            @foreach (var sub in Model.Subcategorias)
+            {
+                <div class="fila-sub">
+                    <div>
+                        <span class="fw-semibold">@sub.Nombre</span>
+                        <span class="text-secondary small ms-2">@sub.Cantidad producto(s)</span>
+                    </div>
+                    <form method="post" asp-page-handler="EliminarSubcategoria" asp-route-id="@Model.Categoria.Id"
+                          onsubmit="return confirm('¿Eliminar &quot;@sub.Nombre&quot;? Sus productos quedarán en la categoría.');">
+                        <input type="hidden" name="categoriaId" value="@Model.Categoria.Id" />
+                        <input type="hidden" name="subcategoriaId" value="@sub.Id" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                    </form>
+                </div>
+            }
+
+            <form method="post" asp-page-handler="CrearSubcategoria" asp-route-id="@Model.Categoria.Id"
+                  class="d-flex flex-wrap gap-2 mt-3">
+                <input type="hidden" name="categoriaId" value="@Model.Categoria.Id" />
+                <label class="visually-hidden" for="nuevaSub">Nombre de la nueva subcategoría</label>
+                <input id="nuevaSub" name="nombre" class="form-control" maxlength="100"
+                       placeholder="Nueva subcategoría" required style="max-width: 320px;" />
+                <button type="submit" class="btn btn-fer">
+                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Agregar
+                </button>
+            </form>
+        </div>
+    </details>
+
+</main>
+
+<script>
+    (function () {
+        const buscar = document.getElementById('buscarProducto');
+        if (!buscar) return; // no hay productos en esta categoría
+
+        const chips = document.querySelectorAll('.chip-filtro');
+        const tarjetas = document.querySelectorAll('.js-producto');
+        const sinResultados = document.getElementById('sinResultados');
+        let filtroActivo = '';
+
+        function aplicar() {
+            const texto = buscar.value.trim().toLowerCase();
+            let visibles = 0;
+
+            tarjetas.forEach(card => {
+                const subs = card.dataset.subs ? card.dataset.subs.split(',') : [];
+
+                let cumpleFiltro = true;
+                if (filtroActivo === 'none') cumpleFiltro = subs.length === 0;
+                else if (filtroActivo !== '') cumpleFiltro = subs.includes(filtroActivo);
+
+                const cumpleTexto = !texto || card.dataset.texto.includes(texto);
+                const mostrar = cumpleFiltro && cumpleTexto;
+
+                card.classList.toggle('oculto', !mostrar);
+                if (mostrar) visibles++;
+            });
+
+            sinResultados.classList.toggle('oculto', visibles > 0);
+        }
+
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                filtroActivo = chip.dataset.filtro;
+                chips.forEach(c => {
+                    const activo = c === chip;
+                    c.classList.toggle('activo', activo);
+                    c.setAttribute('aria-pressed', activo ? 'true' : 'false');
+                });
+                aplicar();
+            });
+        });
+
+        buscar.addEventListener('input', aplicar);
+    })();
+</script>
+
+</body>
+</html>
