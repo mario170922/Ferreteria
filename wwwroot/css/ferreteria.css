@@ -1052,6 +1052,51 @@ legend {
 
 .btn-close { filter: invert(1) grayscale(1) brightness(2); }
 
+/* Ventana de aviso / confirmación (ferreteria.js, reemplaza alert y confirm) */
+.fer-dialogo .modal-content { box-shadow: 0 30px 60px rgba(0, 0, 0, .7); }
+.fer-dialogo .modal-body { padding: 2rem 1.5rem 1.25rem; }
+.fer-dialogo .modal-footer { justify-content: center; gap: .5rem; padding: 1rem 1.5rem 1.5rem; border-top: 0; }
+.fer-dialogo .modal-footer .btn { min-width: 9rem; flex: 1 1 0; }
+
+.fer-dialogo-icono {
+  display: inline-grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin-bottom: .75rem;
+  border-radius: 50%;
+  font-size: 2rem;
+  color: var(--fer-naranja);
+  background: rgba(245, 183, 0, .12);
+  border: 2px solid rgba(245, 183, 0, .5);
+}
+
+.fer-dialogo-titulo { font-size: 1.5rem; margin-bottom: .4rem; }
+.fer-dialogo-texto { font-size: 1.1rem; color: var(--fer-texto); }
+
+.fer-dialogo-peligro .modal-content { border-top-color: var(--fer-rojo); }
+.fer-dialogo-peligro .fer-dialogo-icono {
+  color: var(--fer-rojo);
+  background: rgba(255, 107, 107, .12);
+  border-color: rgba(255, 107, 107, .55);
+}
+
+/* Botón rojo para acciones que no se pueden deshacer */
+.btn-fer-peligro {
+  background-color: #b3261e;
+  border: 2px solid #b3261e;
+  color: #fff;
+}
+
+.btn-fer-peligro:hover,
+.btn-fer-peligro:focus {
+  background-color: #d33a30;
+  border-color: #d33a30;
+  color: #fff;
+}
+
+.modal-backdrop.show { opacity: .75; }
+
 /* ---------- 12. Inventario: detalles extra para las tarjetas de producto ---------- */
 .producto-card { border-radius: var(--fer-radio) !important; }
 

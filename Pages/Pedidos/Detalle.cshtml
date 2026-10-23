@@ -425,7 +425,14 @@
                         <select id="nuevoEstado" name="estado" class="form-select form-select-lg">
                             @foreach (var opcion in DetalleModel.OpcionesEstado)
                             {
-                                <option value="@opcion.Clave" selected="@(opcion.Clave == p.Estado)">@opcion.Etiqueta</option>
+                                @* Cancelar o marcar "No entregado" devuelve el stock: se pide confirmación *@
+                                var confirmar = opcion.Clave == p.Estado ? null
+                                    : opcion.Clave == "cancelado" ? $"¿Cancelar el pedido {p.Numero}? Los productos vuelven al inventario."
+                                    : opcion.Clave == "no_entregado" ? $"¿Marcar el pedido {p.Numero} como no entregado? Los productos vuelven al inventario."
+                                    : null;
+                                <option value="@opcion.Clave" selected="@(opcion.Clave == p.Estado)"
+                                        data-confirmar="@confirmar" data-confirmar-tipo="peligro"
+                                        data-confirmar-boton="@(opcion.Clave == "cancelado" ? "Sí, cancelar pedido" : "Sí, marcar")">@opcion.Etiqueta</option>
                             }
                         </select>
                     </div>

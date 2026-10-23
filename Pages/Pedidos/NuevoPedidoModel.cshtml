@@ -566,7 +566,7 @@
             }
 
             if (lineas.length >= MAX_LINEAS) {
-                alert('Un pedido puede tener hasta ' + MAX_LINEAS + ' productos distintos.');
+                (window.ferAviso || alert)('Un pedido puede tener hasta ' + MAX_LINEAS + ' productos distintos.');
                 return false;
             }
 

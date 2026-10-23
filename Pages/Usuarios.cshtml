@@ -102,7 +102,9 @@
                                         @if (u.NombreUsuario != "admin")
                                         {
                                             <form method="post" asp-page-handler="CambiarActivo" asp-route-id="@u.Id" class="d-inline">
-                                                <button type="submit" class="btn btn-fer-outline btn-sm">
+                                                <button type="submit" class="btn btn-fer-outline btn-sm"
+                                                        data-confirmar="@(u.Activo ? $"¿Desactivar a {u.NombreUsuario}? Ya no podrá ingresar al sistema." : null)"
+                                                        data-confirmar-boton="Sí, desactivar" data-confirmar-tipo="peligro">
                                                     @(u.Activo ? "Desactivar" : "Activar")
                                                 </button>
                                             </form>

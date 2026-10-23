@@ -533,7 +533,9 @@
                                 <form method="post" action="/Productos?handler=Eliminar" style="flex: 1;">
                                     <input type="hidden" name="id" value="@producto.Id" />
                                     <input type="hidden" name="retorno" value="@Model.EnlaceActual()" />
-                                    <button type="submit" class="btn-accion btn-eliminar" onclick="return confirm('¿Eliminar este producto?')">
+                                    <button type="submit" class="btn-accion btn-eliminar"
+                                            data-confirmar="¿Eliminar &quot;@producto.Nombre&quot;? Ya no aparecerá en el inventario."
+                                            data-confirmar-boton="Sí, eliminar" data-confirmar-tipo="peligro">
                                         <i class="bi bi-trash" aria-hidden="true"></i>Eliminar
                                     </button>
                                 </form>

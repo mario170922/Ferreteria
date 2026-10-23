@@ -332,7 +332,8 @@
                         <span class="text-secondary small ms-2">@sub.Cantidad @(sub.Cantidad == 1 ? "producto" : "productos")</span>
                     </div>
                     <form method="post" asp-page-handler="EliminarSubcategoria" asp-route-id="@Model.Categoria.Id"
-                          onsubmit="return confirm('¿Eliminar &quot;@sub.Nombre&quot;? Sus productos quedarán en la categoría.');">
+                          data-confirmar="¿Eliminar &quot;@sub.Nombre&quot;? Sus productos quedarán en la categoría."
+                          data-confirmar-boton="Sí, eliminar" data-confirmar-tipo="peligro">
                         <input type="hidden" name="categoriaId" value="@Model.Categoria.Id" />
                         <input type="hidden" name="subcategoriaId" value="@sub.Id" />
                         <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
