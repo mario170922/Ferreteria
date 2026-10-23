@@ -22,7 +22,22 @@
         botonVolverArriba();
         transicionEntrePaginas();
         registrarApp();
+        lectorDeBarras();
     });
+
+    // El lector de código de barras escribe el código y presiona Enter solo.
+    // En los campos .js-codigo-barras ese Enter no envía el formulario: pasa al siguiente campo.
+    function lectorDeBarras() {
+        document.querySelectorAll('.js-codigo-barras').forEach(function (campo) {
+            campo.addEventListener('keydown', function (ev) {
+                if (ev.key !== 'Enter') return;
+                ev.preventDefault();
+                var campos = Array.prototype.slice.call(campo.form.querySelectorAll('input:not([type=hidden]), select, textarea'));
+                var siguiente = campos[campos.indexOf(campo) + 1];
+                if (siguiente) siguiente.focus();
+            });
+        });
+    }
 
     // Permite instalar el sitio en el celular como una app (ver /sw.js).
     // El navegador solo lo acepta en https o en localhost; en otros casos no pasa nada.

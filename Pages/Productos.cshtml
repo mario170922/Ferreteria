@@ -70,6 +70,7 @@
             color: var(--fer-texto-suave);
             margin-bottom: 0.5rem;
         }
+        .producto-barras { font-size: 0.78rem; letter-spacing: 0.04em; opacity: 0.85; }
         .producto-categorias {
             display: flex;
             flex-wrap: wrap;
@@ -514,7 +515,7 @@
         <form role="search" class="mb-0 busqueda-caja" id="form-busqueda" action="/Productos" method="get">
             <i class="bi bi-search busqueda-icono" aria-hidden="true"></i>
             <input type="search" class="busqueda-input" name="q" value="@Model.Q" autocomplete="off"
-                   placeholder="Buscar por código, nombre o medida..." aria-label="Buscar productos" />
+                   placeholder="Buscar por código, nombre, medida o lector de barras..." aria-label="Buscar productos" />
             <span class="busqueda-girando" aria-hidden="true"></span>
             @if (Model.Categoria is not null) { <input type="hidden" name="categoria" value="@Model.Categoria" /> }
             @if (Model.Sub is not null) { <input type="hidden" name="sub" value="@Model.Sub" /> }
@@ -642,6 +643,10 @@
                             @if (!string.IsNullOrEmpty(producto.Medida))
                             {
                                 <span> · @producto.Medida</span>
+                            }
+                            @if (!string.IsNullOrEmpty(producto.CodigoBarras))
+                            {
+                                <span class="producto-barras d-block"><i class="bi bi-upc" aria-hidden="true"></i> @producto.CodigoBarras</span>
                             }
                         </div>
 

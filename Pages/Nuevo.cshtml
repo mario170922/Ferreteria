@@ -48,6 +48,14 @@
                         <label class="form-label fw-semibold" for="Producto_Nombre">Nombre</label>
                         <input asp-for="Producto.Nombre" class="form-control form-control-lg" autocomplete="off" />
                     </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" for="Producto_CodigoBarras">
+                            <i class="bi bi-upc-scan me-1" aria-hidden="true"></i>Código de barras del proveedor
+                        </label>
+                        <input asp-for="Producto.CodigoBarras" class="form-control form-control-lg js-codigo-barras" autocomplete="off"
+                               placeholder="Pase el lector por el código, o déjelo vacío" aria-describedby="ayudaBarras" />
+                        <div id="ayudaBarras" class="form-text">Si el producto no trae código de barras, el sistema le crea uno propio que no se repite.</div>
+                    </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold" for="Producto_Medida">Medida</label>
                         <input asp-for="Producto.Medida" class="form-control form-control-lg" placeholder="Ej.: 1/4 x 2" autocomplete="off" />

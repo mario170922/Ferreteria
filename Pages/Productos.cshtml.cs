@@ -45,6 +45,7 @@ public class ProductosModel : PageModel
     {
         public int Id { get; set; }
         public string Codigo { get; set; } = "";
+        public string? CodigoBarras { get; set; }
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
@@ -147,7 +148,7 @@ public class ProductosModel : PageModel
         if (Q is not null)
         {
             var patron = "%" + Q.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
-            condiciones.Add("(p.codigo ILIKE @patron OR p.nombre ILIKE @patron OR p.medida ILIKE @patron)");
+            condiciones.Add("(p.codigo ILIKE @patron OR p.nombre ILIKE @patron OR p.medida ILIKE @patron OR p.codigo_barras ILIKE @patron)");
             parametros.Add("patron", patron);
         }
 
@@ -180,7 +181,7 @@ public class ProductosModel : PageModel
         parametros.Add("salto", (Pagina - 1) * TamanoPagina);
 
         var sql = $@"
-            SELECT p.id AS Id, p.codigo AS Codigo, p.nombre AS Nombre, p.medida AS Medida,
+            SELECT p.id AS Id, p.codigo AS Codigo, p.codigo_barras AS CodigoBarras, p.nombre AS Nombre, p.medida AS Medida,
                    p.precio_compra AS PrecioCompra,
                    p.precio_venta  AS PrecioVenta,
                    p.stock AS Stock, p.stock_minimo AS StockMinimo,

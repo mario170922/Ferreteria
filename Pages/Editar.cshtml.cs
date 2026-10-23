@@ -33,6 +33,7 @@ public class EditarModel : PageModel
     {
         public int Id { get; set; }
         public string Codigo { get; set; } = "";
+        public string? CodigoBarras { get; set; }
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
@@ -58,6 +59,7 @@ public class EditarModel : PageModel
     {
         public int Id { get; set; }
         public string Codigo { get; set; } = "";
+        public string? CodigoBarras { get; set; }
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
@@ -77,7 +79,7 @@ public class EditarModel : PageModel
         await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
 
         var p = await conn.QuerySingleOrDefaultAsync<ProductoFila>(@"
-            SELECT id, codigo, nombre, medida,
+            SELECT id, codigo, codigo_barras AS CodigoBarras, nombre, medida,
                    precio_compra AS PrecioCompra,
                    stock_minimo  AS StockMinimo,
                    imagen
@@ -91,6 +93,7 @@ public class EditarModel : PageModel
         {
             Id = p.Id,
             Codigo = p.Codigo,
+            CodigoBarras = p.CodigoBarras,
             Nombre = p.Nombre,
             Medida = p.Medida,
             PrecioCompra = p.PrecioCompra,
@@ -121,6 +124,10 @@ public class EditarModel : PageModel
         if (Form.StockMinimo < 0)
             errores.Add("El stock mínimo no puede ser negativo.");
 
+        Form.CodigoBarras = CodigoBarras.Limpiar(Form.CodigoBarras);
+        if (CodigoBarras.Validar(Form.CodigoBarras) is { } errorBarras)
+            errores.Add(errorBarras);
+
         if (errores.Count > 0)
             return await MostrarConErrorAsync(string.Join(" ", errores));
 
@@ -137,9 +144,14 @@ public class EditarModel : PageModel
             var anterior = await conn.ExecuteScalarAsync<string?>(
                 "SELECT imagen FROM productos WHERE id = @Id", new { Form.Id }, tx);
 
+            // Si se borró el código de barras, se crea uno propio: todo producto debe tener uno.
+            if (Form.CodigoBarras.Length == 0)
+                Form.CodigoBarras = await CodigoBarras.GenerarAsync(conn, tx);
+
             await conn.ExecuteAsync(@"
                 UPDATE productos
                 SET codigo        = @Codigo,
+                    codigo_barras = @CodigoBarras,
                     nombre        = @Nombre,
                     medida        = @Medida,
                     precio_compra = @PrecioCompra,
@@ -150,6 +162,7 @@ public class EditarModel : PageModel
                 {
                     Form.Id,
                     Form.Codigo,
+                    Form.CodigoBarras,
                     Form.Nombre,
                     Form.Medida,
                     Form.PrecioCompra,
@@ -201,7 +214,9 @@ public class EditarModel : PageModel
         catch (PostgresException ex) when (ex.SqlState == "23505")
         {
             ImagenService.Eliminar(nuevaRuta, _entorno);
-            return await MostrarConErrorAsync("Ya existe otro producto con ese código.");
+            return await MostrarConErrorAsync(ex.ConstraintName == "ux_productos_codigo_barras"
+                ? "Ya existe otro producto con ese código de barras."
+                : "Ya existe otro producto con ese código.");
         }
         catch (InvalidOperationException ex)
         {

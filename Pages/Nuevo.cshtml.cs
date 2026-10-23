@@ -1,4 +1,5 @@
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -19,6 +20,7 @@ public class NuevoModel : PageModel
     public class ProductoNuevo
     {
         public string Codigo { get; set; } = "";
+        public string? CodigoBarras { get; set; }
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
@@ -50,6 +52,9 @@ public class NuevoModel : PageModel
         else if (Producto.Stock < 0 || Producto.StockMinimo < 0)
             Error = "El stock no puede ser negativo.";
 
+        Producto.CodigoBarras = CodigoBarras.Limpiar(Producto.CodigoBarras);
+        Error ??= CodigoBarras.Validar(Producto.CodigoBarras);
+
         if (Error != null)
             return Page();
 
@@ -59,9 +64,12 @@ public class NuevoModel : PageModel
             await conn.OpenAsync();
             await using var tx = await conn.BeginTransactionAsync();
 
+            if (Producto.CodigoBarras.Length == 0)
+                Producto.CodigoBarras = await CodigoBarras.GenerarAsync(conn, tx);
+
             int id = await conn.ExecuteScalarAsync<int>(@"
-                INSERT INTO productos (codigo, nombre, medida, precio_compra, stock, stock_minimo)
-                VALUES (@Codigo, @Nombre, @Medida, @PrecioCompra, @Stock, @StockMinimo)
+                INSERT INTO productos (codigo, codigo_barras, nombre, medida, precio_compra, stock, stock_minimo)
+                VALUES (@Codigo, @CodigoBarras, @Nombre, @Medida, @PrecioCompra, @Stock, @StockMinimo)
                 RETURNING id",
                 Producto, tx);
 
@@ -81,7 +89,9 @@ public class NuevoModel : PageModel
         }
         catch (PostgresException ex) when (ex.SqlState == "23505")
         {
-            Error = "Ya existe un producto con ese código.";
+            Error = ex.ConstraintName == "ux_productos_codigo_barras"
+                ? "Ya existe otro producto con ese código de barras."
+                : "Ya existe un producto con ese código.";
             return Page();
         }
     }

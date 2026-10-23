@@ -68,6 +68,14 @@
                 <label class="form-label fw-semibold" for="Form_Nombre">Nombre</label>
                 <input asp-for="Form.Nombre" class="form-control" maxlength="200" required />
             </div>
+            <div class="col-12">
+                <label class="form-label fw-semibold" for="Form_CodigoBarras">
+                    <i class="bi bi-upc-scan me-1" aria-hidden="true"></i>Código de barras
+                </label>
+                <input asp-for="Form.CodigoBarras" class="form-control js-codigo-barras" autocomplete="off"
+                       placeholder="Pase el lector por el código, o déjelo vacío" aria-describedby="ayudaBarras" />
+                <div id="ayudaBarras" class="form-text">Si lo deja vacío, el sistema le crea uno propio que no se repite.</div>
+            </div>
             <div class="col-md-6">
                 <label class="form-label fw-semibold" for="Form_Medida">Medida</label>
                 <input asp-for="Form.Medida" class="form-control" maxlength="100" />

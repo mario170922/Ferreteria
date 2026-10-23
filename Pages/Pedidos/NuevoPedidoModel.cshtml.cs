@@ -324,6 +324,7 @@ public class NuevoPedidoModel : PageModel
         var productos = await con.QueryAsync<ProductoOpcion>(@"
             SELECT id           AS Id,
                    codigo       AS Codigo,
+                   codigo_barras AS CodigoBarras,
                    nombre       AS Nombre,
                    medida       AS Medida,
                    precio_venta AS PrecioVenta,
@@ -482,6 +483,7 @@ public class NuevoPedidoModel : PageModel
     {
         public int Id { get; set; }
         public string Codigo { get; set; } = "";
+        public string? CodigoBarras { get; set; }
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioVenta { get; set; }

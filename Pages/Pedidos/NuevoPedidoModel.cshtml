@@ -12,6 +12,7 @@
     {
         id = p.Id,
         codigo = p.Codigo,
+        barras = p.CodigoBarras ?? "",
         nombre = p.Nombre,
         medida = p.Medida ?? "",
         precio = p.PrecioVenta,
@@ -365,7 +366,7 @@
                         <div class="np-buscador">
                             <i class="bi bi-search" aria-hidden="true"></i>
                             <input id="buscar-producto" type="search" class="form-control form-control-lg"
-                                   placeholder="Nombre, código o medida. Ej.: drywall 1/2" autocomplete="off"
+                                   placeholder="Nombre, código, medida o lector de barras. Ej.: drywall 1/2" autocomplete="off"
                                    aria-describedby="ayuda-buscar" />
                         </div>
                         <div id="ayuda-buscar" class="form-text">Solo aparecen productos con existencias.</div>
@@ -509,7 +510,7 @@
         function buscar() {
             const palabras = sinTildes(buscador.value).split(/\s+/).filter(Boolean);
             const encontrados = PRODUCTOS.filter(p => {
-                const texto = sinTildes(p.codigo + ' ' + p.nombre + ' ' + p.medida);
+                const texto = sinTildes(p.codigo + ' ' + p.barras + ' ' + p.nombre + ' ' + p.medida);
                 return palabras.every(w => texto.includes(w));
             }).slice(0, palabras.length ? 24 : 12);
 
@@ -540,10 +541,20 @@
 
         buscador.addEventListener('input', buscar);
 
-        // Enter en el buscador agrega el primer resultado (y no envía el formulario)
+        // Enter en el buscador agrega el primer resultado (y no envía el formulario).
+        // El lector de código de barras escribe el código y presiona Enter solo:
+        // si el texto es exactamente un código de barras, se agrega ese producto.
         buscador.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                const leido = buscador.value.trim();
+                const porBarras = leido && PRODUCTOS.find(p => p.barras && p.barras.toLowerCase() === leido.toLowerCase());
+                if (porBarras) {
+                    agregar(porBarras.id, 1, true);
+                    buscador.value = '';
+                    buscar();
+                    return;
+                }
                 const primero = buscar()[0];
                 if (primero) {
                     agregar(primero.id, 1, true);

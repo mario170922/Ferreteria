@@ -34,6 +34,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 
+await Ferreteria.Services.EsquemaBaseDatos.ActualizarAsync(app.Configuration, app.Logger);
 await CrearAdminInicialAsync(app.Configuration);
 
 app.Run();
