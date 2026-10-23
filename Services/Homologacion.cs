@@ -12,7 +12,7 @@ namespace Ferreteria.Services;
 //   1. Alias confirmado: mismo proveedor y mismo código de producto        -> 100 %
 //   2. Código de barras igual al de un producto nuestro                     ->  98 %
 //   3. Alias confirmado con la misma descripción normalizada del proveedor  ->  95 %
-//   4. Comparación de la descripción con todos los productos del negocio    -> 0..90 %
+//   4. Comparación de la descripción con todos los productos del negocio    -> 0..89 % (siempre pide aprobación)
 // Reglas duras en el paso 4: si las medidas, el color o el material son distintos, se descarta
 // aunque el texto se parezca (un 6x1 nunca debe confundirse con un 6x1-1/2).
 public static partial class Homologacion
@@ -72,7 +72,9 @@ public static partial class Homologacion
             // Medidas iguales en los dos suman confianza; si solo uno tiene medida, resta
             var bonoMedida = fact.Medidas.Count > 0 && prod.Medidas.Count > 0 ? 0.15
                            : fact.Medidas.Count != prod.Medidas.Count ? -0.1 : 0;
-            var puntaje = (int)Math.Round(Math.Clamp(sim + bonoMedida, 0, 1) * 90);
+            // Tope de 89 %: una coincidencia solo por el texto nunca entra sola al inventario;
+            // la primera vez una persona la aprueba y desde ahí queda como alias (100 %).
+            var puntaje = (int)Math.Round(Math.Clamp(sim + bonoMedida, 0, 1) * 89);
             if (puntaje > mejor.Puntaje)
             {
                 var motivo = $"Se parece a \"{p.Nombre}{(string.IsNullOrWhiteSpace(p.Medida) ? "" : " " + p.Medida)}\" ({(int)Math.Round(sim * 100)} % de palabras en común)";
