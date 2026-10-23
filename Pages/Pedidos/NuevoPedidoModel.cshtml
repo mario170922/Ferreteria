@@ -37,7 +37,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nuevo pedido - Ferretería</title>
+    <title>Nuevo pedido - @Negocio.Nombre(User.NegocioActual())</title>
     <partial name="_Estilos" />
     <style>
         /* ---------- Buscador de productos ---------- */
@@ -289,7 +289,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="celular1">
-                                    Celular principal <span class="text-danger" aria-hidden="true">*</span>
+                                    Celular principal @if (!Model.Mostrador) { <span class="text-danger" aria-hidden="true">*</span> }
                                 </label>
                                 <input id="celular1" name="Cliente.Celular1" type="tel" inputmode="numeric"
                                        class="form-control form-control-lg"
@@ -317,7 +317,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="nombreCliente">
-                                    Nombre del cliente <span class="text-danger" aria-hidden="true">*</span>
+                                    Nombre del cliente @if (!Model.Mostrador) { <span class="text-danger" aria-hidden="true">*</span> }
                                 </label>
                                 <input id="nombreCliente" name="Cliente.NombreCliente" type="text"
                                        class="form-control form-control-lg"
@@ -326,7 +326,7 @@
 
                             <div class="col-12">
                                 <label class="form-label fw-semibold" for="direccion">
-                                    Dirección <span class="text-danger" aria-hidden="true">*</span>
+                                    Dirección @if (!Model.Mostrador) { <span class="text-danger" aria-hidden="true">*</span> }
                                 </label>
                                 <input id="direccion" name="Cliente.Direccion" type="text"
                                        class="form-control form-control-lg"
