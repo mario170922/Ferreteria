@@ -7,7 +7,8 @@ using Npgsql;
 
 namespace Ferreteria.Pages.Clientes;
 
-[Authorize]
+// El conductor no ve inventario ni clientes: solo sus entregas.
+[Authorize(Roles = "admin,vendedor,cajero")]
 public class IndexModel : PageModel
 {
     private readonly IConfiguration _config;

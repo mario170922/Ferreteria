@@ -116,6 +116,11 @@ public static class EsquemaBaseDatos
                 creado_en          timestamp NOT NULL DEFAULT now(),
                 UNIQUE (negocio, fecha, conductor_id)
             );"),
+
+        // Ventas de mostrador: el cliente compra en la tienda y paga ahí mismo
+        ("2026-10-23 ventas de mostrador", @"
+            ALTER TABLE pedidos ADD COLUMN tipo varchar(10) NOT NULL DEFAULT 'domicilio'
+                CHECK (tipo IN ('domicilio', 'mostrador'));"),
     };
 
     public static async Task ActualizarAsync(IConfiguration config, ILogger logger)

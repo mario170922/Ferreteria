@@ -27,9 +27,22 @@
             <h1 id="saludo" class="fer-saludo">Hola, <span>@Model.NombreUsuario</span></h1>
             <p class="text-secondary fs-5 mb-4">¿Qué quieres hacer hoy?</p>
             <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-fer btn-lg" href="/Pedidos/Nuevo">
-                    <i class="bi bi-cart-plus me-2" aria-hidden="true"></i>Nuevo pedido
-                </a>
+                @if (User.IsInRole("cajero"))
+                {
+                    @* El cajero vende en mostrador y maneja la caja *@
+                    <a class="btn btn-fer btn-lg" href="/Pedidos/Nuevo?mostrador=true">
+                        <i class="bi bi-shop me-2" aria-hidden="true"></i>Venta de mostrador
+                    </a>
+                    <a class="btn btn-fer-outline btn-lg" href="/Caja">
+                        <i class="bi bi-cash-stack me-2" aria-hidden="true"></i>Caja
+                    </a>
+                }
+                else
+                {
+                    <a class="btn btn-fer btn-lg" href="/Pedidos/Nuevo">
+                        <i class="bi bi-cart-plus me-2" aria-hidden="true"></i>Nuevo pedido
+                    </a>
+                }
                 <a class="btn btn-fer-outline btn-lg" href="/Productos">
                     <i class="bi bi-search me-2" aria-hidden="true"></i>Buscar producto
                 </a>
@@ -83,10 +96,10 @@
     <div class="row g-4">
 
         <div class="col-12 col-md-6 col-lg-4">
-            <a class="fer-card fer-acceso" href="/Pedidos/Nuevo">
+            <a class="fer-card fer-acceso" href="@(User.IsInRole("cajero") ? "/Pedidos/Nuevo?mostrador=true" : "/Pedidos/Nuevo")">
                 <span class="fer-icono"><i class="bi bi-cart-plus" aria-hidden="true"></i></span>
-                <h2 class="mt-3 mb-1">Nuevo pedido</h2>
-                <p class="fer-descripcion">Registrar la venta a un cliente.</p>
+                <h2 class="mt-3 mb-1">@(User.IsInRole("cajero") ? "Venta de mostrador" : "Nuevo pedido")</h2>
+                <p class="fer-descripcion">@(User.IsInRole("cajero") ? "El cliente compra y paga en la tienda." : "Registrar la venta a un cliente.")</p>
                 <span class="fer-ir">Empezar <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
             </a>
         </div>

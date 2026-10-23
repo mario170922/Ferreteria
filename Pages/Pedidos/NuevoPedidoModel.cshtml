@@ -240,8 +240,14 @@
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <h1 class="h2 mb-1">Nuevo pedido</h1>
-            <p class="text-secondary mb-0">Vendedor: @Model.NombreVendedor</p>
+            <h1 class="h2 mb-1">@(Model.Mostrador ? "Venta de mostrador" : "Nuevo pedido")</h1>
+            <p class="text-secondary mb-0">@(Model.Mostrador ? "Cobra" : "Vendedor"): @Model.NombreVendedor</p>
+            @if (Model.PuedeMostrador && !User.IsInRole(Ferreteria.Services.Negocio.Cajero))
+            {
+                <a class="small" href="@(Model.Mostrador ? "/Pedidos/Nuevo" : "/Pedidos/Nuevo?mostrador=true")">
+                    @(Model.Mostrador ? "Cambiar a pedido a domicilio" : "Cambiar a venta de mostrador (el cliente paga aquí)")
+                </a>
+            }
         </div>
         <div class="fer-card px-4 py-3 text-center">
             <div class="small text-secondary">Descuento máximo permitido</div>
@@ -265,6 +271,7 @@
     }
 
     <form method="post" id="formPedido">
+        <input type="hidden" name="Mostrador" value="@(Model.Mostrador ? "true" : "false")" />
 
         <div class="row g-4">
 
@@ -272,7 +279,11 @@
 
                 <section class="fer-card mb-4" aria-labelledby="titulo-cliente">
                     <div class="fer-card-cuerpo">
-                        <h2 id="titulo-cliente" class="h5 mb-3">1. Cliente</h2>
+                        <h2 id="titulo-cliente" class="h5 mb-3">1. Cliente@(Model.Mostrador ? " (opcional)" : "")</h2>
+                        @if (Model.Mostrador)
+                        {
+                            <p class="text-secondary small">Si el cliente no quiere dar sus datos, deja todo vacío y queda como "Cliente de mostrador".</p>
+                        }
                         <div class="row g-3">
 
                             <div class="col-md-6">
@@ -281,7 +292,7 @@
                                 </label>
                                 <input id="celular1" name="Cliente.Celular1" type="tel" inputmode="numeric"
                                        class="form-control form-control-lg"
-                                       value="@Model.Cliente.Celular1" autocomplete="off" required
+                                       value="@Model.Cliente.Celular1" autocomplete="off" required="@(!Model.Mostrador)"
                                        aria-describedby="ayuda-celular" />
                                 <div id="ayuda-celular" class="form-text">
                                     Escribe el celular y pasa al siguiente campo. Si el cliente ya existe, sus datos se llenan solos.
@@ -309,7 +320,7 @@
                                 </label>
                                 <input id="nombreCliente" name="Cliente.NombreCliente" type="text"
                                        class="form-control form-control-lg"
-                                       value="@Model.Cliente.NombreCliente" autocomplete="off" required />
+                                       value="@Model.Cliente.NombreCliente" autocomplete="off" required="@(!Model.Mostrador)" />
                             </div>
 
                             <div class="col-12">
@@ -318,7 +329,7 @@
                                 </label>
                                 <input id="direccion" name="Cliente.Direccion" type="text"
                                        class="form-control form-control-lg"
-                                       value="@Model.Cliente.Direccion" autocomplete="off" required />
+                                       value="@Model.Cliente.Direccion" autocomplete="off" required="@(!Model.Mostrador)" />
                             </div>
 
                             <div class="col-md-6">
@@ -436,9 +447,30 @@
                             El total final lo calcula el sistema al guardar.
                         </p>
 
+                        @if (Model.Mostrador)
+                        {
+                            <fieldset class="mb-4">
+                                <legend class="form-label fw-semibold fs-6">¿Cómo pagó?</legend>
+                                <div class="d-flex gap-3 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="PagoMetodo" id="pago-efectivo" value="efectivo"
+                                               checked="@(Model.PagoMetodo != "transferencia")" />
+                                        <label class="form-check-label" for="pago-efectivo">Efectivo</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="PagoMetodo" id="pago-transferencia" value="transferencia"
+                                               checked="@(Model.PagoMetodo == "transferencia")" />
+                                        <label class="form-check-label" for="pago-transferencia">Transferencia</label>
+                                    </div>
+                                </div>
+                                <input name="PagoReferencia" value="@Model.PagoReferencia" maxlength="80" class="form-control"
+                                       placeholder="Comprobante de la transferencia (opcional)" aria-label="Comprobante de la transferencia" />
+                            </fieldset>
+                        }
+
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-fer btn-lg">
-                                <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Guardar pedido
+                                <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>@(Model.Mostrador ? "Registrar venta y cobrar" : "Guardar pedido")
                             </button>
                             <a href="/Pedidos/Lista" class="btn btn-fer-outline">Cancelar</a>
                         </div>

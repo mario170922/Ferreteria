@@ -37,6 +37,39 @@
     @if (!string.IsNullOrEmpty(Model.Mensaje)) { <div class="alert alert-success" role="status">@Model.Mensaje</div> }
     @if (!string.IsNullOrEmpty(Model.Error)) { <div class="alert alert-danger" role="alert">@Model.Error</div> }
 
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a class="btn btn-fer btn-lg" href="/Pedidos/Nuevo?mostrador=true"><i class="bi bi-shop me-2" aria-hidden="true"></i>Nueva venta de mostrador</a>
+    </div>
+
+    <div class="fer-card p-3 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <div class="text-secondary">Efectivo que debe haber en la caja</div>
+            <div class="small text-secondary">Ventas de mostrador en efectivo + lo que ya entregaron los conductores</div>
+        </div>
+        <div class="fer-dato-valor">@ListaModel.Moneda(Model.EfectivoEnCaja)</div>
+    </div>
+
+    <h2 class="h4 mb-3"><i class="bi bi-shop me-2" aria-hidden="true"></i>Ventas de mostrador</h2>
+    @if (Model.Mostrador.Count == 0)
+    {
+        <p class="text-secondary mb-4">No hubo ventas de mostrador este día.</p>
+    }
+    else
+    {
+        <div class="fer-card overflow-hidden mb-4">
+            <table class="table fer-tabla mb-0">
+                <thead><tr><th>Cobró</th><th class="text-end">Ventas</th><th class="text-end">Efectivo</th><th class="text-end">Transferencias</th></tr></thead>
+                <tbody>
+                    @foreach (var m in Model.Mostrador)
+                    {
+                        <tr><td>@m.Nombre</td><td class="text-end">@m.Ventas</td><td class="text-end">@ListaModel.Moneda(m.Efectivo)</td><td class="text-end">@ListaModel.Moneda(m.Transferencias)</td></tr>
+                    }
+                </tbody>
+                <tfoot><tr><th>Total</th><td class="text-end">@Model.Mostrador.Sum(m => m.Ventas)</td><td class="text-end fw-bold">@ListaModel.Moneda(Model.Mostrador.Sum(m => m.Efectivo))</td><td class="text-end">@ListaModel.Moneda(Model.Mostrador.Sum(m => m.Transferencias))</td></tr></tfoot>
+            </table>
+        </div>
+    }
+
     <h2 class="h4 mb-3"><i class="bi bi-truck me-2" aria-hidden="true"></i>Conductores</h2>
     @if (Model.Conductores.Count == 0)
     {

@@ -7,8 +7,10 @@ using Npgsql;
 
 namespace Ferreteria.Pages.Pedidos;
 
-// Hacen pedidos el administrador y los vendedores (no el cajero ni el conductor).
-[Authorize(Roles = "admin,vendedor")]
+// Hacen pedidos el administrador y los vendedores.
+// Venta de mostrador (?mostrador=true): el cliente compra en la tienda y paga ahí mismo;
+// la hacen el administrador y el cajero (el cajero solo hace ventas de mostrador).
+[Authorize(Roles = "admin,vendedor,cajero")]
 public class NuevoPedidoModel : PageModel
 {
     private const int MaxLineas = 10;
@@ -28,6 +30,20 @@ public class NuevoPedidoModel : PageModel
     [BindProperty]
     public decimal DescuentoElegido { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public bool Mostrador { get; set; }
+
+    // Venta de mostrador: cómo pagó y comprobante de la transferencia
+    [BindProperty]
+    public string? PagoMetodo { get; set; }
+
+    [BindProperty]
+    public string? PagoReferencia { get; set; }
+
+    public bool PuedeMostrador => User.IsInRole(Negocio.Admin) || User.IsInRole(Negocio.Cajero);
+
+    private const string CelularMostrador = "MOSTRADOR";
+
     [BindProperty]
     public DatosCliente Cliente { get; set; } = new();
 
@@ -38,6 +54,7 @@ public class NuevoPedidoModel : PageModel
 
     public async Task OnGetAsync()
     {
+        AjustarModo();
         Lineas = Enumerable.Range(0, MaxLineas).Select(_ => new LineaPedido()).ToList();
 
         await using var con = CrearConexion();
@@ -174,11 +191,14 @@ public class NuevoPedidoModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        AjustarModo();
         await using var con = CrearConexion();
         await con.OpenAsync();
 
         ValidarCliente();
         var lineas = ValidarLineas();
+        if (Mostrador && PagoMetodo is not ("efectivo" or "transferencia"))
+            ModelState.AddModelError(string.Empty, "Elige cómo pagó el cliente: efectivo o transferencia.");
 
         if (!ModelState.IsValid)
         {
@@ -286,7 +306,18 @@ public class NuevoPedidoModel : PageModel
                 JOIN pedidos p ON p.id = pi.pedido_id
                 WHERE pi.pedido_id = @id", new { id = pedidoId }, tx);
 
+            // Venta de mostrador: queda entregada y cobrada en el momento
+            if (Mostrador)
+            {
+                await con.ExecuteAsync(@"
+                    UPDATE pedidos SET tipo = 'mostrador', estado = 'entregado', entregado_en = now(),
+                        pago_metodo = @metodo, pago_valor = total, pago_referencia = @referencia
+                    WHERE id = @id",
+                    new { id = pedidoId, metodo = PagoMetodo, referencia = Nulo(PagoReferencia) }, tx);
+            }
+
             await tx.CommitAsync();
+            if (Mostrador) TempData["Mensaje"] = "Venta de mostrador registrada y cobrada.";
             return RedirectToPage("/Pedidos/Detalle", new { id = pedidoId });
         }
         catch (InvalidOperationException ex)
@@ -340,8 +371,25 @@ public class NuevoPedidoModel : PageModel
         Productos = productos.ToList();
     }
 
+    // El cajero solo vende en mostrador; el vendedor nunca
+    private void AjustarModo()
+    {
+        if (User.IsInRole(Negocio.Cajero) && !User.IsInRole(Negocio.Admin)) Mostrador = true;
+        if (!PuedeMostrador) Mostrador = false;
+    }
+
     private void ValidarCliente()
     {
+        // En mostrador el cliente es opcional: si no se escribe celular, queda como "Cliente de mostrador"
+        if (Mostrador)
+        {
+            if (!string.IsNullOrWhiteSpace(Cliente.Celular1) && string.IsNullOrWhiteSpace(Cliente.NombreCliente))
+                ModelState.AddModelError(string.Empty, "Escribe el nombre del cliente, o borra el celular para venderle a un cliente de mostrador.");
+            RevisarLargo(Cliente.Celular1, 20, "El celular principal");
+            RevisarLargo(Cliente.NombreCliente, 150, "El nombre del cliente");
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(Cliente.Celular1))
         {
             ModelState.AddModelError(string.Empty, "Escribe el celular del cliente.");
@@ -428,6 +476,17 @@ public class NuevoPedidoModel : PageModel
 
     private async Task<int> ObtenerOCrearClienteAsync(NpgsqlConnection con, NpgsqlTransaction tx)
     {
+        if (Mostrador)
+        {
+            // Sin datos del cliente: un único "Cliente de mostrador" compartido
+            if (string.IsNullOrWhiteSpace(Cliente.Celular1))
+            {
+                Cliente.Celular1 = CelularMostrador;
+                Cliente.NombreCliente = "Cliente de mostrador";
+            }
+            if (string.IsNullOrWhiteSpace(Cliente.Direccion)) Cliente.Direccion = "Venta en mostrador";
+        }
+
         var celular = Cliente.Celular1.Trim();
 
         // Si el cliente ya existe, se usa su registro sin sobrescribir sus datos.

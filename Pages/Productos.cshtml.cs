@@ -7,7 +7,8 @@ using Npgsql;
 
 namespace Ferreteria.Pages;
 
-[Authorize]
+// El conductor no ve inventario ni clientes: solo sus entregas.
+[Authorize(Roles = "admin,vendedor,cajero")]
 public class ProductosModel : PageModel
 {
     public const int TamanoPagina = 24;

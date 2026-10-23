@@ -25,6 +25,7 @@ public class CajaModel : PageModel
     public DateTime Dia { get; set; }
     public List<CajaConductor> Conductores { get; set; } = new();
     public List<VentaVendedor> Vendedores { get; set; } = new();
+    public List<VentaMostrador> Mostrador { get; set; } = new();
     public string? Mensaje { get; set; }
     public string? Error { get; set; }
 
@@ -57,6 +58,17 @@ public class CajaModel : PageModel
             WHERE u.rol = 'conductor' AND u.negocio = @negocio
             GROUP BY u.id, u.nombre_usuario, cc.efectivo_recibido, cc.nota, cc.creado_en, cc.cajero_id
             HAVING u.activo OR count(p.id) > 0 OR bool_or(cc.id IS NOT NULL)
+            ORDER BY u.nombre_usuario", new { negocio, dia = Dia })).ToList();
+
+        // Ventas de mostrador del día, por quien cobró
+        Mostrador = (await con.QueryAsync<VentaMostrador>(@"
+            SELECT u.nombre_usuario AS Nombre, count(*) AS Ventas,
+                   COALESCE(SUM(p.pago_valor) FILTER (WHERE p.pago_metodo = 'efectivo'), 0)      AS Efectivo,
+                   COALESCE(SUM(p.pago_valor) FILTER (WHERE p.pago_metodo = 'transferencia'), 0) AS Transferencias
+            FROM pedidos p JOIN usuarios u ON u.id = p.vendedor_id
+            WHERE p.negocio = @negocio AND p.tipo = 'mostrador' AND p.estado = 'entregado'
+              AND p.entregado_en::date = @dia
+            GROUP BY u.nombre_usuario
             ORDER BY u.nombre_usuario", new { negocio, dia = Dia })).ToList();
 
         Vendedores = (await con.QueryAsync<VentaVendedor>(@"
@@ -139,6 +151,17 @@ public class CajaModel : PageModel
         public bool Cerrada => Recibido is not null;
         public decimal Diferencia => (Recibido ?? 0) - Efectivo;
     }
+
+    public class VentaMostrador
+    {
+        public string Nombre { get; set; } = "";
+        public long Ventas { get; set; }
+        public decimal Efectivo { get; set; }
+        public decimal Transferencias { get; set; }
+    }
+
+    // Efectivo que debería haber en la caja: lo de mostrador más lo que entregaron los conductores
+    public decimal EfectivoEnCaja => Mostrador.Sum(m => m.Efectivo) + Conductores.Sum(c => c.Recibido ?? 0);
 
     public class VentaVendedor
     {
