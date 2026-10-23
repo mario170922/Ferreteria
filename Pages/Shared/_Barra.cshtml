@@ -20,6 +20,10 @@
             <a class="btn btn-light" href="/Productos"><i class="bi bi-box-seam me-2" aria-hidden="true"></i>Inventario</a>
             <a class="btn btn-light" href="/Pedidos/Lista"><i class="bi bi-receipt me-2" aria-hidden="true"></i>Pedidos</a>
             <a class="btn btn-light" href="/Clientes"><i class="bi bi-people me-2" aria-hidden="true"></i>Clientes</a>
+            @if (esAdmin || User.IsInRole(Negocio.Cajero))
+            {
+                <a class="btn btn-light" href="/Resumen"><i class="bi bi-bar-chart-line me-2" aria-hidden="true"></i>Resumen</a>
+            }
             @if (esAdmin)
             {
                 <a class="btn btn-light" href="/Categorias"><i class="bi bi-tags me-2" aria-hidden="true"></i>Categorías</a>

@@ -1,0 +1,215 @@
+@page
+@model ResumenModel
+@using Ferreteria.Pages.Pedidos
+@using Ferreteria.Services
+@{
+    Layout = null;
+    var d = Model.Datos;
+    var a = Model.DatosAnterior;
+    var cultura = new System.Globalization.CultureInfo("es-CO");
+    var maxTramo = Model.Tramos.Count > 0 ? Model.Tramos.Max(t => t.Ingresos) : 0;
+    var maxVendido = Model.MasVendidos.Count > 0 ? Model.MasVendidos.Max(m => m.Unidades) : 0;
+
+    // Comparación con el período anterior: "▲ 12 %" o "▼ 5 %"
+    string Cambio(decimal actual, decimal antes)
+    {
+        if (antes == 0) return actual == 0 ? "" : "nuevo";
+        var pct = (actual - antes) / antes * 100;
+        return (pct >= 0 ? "▲ " : "▼ ") + Math.Abs(pct).ToString("0", cultura) + " %";
+    }
+    string ClaseCambio(decimal actual, decimal antes, bool subirEsBueno = true) =>
+        antes == 0 || actual == antes ? "" : ((actual > antes) == subirEsBueno ? "sube" : "baja");
+    string Nombre(ResumenModel.ProductoVendido p) => p.Nombre + (string.IsNullOrWhiteSpace(p.Medida) ? "" : " · " + p.Medida);
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resumen - @Negocio.Nombre(User.NegocioActual())</title>
+    <partial name="_Estilos" />
+    <style>
+        .res-periodos { display: flex; flex-wrap: wrap; gap: .5rem; }
+        .res-periodos a {
+            min-height: 44px; display: inline-flex; align-items: center; padding: 0 1.1rem;
+            border-radius: 999px; border: 1px solid var(--fer-borde); background: var(--fer-superficie);
+            color: var(--fer-texto); text-decoration: none; font-weight: 600;
+        }
+        .res-periodos a.activo { background: var(--fer-naranja); border-color: var(--fer-naranja); color: #000; }
+        .res-navegar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+        .res-titulo { font-size: 1.5rem; margin: 0; }
+        .res-cifra { padding: 1.1rem 1.2rem; height: 100%; }
+        .res-cifra-etiqueta { color: var(--fer-texto-suave); font-weight: 600; }
+        .res-cifra-valor { font-family: var(--fer-letra-titulo); font-size: 2rem; font-weight: 800; line-height: 1.1; }
+        .res-cifra-cambio { font-size: .85rem; color: var(--fer-texto-suave); }
+        .res-cifra-cambio .sube { color: var(--fer-verde); }
+        .res-cifra-cambio .baja { color: var(--fer-rojo); }
+        .res-nota { font-size: .8rem; color: var(--fer-texto-suave); }
+        .res-tabla td, .res-tabla th { vertical-align: middle; }
+        .res-tabla .barra { display: block; height: 6px; border-radius: 3px; background: var(--fer-naranja); margin-top: 4px; }
+        .res-cero { color: var(--fer-rojo); font-weight: 700; }
+        @@media print { .res-periodos, .res-navegar .btn { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <h1 class="h2 mb-0">Resumen de @Negocio.Nombre(User.NegocioActual())</h1>
+        <button type="button" class="btn btn-fer-outline" onclick="window.print()">
+            <i class="bi bi-printer me-2" aria-hidden="true"></i>Imprimir
+        </button>
+    </div>
+
+    <nav class="res-periodos mb-3" aria-label="Período del resumen">
+        @foreach (var (clave, nombre) in ResumenModel.Periodos)
+        {
+            <a href="@Model.Enlace(clave, Model.Desde)" class="@(clave == Model.Periodo ? "activo" : "")"
+               aria-current="@(clave == Model.Periodo ? "page" : null)">@nombre</a>
+        }
+    </nav>
+
+    <div class="res-navegar fer-card p-3 mb-4">
+        <a class="btn btn-fer-outline" href="@Model.Enlace(Model.Periodo, Model.Anterior)" aria-label="Período anterior">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i><span class="d-none d-sm-inline ms-1">Anterior</span>
+        </a>
+        <h2 class="res-titulo text-center flex-grow-1">@Model.Titulo</h2>
+        @if (Model.EsActual)
+        {
+            <span class="btn btn-fer-outline disabled" aria-hidden="true" style="visibility:hidden"><i class="bi bi-chevron-right"></i></span>
+        }
+        else
+        {
+            <a class="btn btn-fer-outline" href="@Model.Enlace(Model.Periodo, Model.Siguiente)" aria-label="Período siguiente">
+                <span class="d-none d-sm-inline me-1">Siguiente</span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </a>
+        }
+    </div>
+
+    <h2 class="visually-hidden">Cifras del período</h2>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="fer-card res-cifra">
+                <div class="res-cifra-etiqueta"><i class="bi bi-arrow-down-circle me-1 text-success" aria-hidden="true"></i>Ingresos (ventas)</div>
+                <div class="res-cifra-valor">@ListaModel.Moneda(d.Ingresos)</div>
+                <div class="res-cifra-cambio"><span class="@ClaseCambio(d.Ingresos, a.Ingresos)">@Cambio(d.Ingresos, a.Ingresos)</span> frente al anterior</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="fer-card res-cifra">
+                <div class="res-cifra-etiqueta"><i class="bi bi-arrow-up-circle me-1 text-danger" aria-hidden="true"></i>Egresos (compras)</div>
+                <div class="res-cifra-valor">@ListaModel.Moneda(d.Egresos)</div>
+                <div class="res-cifra-cambio"><span class="@ClaseCambio(d.Egresos, a.Egresos, false)">@Cambio(d.Egresos, a.Egresos)</span> frente al anterior</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="fer-card res-cifra">
+                <div class="res-cifra-etiqueta"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Ganancia en ventas</div>
+                <div class="res-cifra-valor">@ListaModel.Moneda(d.Ganancia)</div>
+                <div class="res-cifra-cambio">Ventas menos lo que costó la mercancía vendida</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="fer-card res-cifra">
+                <div class="res-cifra-etiqueta"><i class="bi bi-receipt me-1" aria-hidden="true"></i>Pedidos</div>
+                <div class="res-cifra-valor">@d.Pedidos.ToString("N0", cultura)</div>
+                <div class="res-cifra-cambio"><span class="@ClaseCambio(d.Pedidos, a.Pedidos)">@Cambio(d.Pedidos, a.Pedidos)</span> frente al anterior</div>
+            </div>
+        </div>
+    </div>
+    <p class="res-nota mb-4">
+        No cuentan los pedidos cancelados ni los no entregados. Por ahora los egresos son las entradas de mercancía
+        registradas en Movimientos, al precio de compra actual; cuando se carguen las facturas de compra, saldrán de ahí.
+    </p>
+
+    @if (Model.Tramos.Count > 0)
+    {
+        <section class="fer-card fer-grafica mb-4" aria-labelledby="titulo-tramos">
+            <h2 id="titulo-tramos" class="fer-grafica-titulo mb-3">Ventas @(Model.Periodo is "semestre" or "anio" ? "por mes" : "por día")</h2>
+            <ol class="fer-barras" aria-label="Ventas por tramo">
+                @foreach (var t in Model.Tramos)
+                {
+                    var alto = maxTramo > 0 ? (double)(t.Ingresos / maxTramo) * 100 : 0;
+                    var esHoy = t.Inicio.Date == DateTime.Today && Model.Periodo is "semana" or "mes";
+                    <li class="fer-barra @(esHoy ? "hoy" : "")" title="@ListaModel.Moneda(t.Ingresos)">
+                        <span class="fer-barra-pista">
+                            <span class="fer-barra-relleno" style="height:@(alto.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></span>
+                        </span>
+                        <span class="fer-barra-dia">@Model.EtiquetaTramo(t.Inicio)</span>
+                        <span class="visually-hidden">@Model.EtiquetaTramo(t.Inicio): @ListaModel.Moneda(t.Ingresos)</span>
+                    </li>
+                }
+            </ol>
+        </section>
+    }
+
+    <div class="row g-4">
+        <section class="col-12 col-lg-6" aria-labelledby="titulo-mas">
+            <div class="fer-card overflow-hidden h-100">
+                <div class="fer-card-cuerpo pb-2"><h2 id="titulo-mas" class="h5 mb-0"><i class="bi bi-graph-up-arrow me-2" aria-hidden="true"></i>Lo más vendido</h2></div>
+                @if (Model.MasVendidos.Count == 0)
+                {
+                    <p class="text-secondary px-3 pb-3 mb-0">No hubo ventas en este período.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table fer-tabla res-tabla mb-0">
+                            <thead><tr><th>#</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Vendido</th></tr></thead>
+                            <tbody>
+                                @{ var i = 0; }
+                                @foreach (var p in Model.MasVendidos)
+                                {
+                                    i++;
+                                    var ancho = maxVendido > 0 ? (double)p.Unidades / maxVendido * 100 : 0;
+                                    <tr>
+                                        <td>@i</td>
+                                        <td>@Nombre(p)<span class="barra" style="width:@(ancho.ToString("0", System.Globalization.CultureInfo.InvariantCulture))%"></span></td>
+                                        <td class="text-end">@p.Unidades.ToString("N0", cultura)</td>
+                                        <td class="text-end">@ListaModel.Moneda(p.Valor)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="col-12 col-lg-6" aria-labelledby="titulo-menos">
+            <div class="fer-card overflow-hidden h-100">
+                <div class="fer-card-cuerpo pb-2"><h2 id="titulo-menos" class="h5 mb-0"><i class="bi bi-graph-down-arrow me-2" aria-hidden="true"></i>Lo menos vendido</h2></div>
+                @if (Model.MenosVendidos.Count == 0)
+                {
+                    <p class="text-secondary px-3 pb-3 mb-0">No hay productos con existencias.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table fer-tabla res-tabla mb-0">
+                            <thead><tr><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">En stock</th></tr></thead>
+                            <tbody>
+                                @foreach (var p in Model.MenosVendidos)
+                                {
+                                    <tr>
+                                        <td>@Nombre(p)</td>
+                                        <td class="text-end @(p.Unidades == 0 ? "res-cero" : "")">@(p.Unidades == 0 ? "Nada" : p.Unidades.ToString("N0", cultura))</td>
+                                        <td class="text-end">@p.Stock.ToString("N0", cultura)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="res-nota px-3 py-2 mb-0">Incluye productos con existencias que no se vendieron en el período.</p>
+                }
+            </div>
+        </section>
+    </div>
+
+</main>
+</body>
+</html>
