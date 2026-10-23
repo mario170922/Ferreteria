@@ -154,6 +154,10 @@ public class CargarModel : PageModel
 
             var sumados = 0;
             var creados = 0;
+            // Un mismo producto puede venir en varias líneas (por ejemplo, una de obsequio con valor 0):
+            // se crea una sola vez y su costo se calcula con todas sus líneas juntas.
+            var creadosEnEstaFactura = new Dictionary<string, int>();
+            var acumulado = new Dictionary<int, (int Unidades, decimal Valor)>();
             for (var i = 0; i < Factura.Lineas.Count; i++)
             {
                 var linea = Factura.Lineas[i];
@@ -170,9 +174,15 @@ public class CargarModel : PageModel
                     // Costo de cada unidad con impuestos incluidos: lo que realmente se pagó
                     var costoUnidad = cantidad > 0 ? Math.Round(linea.ValorTotal / cantidad, 2) : 0;
 
-                    if (form.ProductoId == CrearNuevo)
+                    var llaveNuevo = linea.CodigoBarras ?? (form.CodigoNuevo ?? "").Trim();
+                    if (form.ProductoId == CrearNuevo && llaveNuevo.Length > 0 && creadosEnEstaFactura.TryGetValue(llaveNuevo, out var yaCreado))
+                    {
+                        productoId = yaCreado;
+                    }
+                    else if (form.ProductoId == CrearNuevo)
                     {
                         productoId = await CrearProductoAsync(con, tx, negocio, linea, form, costoUnidad);
+                        if (llaveNuevo.Length > 0) creadosEnEstaFactura[llaveNuevo] = productoId.Value;
                         creados++;
                     }
                     else
@@ -184,8 +194,11 @@ public class CargarModel : PageModel
                     }
 
                     await con.ExecuteAsync(
-                        "UPDATE productos SET stock = stock + @cantidad, precio_compra = @costoUnidad WHERE id = @productoId",
-                        new { cantidad, costoUnidad, productoId }, tx);
+                        "UPDATE productos SET stock = stock + @cantidad WHERE id = @productoId",
+                        new { cantidad, productoId }, tx);
+
+                    var previo = acumulado.GetValueOrDefault(productoId.Value);
+                    acumulado[productoId.Value] = (previo.Unidades + cantidad, previo.Valor + linea.ValorTotal);
 
                     await con.ExecuteAsync(@"
                         INSERT INTO movimientos_inventario (producto_id, cantidad, motivo)
@@ -215,6 +228,14 @@ public class CargarModel : PageModel
                         compraId, productoId, codigo = linea.CodigoProveedor,
                         descripcion = Recortar(linea.Descripcion, 300), cantidad = linea.Cantidad, unidadesPor, valor = linea.ValorTotal
                     }, tx);
+            }
+
+            // Precio de compra = lo pagado por ese producto en toda la factura / unidades recibidas
+            foreach (var (id, (unidadesTotales, valor)) in acumulado)
+            {
+                if (unidadesTotales <= 0) continue;
+                await con.ExecuteAsync("UPDATE productos SET precio_compra = @costo WHERE id = @id",
+                    new { costo = Math.Round(valor / unidadesTotales, 2), id }, tx);
             }
 
             await tx.CommitAsync();
@@ -286,6 +307,16 @@ public class CargarModel : PageModel
                 LIMIT 1", new { nit = Nit(f), codigo = l.CodigoProveedor, negocio });
 
             int? porBarras = l.CodigoBarras is null ? null : Productos.FirstOrDefault(p => p.CodigoBarras == l.CodigoBarras)?.Id;
+            // Si el producto viene repetido en la factura, la segunda línea toma lo mismo que la primera
+            var anterior = l.CodigoProveedor.Length > 0
+                ? resultado.Zip(f.Lineas).FirstOrDefault(x => x.Second.CodigoProveedor == l.CodigoProveedor).First
+                : null;
+            if (anterior is not null && aprendido is null && porBarras is null)
+            {
+                resultado.Add(new LineaForm { ProductoId = anterior.ProductoId, UnidadesPor = anterior.UnidadesPor,
+                    CodigoNuevo = anterior.CodigoNuevo, NombreNuevo = anterior.NombreNuevo });
+                continue;
+            }
 
             resultado.Add(new LineaForm
             {
