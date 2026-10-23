@@ -1,0 +1,115 @@
+@page
+@model CajaModel
+@using Ferreteria.Pages.Pedidos
+@using Ferreteria.Services
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Caja - @Negocio.Nombre(User.NegocioActual())</title>
+    <partial name="_Estilos" />
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">Caja</h1>
+            <p class="text-secondary mb-0">@Model.DiaTexto</p>
+        </div>
+        <form method="get" class="d-flex gap-2 align-items-end">
+            <div>
+                <label for="fecha" class="form-label small mb-1">Ver otro día</label>
+                <input id="fecha" name="fecha" type="date" class="form-control" value="@Model.Dia.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            </div>
+            <button type="submit" class="btn btn-fer-outline">Ver</button>
+        </form>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Mensaje)) { <div class="alert alert-success" role="status">@Model.Mensaje</div> }
+    @if (!string.IsNullOrEmpty(Model.Error)) { <div class="alert alert-danger" role="alert">@Model.Error</div> }
+
+    <h2 class="h4 mb-3"><i class="bi bi-truck me-2" aria-hidden="true"></i>Conductores</h2>
+    @if (Model.Conductores.Count == 0)
+    {
+        <div class="fer-card fer-vacio mb-4"><i class="bi bi-person-badge" aria-hidden="true"></i><h3>No hay conductores</h3><p class="mb-0">Créalos en Usuarios con el perfil Conductor.</p></div>
+    }
+    <div class="row g-3 mb-4">
+        @foreach (var c in Model.Conductores)
+        {
+            <section class="col-12 col-md-6 col-xl-4" aria-labelledby="cond-@c.Id">
+                <div class="fer-card p-3 h-100">
+                    <h3 id="cond-@c.Id" class="h5 mb-2">@c.Nombre</h3>
+                    <p class="small text-secondary mb-2">
+                        @c.Entregados entregados · @c.NoEntregados no entregados
+                        @if (c.PorEntregar > 0) { <span> · <strong class="text-warning">@c.PorEntregar por entregar</strong></span> }
+                    </p>
+                    <dl class="row mb-2">
+                        <dt class="col-7">Efectivo cobrado</dt><dd class="col-5 text-end fw-bold">@ListaModel.Moneda(c.Efectivo)</dd>
+                        <dt class="col-7">Transferencias</dt><dd class="col-5 text-end">@ListaModel.Moneda(c.Transferencias)</dd>
+                        <dt class="col-7">Total cobrado</dt><dd class="col-5 text-end">@ListaModel.Moneda(c.Efectivo + c.Transferencias)</dd>
+                    </dl>
+                    @if (c.Cerrada)
+                    {
+                        <div class="alert @(c.Diferencia == 0 ? "alert-success" : "alert-warning") mb-0">
+                            <div>
+                                Caja cerrada: recibido @ListaModel.Moneda(c.Recibido!.Value) en efectivo.
+                                @if (c.Diferencia != 0) { <strong>@(c.Diferencia > 0 ? "Sobran" : "Faltan") @ListaModel.Moneda(Math.Abs(c.Diferencia)).</strong> }
+                                <div class="small">Por @c.CerradoPor · @c.CerradoEn?.ToString("hh:mm tt")@(string.IsNullOrEmpty(c.Nota) ? "" : " · " + c.Nota)</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="post" asp-page-handler="Cerrar" asp-route-fecha="@Model.Dia.ToString("yyyy-MM-dd")">
+                            <input type="hidden" name="conductorId" value="@c.Id" />
+                            <label class="form-label small fw-semibold" for="rec-@c.Id">Efectivo que entregó</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">$</span>
+                                <input id="rec-@c.Id" name="recibido" type="number" min="0" step="1" inputmode="numeric" class="form-control"
+                                       value="@c.Efectivo.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" required />
+                            </div>
+                            <input name="nota" maxlength="300" class="form-control form-control-sm mb-2" placeholder="Nota (opcional)" aria-label="Nota" />
+                            <button type="submit" class="btn btn-fer w-100"
+                                    data-confirmar="¿Cerrar la caja de @c.Nombre de este día? Después no se puede cambiar."
+                                    data-confirmar-boton="Sí, cerrar">
+                                <i class="bi bi-lock me-2" aria-hidden="true"></i>Cerrar caja
+                            </button>
+                        </form>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+
+    <h2 class="h4 mb-3"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Ventas por vendedor</h2>
+    @if (Model.Vendedores.Count == 0)
+    {
+        <p class="text-secondary">No hubo ventas este día.</p>
+    }
+    else
+    {
+        <div class="fer-card overflow-hidden">
+            <table class="table fer-tabla mb-0">
+                <thead><tr><th>Vendedor</th><th class="text-end">Pedidos</th><th class="text-end">Vendido</th></tr></thead>
+                <tbody>
+                    @foreach (var v in Model.Vendedores)
+                    {
+                        <tr><td>@v.Nombre</td><td class="text-end">@v.Pedidos</td><td class="text-end">@ListaModel.Moneda(v.Total)</td></tr>
+                    }
+                </tbody>
+                <tfoot><tr><th>Total</th><td class="text-end">@Model.Vendedores.Sum(v => v.Pedidos)</td><td class="text-end fw-bold">@ListaModel.Moneda(Model.Vendedores.Sum(v => v.Total))</td></tr></tfoot>
+            </table>
+        </div>
+    }
+</main>
+</body>
+</html>

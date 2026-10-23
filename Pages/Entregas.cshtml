@@ -1,0 +1,173 @@
+@page
+@model EntregasModel
+@using Ferreteria.Pages.Pedidos
+@using Ferreteria.Services
+@{
+    Layout = null;
+    var ruta = Model.EnlaceRuta();
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mis entregas - El Castillo</title>
+    <partial name="_Estilos" />
+    <style>
+        .ent-card { padding: 1.1rem; margin-bottom: 1rem; }
+        .ent-cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
+        .ent-cliente { font-size: 1.25rem; font-weight: 800; line-height: 1.2; }
+        .ent-dir { font-size: 1.05rem; margin: .4rem 0; }
+        .ent-total { font-family: var(--fer-letra-titulo); font-size: 1.7rem; font-weight: 800; color: var(--fer-naranja); white-space: nowrap; }
+        .ent-botones { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .75rem; }
+        .ent-botones .btn { min-height: 52px; font-size: 1.05rem; }
+        .ent-mapa { background: #1a73e8; border-color: #1a73e8; color: #fff; }
+        .ent-mapa:hover { background: #1765cc; color: #fff; }
+        .ent-waze { background: #33ccff; border-color: #33ccff; color: #000; }
+        .ent-waze:hover { background: #5fd7ff; color: #000; }
+        .ent-entregado { background: var(--fer-verde); border-color: var(--fer-verde); color: #06250f; }
+        .ent-entregado:hover { background: #3fd46c; color: #06250f; }
+        .ent-panel { display: none; margin-top: .75rem; padding: .9rem; border-radius: var(--fer-radio-sm); background: var(--fer-superficie-2); }
+        .ent-panel.abierto { display: block; }
+        .ent-metodos { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+        .ent-metodos input { position: absolute; opacity: 0; }
+        .ent-metodos label {
+            display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: 52px;
+            border: 2px solid var(--fer-borde); border-radius: var(--fer-radio-sm); font-weight: 700; cursor: pointer;
+        }
+        .ent-metodos input:checked + label { border-color: var(--fer-naranja); background: rgba(245, 183, 0, .15); color: var(--fer-naranja); }
+        .ent-metodos input:focus-visible + label { outline: 3px solid var(--fer-naranja); }
+        .ent-hecha { opacity: .75; }
+    </style>
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-3" style="max-width: 720px">
+
+    <h1 class="h2 mb-1">Mis entregas</h1>
+    <p class="text-secondary mb-3">@Model.Pendientes.Count @(Model.Pendientes.Count == 1 ? "pedido por entregar" : "pedidos por entregar")</p>
+
+    @if (!string.IsNullOrEmpty(Model.Mensaje)) { <div class="alert alert-success" role="status">@Model.Mensaje</div> }
+    @if (!string.IsNullOrEmpty(Model.Error)) { <div class="alert alert-danger" role="alert">@Model.Error</div> }
+
+    @if (ruta is not null)
+    {
+        <a class="btn ent-mapa btn-lg w-100 mb-3" href="@ruta" target="_blank" rel="noopener">
+            <i class="bi bi-signpost-split me-2" aria-hidden="true"></i>Ver ruta con todas las paradas
+        </a>
+    }
+
+    @if (Model.Pendientes.Count == 0)
+    {
+        <div class="fer-card fer-vacio">
+            <i class="bi bi-truck" aria-hidden="true"></i>
+            <h2>No tienes pedidos asignados</h2>
+            <p class="mb-0">Cuando el administrador o el cajero te asigne un pedido, aparece aquí.</p>
+        </div>
+    }
+
+    @foreach (var e in Model.Pendientes)
+    {
+        <article class="fer-card ent-card" aria-labelledby="cli-@e.Id">
+            <div class="ent-cabeza">
+                <div>
+                    <div class="small text-secondary">@e.Numero · <span class="estado @ListaModel.ClaseEstado(e.Estado)">@ListaModel.EtiquetaEstado(e.Estado)</span></div>
+                    <div id="cli-@e.Id" class="ent-cliente mt-1">@(string.IsNullOrWhiteSpace(e.Ferreteria) ? e.Cliente : e.Ferreteria)</div>
+                    @if (!string.IsNullOrWhiteSpace(e.Ferreteria)) { <div class="text-secondary">@e.Cliente</div> }
+                </div>
+                <div class="text-end">
+                    <div class="small text-secondary">A cobrar</div>
+                    <div class="ent-total">@ListaModel.Moneda(e.Total)</div>
+                </div>
+            </div>
+
+            <div class="ent-dir"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>@e.Direccion@(string.IsNullOrWhiteSpace(e.Ubicacion) || EntregasModel.EsEnlace(e.Ubicacion) ? "" : " · " + e.Ubicacion)</div>
+            @if (!string.IsNullOrWhiteSpace(e.Horario)) { <div class="small text-secondary"><i class="bi bi-clock me-1" aria-hidden="true"></i>@e.Horario</div> }
+            <div class="small text-secondary"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>@e.Unidades unidades · <a href="/Pedidos/Detalle/@e.Id">ver productos</a></div>
+
+            <div class="ent-botones">
+                <a class="btn ent-mapa" href="@Model.EnlaceGoogle(e)" target="_blank" rel="noopener"><i class="bi bi-google me-2" aria-hidden="true"></i>Google Maps</a>
+                <a class="btn ent-waze" href="@Model.EnlaceWaze(e)" target="_blank" rel="noopener"><i class="bi bi-cursor me-2" aria-hidden="true"></i>Waze</a>
+                <a class="btn btn-fer-outline" href="tel:@e.Celular1"><i class="bi bi-telephone me-2" aria-hidden="true"></i>Llamar</a>
+                @if (e.Estado != "en_ruta")
+                {
+                    <form method="post" asp-page-handler="Salir" asp-route-id="@e.Id" class="d-grid">
+                        <button type="submit" class="btn btn-fer"><i class="bi bi-truck me-2" aria-hidden="true"></i>Salí a entregar</button>
+                    </form>
+                }
+                else
+                {
+                    <button type="button" class="btn ent-entregado" data-abrir="entregar-@e.Id"><i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Entregué</button>
+                }
+            </div>
+
+            @* Entregado: cómo pagó *@
+            <form method="post" asp-page-handler="Entregar" asp-route-id="@e.Id" id="entregar-@e.Id" class="ent-panel">
+                <p class="fw-semibold mb-2">¿Cómo pagó el cliente?</p>
+                <div class="ent-metodos mb-3">
+                    <div><input type="radio" name="metodo" value="efectivo" id="ef-@e.Id" checked /><label for="ef-@e.Id"><i class="bi bi-cash" aria-hidden="true"></i>Efectivo</label></div>
+                    <div><input type="radio" name="metodo" value="transferencia" id="tr-@e.Id" /><label for="tr-@e.Id"><i class="bi bi-phone" aria-hidden="true"></i>Transferencia</label></div>
+                </div>
+                <label class="form-label fw-semibold" for="valor-@e.Id">Valor cobrado</label>
+                <div class="input-group input-group-lg mb-2">
+                    <span class="input-group-text">$</span>
+                    <input id="valor-@e.Id" name="valor" type="number" min="1" step="1" inputmode="numeric" class="form-control"
+                           value="@e.Total.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" required />
+                </div>
+                <label class="form-label small" for="ref-@e.Id">Comprobante de la transferencia (opcional)</label>
+                <input id="ref-@e.Id" name="referencia" maxlength="80" class="form-control mb-3" placeholder="Ej.: número de Nequi o de la transacción" />
+                <button type="submit" class="btn ent-entregado btn-lg w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Confirmar entrega</button>
+                <button type="button" class="btn btn-link text-danger w-100 mt-2" data-abrir="noent-@e.Id">No lo pude entregar</button>
+            </form>
+
+            <form method="post" asp-page-handler="NoEntregar" asp-route-id="@e.Id" id="noent-@e.Id" class="ent-panel">
+                <label class="form-label fw-semibold" for="nota-@e.Id">¿Por qué no se entregó?</label>
+                <input id="nota-@e.Id" name="nota" maxlength="300" class="form-control mb-3" placeholder="Ej.: cerrado, no contestó, dirección errada" />
+                <button type="submit" class="btn btn-fer-peligro btn-lg w-100"
+                        data-confirmar="¿Marcar el pedido @e.Numero como no entregado? La mercancía vuelve al inventario."
+                        data-confirmar-boton="Sí, no se entregó" data-confirmar-tipo="peligro">Marcar no entregado</button>
+            </form>
+        </article>
+    }
+
+    @if (Model.Terminadas.Count > 0)
+    {
+        <h2 class="h5 mt-4 mb-2">Terminados hoy</h2>
+        @foreach (var e in Model.Terminadas)
+        {
+            <div class="fer-card ent-card ent-hecha d-flex justify-content-between align-items-center gap-2">
+                <div>
+                    <div class="fw-bold">@(string.IsNullOrWhiteSpace(e.Ferreteria) ? e.Cliente : e.Ferreteria)</div>
+                    <div class="small text-secondary">@e.Numero · @ListaModel.EtiquetaEstado(e.Estado)</div>
+                </div>
+                <div class="text-end">
+                    @if (e.PagoValor is not null)
+                    {
+                        <div class="fw-bold">@ListaModel.Moneda(e.PagoValor.Value)</div>
+                        <div class="small text-secondary">@(e.PagoMetodo == "efectivo" ? "Efectivo" : "Transferencia")</div>
+                    }
+                </div>
+            </div>
+        }
+        <p class="text-secondary small">Total cobrado hoy:
+            <strong>@ListaModel.Moneda(Model.Terminadas.Sum(t => t.PagoValor ?? 0))</strong>
+            (efectivo @ListaModel.Moneda(Model.Terminadas.Where(t => t.PagoMetodo == "efectivo").Sum(t => t.PagoValor ?? 0)))
+        </p>
+    }
+</main>
+
+<script>
+    // Botones que abren el panel de "Entregué" o "No lo pude entregar"
+    document.querySelectorAll('[data-abrir]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var panel = document.getElementById(b.dataset.abrir);
+            panel.classList.toggle('abierto');
+            if (panel.classList.contains('abierto')) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
+</script>
+</body>
+</html>

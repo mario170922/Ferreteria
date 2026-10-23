@@ -21,6 +21,7 @@ public class DetalleModel : PageModel
     public PedidoCabecera? Pedido { get; set; }
     public List<ItemDetalle> Items { get; set; } = new();
     public bool EsAdmin { get; set; }
+    public List<(int Id, string Nombre)> Conductores { get; set; } = new();
     public string? Mensaje { get; set; }
     public string? Error { get; set; }
 
@@ -80,13 +81,17 @@ public class DetalleModel : PageModel
                    c.horario            AS Horario,
                    c.celular_1          AS Celular1,
                    c.celular_2          AS Celular2,
-                   u.nombre_usuario     AS Vendedor
+                   u.nombre_usuario     AS Vendedor,
+                   p.conductor_id       AS ConductorId,
+                   (SELECT nombre_usuario FROM usuarios WHERE id = p.conductor_id) AS Conductor,
+                   p.pago_metodo        AS PagoMetodo,
+                   p.pago_valor         AS PagoValor
             FROM pedidos p
             JOIN clientes c ON c.id = p.cliente_id
             JOIN usuarios u ON u.id = p.vendedor_id
             WHERE p.id = @id
               AND p.negocio = @negocio
-              AND (@veTodos OR p.vendedor_id = @vid)";
+              AND (@veTodos OR p.vendedor_id = @vid OR p.conductor_id = @vid)";
 
         Pedido = await con.QueryFirstOrDefaultAsync<PedidoCabecera>(
             sqlCabecera,
@@ -110,6 +115,14 @@ public class DetalleModel : PageModel
 
         var items = await con.QueryAsync<ItemDetalle>(sqlItems, new { id });
         Items = items.ToList();
+
+        if (User.ManejaCaja())
+        {
+            Conductores = (await con.QueryAsync<(int Id, string Nombre)>(@"
+                SELECT id, nombre_usuario FROM usuarios
+                WHERE rol = 'conductor' AND activo AND negocio = @negocio
+                ORDER BY nombre_usuario", new { negocio = User.NegocioActual() })).ToList();
+        }
 
         return Page();
     }
@@ -135,9 +148,7 @@ public class DetalleModel : PageModel
 
         try
         {
-            var actual = await con.QueryFirstOrDefaultAsync<string>(
-                "SELECT estado FROM pedidos WHERE id = @id AND negocio = @negocio FOR UPDATE",
-                new { id, negocio = User.NegocioActual() }, tx);
+            var actual = await EstadoPedido.CambiarAsync(con, tx, id, User.NegocioActual(), estado);
 
             if (actual is null)
             {
@@ -151,48 +162,6 @@ public class DetalleModel : PageModel
                 TempData["Mensaje"] = "El pedido ya está en ese estado.";
                 return RedirectToPage("/Pedidos/Detalle", new { id });
             }
-
-            bool eraDevuelto = EsDevuelto(actual);
-            bool seraDevuelto = EsDevuelto(estado);
-
-            // Pasa a "No entregado" o "Cancelado": el stock vuelve al inventario.
-            if (!eraDevuelto && seraDevuelto)
-            {
-                await con.ExecuteAsync(@"
-                    UPDATE productos p
-                    SET stock = p.stock + pi.cantidad
-                    FROM pedido_items pi
-                    WHERE pi.pedido_id = @id AND pi.producto_id = p.id", new { id }, tx);
-
-                await RegistrarMovimientosAsync(con, tx, id, 1, $"Devolución: pedido %s pasó a {EtiquetaDe(estado)}");
-            }
-            // Vuelve a un estado activo: se descuenta el stock otra vez, si hay existencias.
-            else if (eraDevuelto && !seraDevuelto)
-            {
-                long faltantes = await con.ExecuteScalarAsync<long>(@"
-                    SELECT COUNT(*)
-                    FROM pedido_items pi
-                    JOIN productos p ON p.id = pi.producto_id
-                    WHERE pi.pedido_id = @id AND p.stock < pi.cantidad", new { id }, tx);
-
-                if (faltantes > 0)
-                {
-                    throw new InvalidOperationException(
-                        "No hay stock suficiente para volver a activar este pedido.");
-                }
-
-                await con.ExecuteAsync(@"
-                    UPDATE productos p
-                    SET stock = p.stock - pi.cantidad
-                    FROM pedido_items pi
-                    WHERE pi.pedido_id = @id AND pi.producto_id = p.id", new { id }, tx);
-
-                await RegistrarMovimientosAsync(con, tx, id, -1, $"Salida: pedido %s se reactivó como {EtiquetaDe(estado)}");
-            }
-
-            await con.ExecuteAsync(
-                "UPDATE pedidos SET estado = @estado WHERE id = @id",
-                new { estado, id }, tx);
 
             await tx.CommitAsync();
             TempData["Mensaje"] = $"Estado cambiado a {EtiquetaDe(estado)}.";
@@ -211,31 +180,45 @@ public class DetalleModel : PageModel
         return RedirectToPage("/Pedidos/Detalle", new { id });
     }
 
+    // ---------- Asignar conductor (administrador y cajero) ----------
+
+    public async Task<IActionResult> OnPostAsignarAsync(int id, int? conductorId)
+    {
+        if (!User.ManejaCaja()) return Forbid();
+
+        await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
+        var negocio = User.NegocioActual();
+
+        if (conductorId is null or 0)
+        {
+            await con.ExecuteAsync(@"
+                UPDATE pedidos SET conductor_id = NULL, asignado_en = NULL
+                WHERE id = @id AND negocio = @negocio AND estado IN ('pendiente', 'alistado', 'en_ruta')",
+                new { id, negocio });
+            TempData["Mensaje"] = "Se quitó el conductor del pedido.";
+            return RedirectToPage("/Pedidos/Detalle", new { id });
+        }
+
+        // Solo conductores activos del mismo negocio, y solo pedidos que no se han terminado
+        int filas = await con.ExecuteAsync(@"
+            UPDATE pedidos SET conductor_id = @conductorId, asignado_en = now()
+            WHERE id = @id AND negocio = @negocio AND estado IN ('pendiente', 'alistado', 'en_ruta')
+              AND EXISTS (SELECT 1 FROM usuarios WHERE id = @conductorId AND rol = 'conductor'
+                                                  AND activo AND negocio = @negocio)",
+            new { id, conductorId, negocio });
+
+        if (filas == 0)
+            TempData["Error"] = "No se pudo asignar: el pedido ya terminó o el conductor no es de este negocio.";
+        else
+            TempData["Mensaje"] = "Conductor asignado. Ya puede ver el pedido en su celular.";
+        return RedirectToPage("/Pedidos/Detalle", new { id });
+    }
+
     // ---------- Ayudas ----------
 
     private bool TieneRolAdmin()
     {
         return User.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == "admin");
-    }
-
-    // Anota en movimientos_inventario cada producto del pedido.
-    // signo = 1 es entrada (vuelve al inventario), signo = -1 es salida.
-    // En el motivo, %s se reemplaza por el número del pedido.
-    private static async Task RegistrarMovimientosAsync(
-        NpgsqlConnection con, NpgsqlTransaction tx, int id, int signo, string motivo)
-    {
-        await con.ExecuteAsync(@"
-            INSERT INTO movimientos_inventario (producto_id, cantidad, motivo)
-            SELECT pi.producto_id, @signo * pi.cantidad, format(@motivo, p.numero)
-            FROM pedido_items pi
-            JOIN pedidos p ON p.id = pi.pedido_id
-            WHERE pi.pedido_id = @id",
-            new { id, signo, motivo }, tx);
-    }
-
-    private static bool EsDevuelto(string estado)
-    {
-        return estado is "no_entregado" or "cancelado";
     }
 
     private static string EtiquetaDe(string clave)
@@ -263,6 +246,10 @@ public class DetalleModel : PageModel
         public string Celular1 { get; set; } = "";
         public string? Celular2 { get; set; }
         public string Vendedor { get; set; } = "";
+        public int? ConductorId { get; set; }
+        public string? Conductor { get; set; }
+        public string? PagoMetodo { get; set; }
+        public decimal? PagoValor { get; set; }
     }
 
     public class ItemDetalle

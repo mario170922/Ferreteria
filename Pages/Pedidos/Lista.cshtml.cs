@@ -44,7 +44,7 @@ public class ListaModel : PageModel
             }
         }
 
-        string filtroVendedor = veTodos ? "" : "AND p.vendedor_id = @vid";
+        string filtroVendedor = veTodos ? "" : "AND (p.vendedor_id = @vid OR p.conductor_id = @vid)";
 
         string sql = $@"
             SELECT p.id                AS Id,

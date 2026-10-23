@@ -58,7 +58,12 @@ public static class Negocio
     // así todo lo que ya pedía [Authorize(Roles = "admin")] le sigue funcionando.
     public static bool EsAdmin(this ClaimsPrincipal usuario) => usuario.IsInRole(Admin);
 
-    // Quién ve todos los pedidos del negocio (el vendedor solo ve los suyos)
+    // Quién ve todos los pedidos del negocio. El vendedor solo ve los que vendió
+    // y el conductor solo los que le asignaron.
     public static bool VeTodosLosPedidos(this ClaimsPrincipal usuario) =>
-        usuario.IsInRole(Admin) || usuario.IsInRole(Cajero) || usuario.IsInRole(Conductor);
+        usuario.IsInRole(Admin) || usuario.IsInRole(Cajero);
+
+    // Quién puede asignar conductores y manejar la caja
+    public static bool ManejaCaja(this ClaimsPrincipal usuario) =>
+        usuario.IsInRole(Admin) || usuario.IsInRole(Cajero);
 }

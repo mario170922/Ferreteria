@@ -477,6 +477,43 @@
 
     </div>
 
+    @* Conductor que lleva el pedido y cómo se cobró *@
+    @if (p.Conductor is not null || p.PagoMetodo is not null || Ferreteria.Services.Negocio.ManejaCaja(User))
+    {
+        <section class="ec-tarjeta mb-4 no-imprimir" aria-labelledby="titulo-entrega">
+            <div class="fer-card-cuerpo">
+                <h2 id="titulo-entrega" class="h5 mb-3"><i class="bi bi-truck me-2" aria-hidden="true"></i>Entrega</h2>
+                <p class="mb-2">Conductor: <strong>@(p.Conductor ?? "Sin asignar")</strong></p>
+                @if (p.PagoMetodo is not null)
+                {
+                    <p class="mb-2">Cobrado: <strong>@ListaModel.Moneda(p.PagoValor ?? 0)</strong> en @(p.PagoMetodo == "efectivo" ? "efectivo" : "transferencia")</p>
+                }
+                @if (Ferreteria.Services.Negocio.ManejaCaja(User) && p.Estado is "pendiente" or "alistado" or "en_ruta")
+                {
+                    <form method="post" asp-page-handler="Asignar" asp-route-id="@p.Id" class="row g-2 align-items-end">
+                        <div class="col-md-8">
+                            <label for="conductorId" class="form-label fw-semibold">Asignar a</label>
+                            <select id="conductorId" name="conductorId" class="form-select form-select-lg">
+                                <option value="0">Sin conductor</option>
+                                @foreach (var c in Model.Conductores)
+                                {
+                                    <option value="@c.Id" selected="@(c.Id == p.ConductorId)">@c.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button type="submit" class="btn ec-boton btn-lg"><i class="bi bi-person-check me-2" aria-hidden="true"></i>Asignar</button>
+                        </div>
+                    </form>
+                    @if (Model.Conductores.Count == 0)
+                    {
+                        <p class="small text-secondary mt-2 mb-0">No hay conductores en este negocio. Créalos en Usuarios con el perfil Conductor.</p>
+                    }
+                }
+            </div>
+        </section>
+    }
+
     @if (Model.EsAdmin)
     {
         <section class="ec-tarjeta mb-4 no-imprimir" aria-labelledby="titulo-estado">

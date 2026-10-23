@@ -90,6 +90,32 @@ public static class EsquemaBaseDatos
                 unidades_por     int NOT NULL DEFAULT 1,
                 PRIMARY KEY (proveedor_id, codigo_proveedor, producto_id)
             );"),
+
+        // Entregas y caja: el pedido se asigna a un conductor, que registra cómo cobró.
+        // Al final del día el cajero recibe la plata de cada conductor y cierra su caja.
+        ("2026-10-23 entregas y caja", @"
+            ALTER TABLE pedidos ADD COLUMN conductor_id    int REFERENCES usuarios (id);
+            ALTER TABLE pedidos ADD COLUMN asignado_en     timestamp;
+            ALTER TABLE pedidos ADD COLUMN entregado_en    timestamp;
+            ALTER TABLE pedidos ADD COLUMN pago_metodo     varchar(15) CHECK (pago_metodo IN ('efectivo', 'transferencia'));
+            ALTER TABLE pedidos ADD COLUMN pago_valor      numeric(14, 2);
+            ALTER TABLE pedidos ADD COLUMN pago_referencia varchar(80);
+            ALTER TABLE pedidos ADD COLUMN nota_entrega    varchar(300);
+            CREATE INDEX ix_pedidos_conductor ON pedidos (conductor_id, estado);
+
+            CREATE TABLE cierres_caja (
+                id                 serial PRIMARY KEY,
+                negocio            varchar(15) NOT NULL CHECK (negocio IN ('tornilleria', 'ferreteria')),
+                fecha              date NOT NULL,
+                conductor_id       int NOT NULL REFERENCES usuarios (id),
+                efectivo_esperado  numeric(14, 2) NOT NULL,
+                transferencias     numeric(14, 2) NOT NULL,
+                efectivo_recibido  numeric(14, 2) NOT NULL,
+                nota               varchar(300),
+                cajero_id          int REFERENCES usuarios (id),
+                creado_en          timestamp NOT NULL DEFAULT now(),
+                UNIQUE (negocio, fecha, conductor_id)
+            );"),
     };
 
     public static async Task ActualizarAsync(IConfiguration config, ILogger logger)

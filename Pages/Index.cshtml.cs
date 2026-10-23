@@ -36,6 +36,10 @@ public class IndexModel : PageModel
             return RedirectToPage("/Bienvenida");
         }
 
+        // El conductor trabaja desde su pantalla de entregas
+        if (User.IsInRole(Ferreteria.Services.Negocio.Conductor))
+            return RedirectToPage("/Entregas");
+
         NombreUsuario = User.Identity.Name ?? "";
         EsAdmin = User.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == "admin");
 
