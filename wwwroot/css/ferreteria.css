@@ -1197,7 +1197,7 @@ legend {
 
 .producto-card .producto-imagen-vacia { color: #5a5a5a; opacity: 1; }
 
-/* Dibujo del tornillo para productos sin foto (img/sin-foto.svg) */
+/* Dibujo para productos sin foto, según su tipo (img/sin-foto/, Services/DibujoSinFoto.cs) */
 .fer-sin-foto {
   width: 70%;
   height: 70%;

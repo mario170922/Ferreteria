@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Producto sin foto">
+  <!-- Caja de ferretería, para productos sin foto cuyo tipo no se reconoce. Fondo transparente. -->
+  <ellipse cx="100" cy="178" rx="64" ry="8" fill="#000" opacity=".35"/>
+  <!-- Lados de la caja -->
+  <path d="M40 80 L100 104 V170 L40 146 Z" fill="#7a5b2e"/>
+  <path d="M160 80 L100 104 V170 L160 146 Z" fill="#5e4523"/>
+  <!-- Tapa -->
+  <path d="M40 80 L100 56 L160 80 L100 104 Z" fill="#a37a40"/>
+  <!-- Cinta amarilla de la marca -->
+  <path d="M88 61 L148 85 L136 90 L76 66 Z" fill="#f5b700"/>
+  <path d="M136 90 L148 85 V151 L136 156 Z" fill="#c99600"/>
+  <!-- Tornillito dibujado en el costado -->
+  <g transform="translate(58 112) rotate(20)" opacity=".85">
+    <rect x="0" y="0" width="14" height="5" rx="1.5" fill="#f5b700"/>
+    <rect x="4" y="5" width="6" height="18" fill="#cfcfcf"/>
+    <path d="M4 23 L7 29 L10 23 Z" fill="#cfcfcf"/>
+  </g>
+  <g transform="translate(140 28)" fill="none" stroke="#f5b700" stroke-width="4" stroke-linecap="round" opacity=".8">
+    <rect x="0" y="8" width="40" height="28" rx="6"/><path d="M12 8 L16 1 H24 L28 8"/><circle cx="20" cy="22" r="7"/><line x1="-4" y1="40" x2="44" y2="4"/>
+  </g>
+</svg>

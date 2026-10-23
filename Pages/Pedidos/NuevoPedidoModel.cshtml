@@ -16,6 +16,7 @@
         medida = p.Medida ?? "",
         precio = p.PrecioVenta,
         stock = p.Stock,
+        sinFoto = Ferreteria.Services.DibujoSinFoto.Ruta(p.Nombre),
         imagen = string.IsNullOrEmpty(p.Imagen) ? ""
                : p.Imagen.Contains('/') ? "/" + p.Imagen.TrimStart('/')
                : "/img/productos/" + p.Imagen
@@ -485,9 +486,9 @@
                 img.loading = 'lazy';
                 return img;
             }
-            // Sin foto: el dibujo del tornillo (wwwroot/img/sin-foto.svg)
+            // Sin foto: dibujo según el tipo de producto (wwwroot/img/sin-foto/)
             const vacia = el('img', 'np-foto np-foto-vacia');
-            vacia.src = '/img/sin-foto.svg';
+            vacia.src = p.sinFoto;
             vacia.alt = '';
             return vacia;
         }

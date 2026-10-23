@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Chazo sin foto">
+  <!-- Chazo plástico (taco de expansión), para productos sin foto. Fondo transparente. -->
+  <defs>
+    <linearGradient id="plastico" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c99600"/>
+      <stop offset=".45" stop-color="#ffd23f"/>
+      <stop offset="1" stop-color="#a87d00"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="184" rx="52" ry="7" fill="#000" opacity=".35"/>
+  <g transform="rotate(-28 100 110)">
+    <!-- Ala de arriba -->
+    <rect x="80" y="38" width="40" height="10" rx="3" fill="url(#plastico)"/>
+    <!-- Cuerpo con aletas -->
+    <path d="M88 48 H112 V150 L106 172 H94 L88 150 Z" fill="url(#plastico)"/>
+    <g fill="#8a6700">
+      <path d="M88 64 L80 72 L88 74 Z"/><path d="M112 64 L120 72 L112 74 Z"/>
+      <path d="M88 88 L80 96 L88 98 Z"/><path d="M112 88 L120 96 L112 98 Z"/>
+      <path d="M88 112 L80 120 L88 122 Z"/><path d="M112 112 L120 120 L112 122 Z"/>
+      <path d="M88 136 L80 144 L88 146 Z"/><path d="M112 136 L120 144 L112 146 Z"/>
+    </g>
+    <!-- Ranura que abre el chazo -->
+    <path d="M100 96 V170" stroke="#5c4500" stroke-width="3"/>
+    <rect x="96" y="38" width="8" height="12" fill="#3a2c00" opacity=".6"/>
+  </g>
+  <g transform="translate(140 28)" fill="none" stroke="#f5b700" stroke-width="4" stroke-linecap="round" opacity=".8">
+    <rect x="0" y="8" width="40" height="28" rx="6"/><path d="M12 8 L16 1 H24 L28 8"/><circle cx="20" cy="22" r="7"/><line x1="-4" y1="40" x2="44" y2="4"/>
+  </g>
+</svg>
