@@ -291,7 +291,76 @@
             section {
                 break-inside: avoid;
             }
+
+            /* Al imprimir solo sale la remisión (_Remision.cshtml); lo de la pantalla se oculta */
+            main > :not(.remision),
+            .fer-arriba,
+            .visually-hidden-focusable {
+                display: none !important;
+            }
+
+            .remision { display: block !important; break-inside: auto !important; }
         }
+
+        /* ---------- Remisión impresa ---------- */
+        .remision {
+            display: none;
+            font-family: "Barlow", Arial, sans-serif;
+            color: #000;
+            font-size: 10pt;
+        }
+
+        .remision table { width: 100%; border-collapse: collapse; }
+
+        .rem-encabezado {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            border-bottom: 3px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .rem-empresa { display: flex; align-items: center; gap: 10px; }
+        .rem-logo { height: 54px; width: auto; filter: grayscale(1) brightness(0); }
+        .rem-empresa-nombre { font-family: "Barlow Condensed", "Barlow", sans-serif; font-weight: 800; font-size: 18pt; line-height: 1; text-transform: uppercase; }
+        .rem-empresa-datos { font-size: 9pt; margin-top: 3px; }
+
+        .rem-numero { border: 2px solid #000; border-radius: 6px; padding: 4px 12px; text-align: center; font-size: 9pt; }
+        .rem-titulo { font-family: "Barlow Condensed", "Barlow", sans-serif; font-weight: 800; font-size: 15pt; letter-spacing: .08em; }
+        .rem-numero-valor { font-weight: 700; font-size: 11pt; }
+
+        .rem-datos { margin-bottom: 10px; }
+        .rem-datos th,
+        .rem-datos td { border: 1px solid #000; padding: 3px 6px !important; vertical-align: top; background: #fff !important; color: #000 !important; }
+        .rem-datos th { width: 11%; font-weight: 700; background: #eee !important; white-space: nowrap; }
+
+        .rem-items th,
+        .rem-items td { border: 1px solid #000; padding: 3px 6px !important; color: #000 !important; background: #fff !important; }
+        .rem-items thead th { background: #e6e6e6 !important; font-weight: 700; }
+        .rem-items tr { break-inside: avoid; }
+        .rem-n { width: 4%; text-align: center; }
+        .rem-num { text-align: right; white-space: nowrap; }
+        .rem-check { width: 6%; text-align: center; }
+        .rem-cuadro { display: inline-block; width: 11px; height: 11px; border: 1px solid #000; }
+
+        .rem-pie { display: flex; justify-content: space-between; gap: 16px; margin-top: 8px; break-inside: avoid; }
+        .rem-resumen-izq { flex: 1; }
+        .rem-observaciones { margin-top: 6px; height: 46px; border: 1px solid #000; padding: 3px 6px; }
+        .rem-totales { width: 40% !important; }
+        .rem-totales th,
+        .rem-totales td { padding: 2px 6px !important; border-bottom: 1px solid #999; color: #000 !important; background: #fff !important; }
+        .rem-totales th { text-align: right; font-weight: 600; }
+        .rem-totales td { text-align: right; white-space: nowrap; }
+        .rem-total th,
+        .rem-total td { font-size: 12pt; font-weight: 800 !important; border-top: 2px solid #000 !important; border-bottom: 0; }
+
+        .rem-firmas { display: flex; gap: 24px; margin-top: 46px; break-inside: avoid; font-size: 9pt; text-align: center; }
+        .rem-firmas > div { flex: 1; }
+        .rem-firmas .rem-fecha-recibido { flex: 0.7; }
+        .rem-linea { border-top: 1px solid #000; margin-bottom: 3px; }
+
+        .rem-nota { margin-top: 14px; font-size: 8pt; text-align: center; color: #333 !important; }
     </style>
 </head>
 <body>
@@ -319,12 +388,6 @@
         <div class="alert alert-danger no-imprimir" role="alert">@Model.Error</div>
     }
 
-    <!-- Encabezado que solo aparece en el papel -->
-    <div class="solo-imprimir">
-        <h1>Ferretería · Inventario y pedidos</h1>
-        <p>Pedido @p.Numero · Fecha del pedido: @ListaModel.FormatearFecha(p.Fecha) · Impreso: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
-    </div>
-
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h1 class="h2 mb-1">Pedido @p.Numero</h1>
@@ -345,7 +408,7 @@
                 </a>
             }
             <button type="button" class="btn ec-boton-outline no-imprimir" onclick="window.print()">
-                <i class="bi bi-printer me-2" aria-hidden="true"></i>Imprimir
+                <i class="bi bi-printer me-2" aria-hidden="true"></i>Imprimir remisión
             </button>
         </div>
     </div>
@@ -501,6 +564,8 @@
             <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver a pedidos
         </a>
     </div>
+
+    <partial name="_Remision" model="Model" />
 
 </main>
 

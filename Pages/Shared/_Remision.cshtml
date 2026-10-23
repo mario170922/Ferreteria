@@ -1,0 +1,123 @@
+@* Remisión del pedido: solo aparece al imprimir el detalle (botón "Imprimir remisión").
+   Hoja carta en blanco y negro, con espacio para las firmas de quien entrega y quien recibe.
+   Los datos de la empresa salen de appsettings.json, sección "Empresa" (Nombre, Nit,
+   Direccion, Telefono). Si una línea no está configurada, simplemente no se imprime.
+   Se usa en Pedidos/Detalle.cshtml con: <partial name="_Remision" model="Model" /> *@
+@model Ferreteria.Pages.Pedidos.DetalleModel
+@using Ferreteria.Pages.Pedidos
+@inject IConfiguration Config
+@{
+    var p = Model.Pedido!;
+    var nombreEmpresa = Config["Empresa:Nombre"] is { Length: > 0 } n ? n : "El Castillo Ferretería";
+    var datosEmpresa = new[]
+    {
+        Config["Empresa:Nit"] is { Length: > 0 } nit ? "NIT " + nit : null,
+        Config["Empresa:Direccion"],
+        Config["Empresa:Telefono"] is { Length: > 0 } tel ? "Tel. " + tel : null
+    }.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+    var unidades = Model.Items.Sum(i => i.Cantidad);
+}
+<section class="remision" aria-hidden="true">
+
+    <header class="rem-encabezado">
+        <div class="rem-empresa">
+            <img src="/img/logo-casita.png" alt="" class="rem-logo" />
+            <div>
+                <div class="rem-empresa-nombre">@nombreEmpresa</div>
+                @if (datosEmpresa.Count > 0)
+                {
+                    <div class="rem-empresa-datos">@string.Join(" · ", datosEmpresa)</div>
+                }
+            </div>
+        </div>
+        <div class="rem-numero">
+            <div class="rem-titulo">REMISIÓN</div>
+            <div class="rem-numero-valor">N.º @p.Numero</div>
+            <div>Fecha: @p.Fecha.ToString("dd/MM/yyyy")</div>
+        </div>
+    </header>
+
+    <table class="rem-datos">
+        <tr>
+            <th>Cliente</th>
+            <td>@p.Cliente@(string.IsNullOrWhiteSpace(p.Ferreteria) ? "" : " — " + p.Ferreteria)</td>
+            <th>Celular</th>
+            <td>@p.Celular1@(string.IsNullOrWhiteSpace(p.Celular2) ? "" : " / " + p.Celular2)</td>
+        </tr>
+        <tr>
+            <th>Dirección</th>
+            <td>@p.Direccion@(string.IsNullOrWhiteSpace(p.Ubicacion) ? "" : " (" + p.Ubicacion + ")")</td>
+            <th>Vendedor</th>
+            <td>@p.Vendedor</td>
+        </tr>
+        @if (!string.IsNullOrWhiteSpace(p.Horario))
+        {
+            <tr>
+                <th>Horario</th>
+                <td colspan="3">@p.Horario</td>
+            </tr>
+        }
+    </table>
+
+    <table class="rem-items">
+        <thead>
+            <tr>
+                <th class="rem-n">#</th>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th class="rem-num">Cant.</th>
+                <th class="rem-num">Vr. unitario</th>
+                <th class="rem-num">Vr. total</th>
+                <th class="rem-check">Rev.</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ var fila = 0; }
+            @foreach (var item in Model.Items)
+            {
+                fila++;
+                <tr>
+                    <td class="rem-n">@fila</td>
+                    <td>@item.Codigo</td>
+                    <td>@item.Nombre@(string.IsNullOrWhiteSpace(item.Medida) ? "" : " · " + item.Medida)</td>
+                    <td class="rem-num">@item.Cantidad</td>
+                    <td class="rem-num">@ListaModel.Moneda(item.PrecioUnitario)</td>
+                    <td class="rem-num">@ListaModel.Moneda(item.Subtotal)</td>
+                    <td class="rem-check"><span class="rem-cuadro"></span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="rem-pie">
+        <div class="rem-resumen-izq">
+            <div>Productos distintos: <strong>@Model.Items.Count</strong> · Unidades: <strong>@unidades</strong></div>
+            <div class="rem-observaciones">Observaciones:</div>
+        </div>
+        <table class="rem-totales">
+            <tr><th>Subtotal</th><td>@ListaModel.Moneda(Model.Subtotal)</td></tr>
+            <tr><th>Descuento (@p.DescuentoPct.ToString("0.##")%)</th><td>− @ListaModel.Moneda(Model.MontoDescuento)</td></tr>
+            <tr class="rem-total"><th>TOTAL</th><td>@ListaModel.Moneda(p.Total)</td></tr>
+        </table>
+    </div>
+
+    <div class="rem-firmas">
+        <div>
+            <div class="rem-linea"></div>
+            Entregado por (nombre y firma)
+        </div>
+        <div>
+            <div class="rem-linea"></div>
+            Recibido a satisfacción (nombre, C.C. y firma)
+        </div>
+        <div class="rem-fecha-recibido">
+            <div class="rem-linea"></div>
+            Fecha y hora de recibido
+        </div>
+    </div>
+
+    <p class="rem-nota">
+        Este documento es una remisión de mercancía y no reemplaza la factura.
+        Impreso el @DateTime.Now.ToString("dd/MM/yyyy HH:mm").
+    </p>
+</section>
