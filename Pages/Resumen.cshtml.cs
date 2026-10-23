@@ -12,9 +12,9 @@ namespace Ferreteria.Pages;
 // ingresos (ventas), egresos (compras de mercancía), lo más y lo menos vendido.
 //
 // - Ingresos: total de los pedidos del período, sin contar cancelados ni no entregados.
-// - Egresos: por ahora son las entradas de inventario hechas en Movimientos (no cuentan
-//   devoluciones de pedidos, ajustes ni el stock inicial) por su precio de compra actual. Cuando se carguen las compras desde la factura
-//   electrónica, saldrán de ahí con el valor exacto.
+// - Egresos: el total de las facturas de compra cargadas en Compras (por la fecha de la
+//   factura), más las entradas manuales hechas en Movimientos (sin devoluciones de pedidos,
+//   ajustes ni stock inicial) por su precio de compra actual.
 [Authorize(Roles = "admin,cajero")]
 public class ResumenModel : PageModel
 {
@@ -120,12 +120,14 @@ public class ResumenModel : PageModel
                    JOIN productos pr ON pr.id = pi.producto_id
                   WHERE p.negocio = @negocio AND p.estado NOT IN ('cancelado', 'no_entregado')
                     AND p.fecha >= @desde AND p.fecha < @hasta)                               AS CostoVendido,
-                (SELECT COALESCE(SUM(m.cantidad * pr.precio_compra), 0)
+                (SELECT COALESCE(SUM(total), 0) FROM compras
+                  WHERE negocio = @negocio AND fecha >= @desde AND fecha < @hasta)
+                + (SELECT COALESCE(SUM(m.cantidad * pr.precio_compra), 0)
                    FROM movimientos_inventario m
                    JOIN productos pr ON pr.id = m.producto_id
                   WHERE pr.negocio = @negocio AND m.cantidad > 0
                     AND m.motivo NOT ILIKE 'Devoluci%' AND m.motivo NOT ILIKE 'Ajuste%'
-                    AND m.motivo <> 'Stock inicial'
+                    AND m.motivo NOT ILIKE 'Compra:%' AND m.motivo <> 'Stock inicial'
                     AND m.fecha >= @desde AND m.fecha < @hasta)                               AS Egresos",
             new { negocio, desde, hasta });
     }

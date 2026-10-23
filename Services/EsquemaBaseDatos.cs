@@ -45,6 +45,51 @@ public static class EsquemaBaseDatos
             ALTER TABLE usuarios ADD CONSTRAINT usuarios_negocio_check
                 CHECK ((rol = 'admin_global' AND negocio IS NULL)
                     OR (rol <> 'admin_global' AND negocio IN ('tornilleria', 'ferreteria')));"),
+
+        // Compras cargadas desde la factura electrónica del proveedor
+        ("2026-10-23 compras", @"
+            CREATE TABLE proveedores (
+                id     serial PRIMARY KEY,
+                nit    varchar(20) NOT NULL UNIQUE,
+                nombre varchar(200) NOT NULL
+            );
+
+            CREATE TABLE compras (
+                id             serial PRIMARY KEY,
+                negocio        varchar(15) NOT NULL CHECK (negocio IN ('tornilleria', 'ferreteria')),
+                proveedor_id   int NOT NULL REFERENCES proveedores (id),
+                numero_factura varchar(50) NOT NULL,
+                cufe           varchar(120),
+                fecha          date NOT NULL,
+                subtotal       numeric(14, 2) NOT NULL,
+                impuestos      numeric(14, 2) NOT NULL,
+                total          numeric(14, 2) NOT NULL,
+                usuario_id     int REFERENCES usuarios (id),
+                creado_en      timestamp NOT NULL DEFAULT now(),
+                UNIQUE (proveedor_id, numero_factura)
+            );
+            CREATE UNIQUE INDEX ux_compras_cufe ON compras (cufe) WHERE cufe IS NOT NULL AND cufe <> '';
+
+            CREATE TABLE compra_items (
+                id               serial PRIMARY KEY,
+                compra_id        int NOT NULL REFERENCES compras (id) ON DELETE CASCADE,
+                producto_id      int REFERENCES productos (id) ON DELETE SET NULL,
+                codigo_proveedor varchar(60),
+                descripcion      varchar(300) NOT NULL,
+                cantidad         numeric(14, 3) NOT NULL,
+                unidades_por     int NOT NULL DEFAULT 1,
+                valor_total      numeric(14, 2) NOT NULL
+            );
+
+            -- Lo que el sistema aprende: qué producto nuestro es cada código del proveedor
+            -- y cuántas unidades trae cada una (por ejemplo, una caja de 100).
+            CREATE TABLE producto_codigos_proveedor (
+                proveedor_id     int NOT NULL REFERENCES proveedores (id),
+                codigo_proveedor varchar(60) NOT NULL,
+                producto_id      int NOT NULL REFERENCES productos (id) ON DELETE CASCADE,
+                unidades_por     int NOT NULL DEFAULT 1,
+                PRIMARY KEY (proveedor_id, codigo_proveedor, producto_id)
+            );"),
     };
 
     public static async Task ActualizarAsync(IConfiguration config, ILogger logger)

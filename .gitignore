@@ -13,6 +13,9 @@ secrets.json
 appsettings.Development.json
 appsettings.Local.json
 
+# Facturas de compra cargadas (datos de la empresa, no van a GitHub)
+App_Data/
+
 # Temporales
 *.log
 *.tmp

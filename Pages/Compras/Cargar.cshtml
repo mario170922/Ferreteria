@@ -1,0 +1,195 @@
+@page
+@model Ferreteria.Pages.Compras.CargarModel
+@using Ferreteria.Pages.Pedidos
+@using Ferreteria.Services
+@{
+    Layout = null;
+    var f = Model.Factura;
+    var cultura = new System.Globalization.CultureInfo("es-CO");
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cargar factura de compra - @Negocio.Nombre(User.NegocioActual())</title>
+    <partial name="_Estilos" />
+    <style>
+        .cf-subir {
+            display: flex; flex-direction: column; align-items: center; gap: .75rem; text-align: center;
+            padding: 2.5rem 1.5rem; border: 2px dashed rgba(245, 183, 0, .5); border-radius: var(--fer-radio);
+            background: rgba(245, 183, 0, .05);
+        }
+        .cf-subir .bi { font-size: 3rem; color: var(--fer-naranja); }
+        .cf-linea { padding: 1rem 1.1rem; border-bottom: 1px solid var(--fer-borde); }
+        .cf-linea:last-child { border-bottom: 0; }
+        .cf-desc { font-weight: 700; }
+        .cf-detalle { font-size: .9rem; color: var(--fer-texto-suave); }
+        .cf-nuevo { display: none; }
+        .cf-linea.crear .cf-nuevo { display: flex; }
+        .cf-linea.no-sumar { opacity: .55; }
+        .cf-estado { font-size: .8rem; font-weight: 700; border-radius: 999px; padding: .15rem .6rem; }
+        .cf-estado.ok { background: #b9f5c6; color: #0a3d17; }
+        .cf-estado.nuevo { background: #ffe9a8; color: #4a3800; }
+    </style>
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-4">
+
+    <nav aria-label="Ruta de navegación" class="mb-3">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Compras">Compras</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Cargar factura</li>
+        </ol>
+    </nav>
+
+    <h1 class="h2 mb-3">Cargar factura de compra</h1>
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger" role="alert">@Model.Error</div>
+    }
+
+    @if (f is null)
+    {
+        @* ---------- Paso 1: subir el archivo ---------- *@
+        <form method="post" asp-page-handler="Leer" enctype="multipart/form-data" class="fer-card p-4">
+            <label for="factura" class="cf-subir">
+                <i class="bi bi-file-earmark-zip" aria-hidden="true"></i>
+                <span class="fs-5 fw-semibold">Elige el archivo .zip de la factura</span>
+                <span class="text-secondary">Es el archivo que llega adjunto en el correo del proveedor junto con el PDF.
+                    También sirve el .xml que viene dentro del .zip.</span>
+                <input id="factura" name="factura" type="file" accept=".zip,.xml" class="form-control form-control-lg mt-2" style="max-width: 460px" required />
+            </label>
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-fer btn-lg">
+                    <i class="bi bi-search me-2" aria-hidden="true"></i>Leer factura
+                </button>
+            </div>
+        </form>
+    }
+    else
+    {
+        @* ---------- Paso 2: revisar y guardar ---------- *@
+        <section class="fer-card p-4 mb-4" aria-labelledby="titulo-factura">
+            <h2 id="titulo-factura" class="h5 mb-3">Factura @f.Numero</h2>
+            <div class="row g-3">
+                <div class="col-md-5"><span class="text-secondary d-block small">Proveedor</span><strong>@f.ProveedorNombre</strong><span class="d-block small text-secondary">NIT @f.ProveedorNit</span></div>
+                <div class="col-6 col-md-2"><span class="text-secondary d-block small">Fecha</span><strong>@f.Fecha.ToString("dd/MM/yyyy")</strong></div>
+                <div class="col-6 col-md-2"><span class="text-secondary d-block small">Impuestos</span><strong>@ListaModel.Moneda(f.Impuestos)</strong></div>
+                <div class="col-md-3"><span class="text-secondary d-block small">Total a pagar</span><strong class="fs-4">@ListaModel.Moneda(f.Total)</strong></div>
+            </div>
+        </section>
+
+        <form method="post" asp-page-handler="Guardar">
+            <input type="hidden" asp-for="Archivo" />
+
+            <div class="fer-card overflow-hidden mb-3">
+                <div class="fer-card-cuerpo pb-2">
+                    <h2 class="h5 mb-1">Productos de la factura (@f.Lineas.Count)</h2>
+                    <p class="text-secondary small mb-0">
+                        Revisa a qué producto del inventario corresponde cada uno. Si el proveedor vende por caja o paquete,
+                        escribe cuántas unidades trae cada una. El sistema lo recuerda para la próxima factura.
+                    </p>
+                </div>
+
+                @for (var i = 0; i < f.Lineas.Count; i++)
+                {
+                    var l = f.Lineas[i];
+                    var form = Model.Lineas.Count > i ? Model.Lineas[i] : new CargarModel.LineaForm();
+                    var clase = form.ProductoId == CargarModel.CrearNuevo ? "crear" : form.ProductoId == CargarModel.NoSumar ? "no-sumar" : "";
+                    <div class="cf-linea @clase" data-linea>
+                        <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                            <div>
+                                <div class="cf-desc">@l.Descripcion</div>
+                                <div class="cf-detalle">
+                                    Código del proveedor @l.CodigoProveedor
+                                    @if (l.CodigoBarras is not null) { <span> · <i class="bi bi-upc" aria-hidden="true"></i> @l.CodigoBarras</span> }
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div><strong>@l.Cantidad.ToString("0.###", cultura)</strong> @l.Unidad</div>
+                                <div class="cf-detalle">@ListaModel.Moneda(l.ValorTotal) con impuestos</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-8">
+                                <label class="form-label small fw-semibold" for="prod-@i">
+                                    Producto del inventario
+                                    @if (form.ProductoId > 0) { <span class="cf-estado ok ms-1">Encontrado</span> }
+                                    else if (form.ProductoId == CargarModel.CrearNuevo) { <span class="cf-estado nuevo ms-1">Nuevo</span> }
+                                </label>
+                                <select id="prod-@i" name="Lineas[@i].ProductoId" class="form-select js-producto">
+                                    <option value="@CargarModel.CrearNuevo" selected="@(form.ProductoId == CargarModel.CrearNuevo)">➕ Crear producto nuevo</option>
+                                    <option value="@CargarModel.NoSumar" selected="@(form.ProductoId == CargarModel.NoSumar)">No sumar al inventario (servicio, flete, etc.)</option>
+                                    @foreach (var p in Model.Productos)
+                                    {
+                                        <option value="@p.Id" selected="@(form.ProductoId == p.Id)">@p.Texto</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold" for="unid-@i">Unidades por cada una</label>
+                                <input id="unid-@i" name="Lineas[@i].UnidadesPor" type="number" min="1" step="1" inputmode="numeric"
+                                       value="@form.UnidadesPor" class="form-control js-unidades" data-cantidad="@l.Cantidad.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                                <div class="form-text js-total-unidades"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mt-1 cf-nuevo">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold" for="cod-@i">Código del producto nuevo</label>
+                                <input id="cod-@i" name="Lineas[@i].CodigoNuevo" value="@form.CodigoNuevo" maxlength="30" class="form-control" />
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-semibold" for="nom-@i">Nombre del producto nuevo</label>
+                                <input id="nom-@i" name="Lineas[@i].NombreNuevo" value="@form.NombreNuevo" maxlength="150" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <p class="small text-secondary">
+                Al guardar: se suma la cantidad al inventario, el precio de compra de cada producto queda con lo que costó
+                cada unidad en esta factura (impuestos incluidos) y la compra cuenta como egreso en el Resumen.
+                Los productos nuevos quedan con precio de venta por definir: revísalos en Inventario.
+            </p>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-end">
+                <a class="btn btn-fer-outline btn-lg" href="/Compras/Cargar">Cancelar</a>
+                <button type="submit" class="btn btn-fer btn-lg"
+                        data-confirmar="¿Cargar la factura @f.Numero por @ListaModel.Moneda(f.Total) y sumar los productos al inventario?"
+                        data-confirmar-boton="Sí, cargar">
+                    <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Guardar compra
+                </button>
+            </div>
+        </form>
+    }
+</main>
+
+<script>
+    // Muestra los campos de "producto nuevo" solo cuando se elige crear uno,
+    // y cuántas unidades van a entrar al inventario.
+    document.querySelectorAll('[data-linea]').forEach(function (linea) {
+        var select = linea.querySelector('.js-producto');
+        var unidades = linea.querySelector('.js-unidades');
+        var ayuda = linea.querySelector('.js-total-unidades');
+        function actualizar() {
+            linea.classList.toggle('crear', select.value === '0');
+            linea.classList.toggle('no-sumar', select.value === '-1');
+            var total = parseFloat(unidades.dataset.cantidad) * (parseInt(unidades.value, 10) || 1);
+            ayuda.textContent = select.value === '-1' ? 'No entra al inventario' : 'Entran ' + total.toLocaleString('es-CO') + ' unidades';
+        }
+        select.addEventListener('change', actualizar);
+        unidades.addEventListener('input', actualizar);
+        actualizar();
+    });
+</script>
+</body>
+</html>

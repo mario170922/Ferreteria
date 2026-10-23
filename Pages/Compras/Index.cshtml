@@ -1,0 +1,81 @@
+@page
+@model Ferreteria.Pages.Compras.IndexModel
+@using Ferreteria.Pages.Pedidos
+@using Ferreteria.Services
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Compras - @Negocio.Nombre(User.NegocioActual())</title>
+    <partial name="_Estilos" />
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-4">
+
+    <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Compras</h1>
+            <p class="text-secondary mb-0">Facturas de proveedores cargadas en @Negocio.Nombre(User.NegocioActual()).</p>
+        </div>
+        <a class="btn btn-fer btn-lg" href="/Compras/Cargar">
+            <i class="bi bi-file-earmark-arrow-up me-2" aria-hidden="true"></i>Cargar factura
+        </a>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.Mensaje))
+    {
+        <div class="alert alert-success" role="status">@Model.Mensaje</div>
+    }
+
+    @if (Model.Lista.Count == 0)
+    {
+        <div class="fer-card fer-vacio">
+            <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
+            <h2>Todavía no hay compras</h2>
+            <p class="mb-3">Descarga el .zip que llega en el correo de la factura del proveedor y cárgalo aquí.
+                El inventario se actualiza solo.</p>
+            <a class="btn btn-fer" href="/Compras/Cargar"><i class="bi bi-file-earmark-arrow-up me-2" aria-hidden="true"></i>Cargar la primera factura</a>
+        </div>
+    }
+    else
+    {
+        <div class="fer-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table fer-tabla fer-tabla-tarjetas mb-0">
+                    <caption class="visually-hidden">Compras cargadas</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Factura</th>
+                            <th scope="col">Proveedor</th>
+                            <th scope="col" class="text-end">Productos</th>
+                            <th scope="col" class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Lista)
+                        {
+                            <tr>
+                                <td data-etiqueta="Fecha">@c.Fecha.ToString("dd/MM/yyyy")</td>
+                                <td data-etiqueta="Factura"><strong>@c.Numero</strong></td>
+                                <td data-etiqueta="Proveedor">@c.Proveedor</td>
+                                <td data-etiqueta="Productos" class="text-end">@c.Productos</td>
+                                <td data-etiqueta="Total" class="text-end">@ListaModel.Moneda(c.Total)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</main>
+</body>
+</html>
