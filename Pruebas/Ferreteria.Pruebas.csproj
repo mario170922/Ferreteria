@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Pruebas automáticas de la lógica que no necesita base de datos:
+       lectura de facturas, homologación de productos y códigos de barras.
+       Se corren con:  dotnet test Pruebas   (desde la carpeta Ferreteria) -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../Services/Homologacion.cs" Link="Codigo/Homologacion.cs" />
+    <Compile Include="../Services/FacturaElectronica.cs" Link="Codigo/FacturaElectronica.cs" />
+    <Compile Include="../Services/CodigoBarras.cs" Link="Codigo/CodigoBarras.cs" />
+    <Compile Include="../Services/CodigoBarrasSvg.cs" Link="Codigo/CodigoBarrasSvg.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Dapper" Version="2.1.89" />
+  </ItemGroup>
+
+</Project>

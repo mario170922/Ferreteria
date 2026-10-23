@@ -15,4 +15,11 @@
     <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
   </ItemGroup>
 
+  <!-- Las pruebas automáticas son un proyecto aparte (Pruebas/Ferreteria.Pruebas.csproj) -->
+  <ItemGroup>
+    <Compile Remove="Pruebas/**" />
+    <Content Remove="Pruebas/**" />
+    <None Remove="Pruebas/**" />
+  </ItemGroup>
+
 </Project>
