@@ -11,7 +11,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         opciones.LoginPath = "/Login";
         opciones.LogoutPath = "/Salir";
-        opciones.AccessDeniedPath = "/Login";
+        opciones.AccessDeniedPath = "/SinPermiso";
         opciones.ExpireTimeSpan = TimeSpan.FromHours(12);
         opciones.SlidingExpiration = true;
         opciones.Cookie.HttpOnly = true;

@@ -1,0 +1,30 @@
+@page
+@model Ferreteria.Pages.SinPermisoModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sin permiso - Ferretería</title>
+    <partial name="_Estilos" />
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-5" style="max-width:640px">
+    <div class="fer-card fer-vacio">
+        <i class="bi bi-shield-lock" aria-hidden="true"></i>
+        <h1 class="h3">Esta parte es solo para el administrador</h1>
+        <p class="mb-4">Tu usuario no tiene permiso para entrar aquí. Si lo necesitas, pídeselo al administrador.</p>
+        <a class="btn btn-fer btn-lg" href="/"><i class="bi bi-house-door me-2" aria-hidden="true"></i>Volver al inicio</a>
+    </div>
+</main>
+
+</body>
+</html>

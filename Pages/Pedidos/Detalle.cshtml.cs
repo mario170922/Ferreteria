@@ -52,7 +52,7 @@ public class DetalleModel : PageModel
         if (!EsAdmin)
         {
             vendedorId = await con.QueryFirstOrDefaultAsync<int>(
-                "SELECT id FROM usuarios WHERE nombre_usuario = @nombre",
+                "SELECT id FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre)",
                 new { nombre = User.Identity?.Name ?? "" });
 
             if (vendedorId == 0)

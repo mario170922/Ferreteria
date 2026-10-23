@@ -51,7 +51,7 @@ public class IndexModel : PageModel
                       WHERE p.fecha::date = current_date AND (@esAdmin OR p.vendedor_id = u.id)) AS PedidosHoy,
                     (SELECT count(*) FROM productos WHERE stock_minimo > 0 AND stock <= stock_minimo) AS StockBajo,
                     (SELECT count(*) FROM clientes)                                               AS Clientes
-                FROM (SELECT (SELECT id FROM usuarios WHERE nombre_usuario = @nombre) AS id) u",
+                FROM (SELECT (SELECT id FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre)) AS id) u",
                 new { esAdmin = EsAdmin, nombre = NombreUsuario });
         }
         catch (NpgsqlException)

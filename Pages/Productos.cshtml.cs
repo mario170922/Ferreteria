@@ -36,6 +36,7 @@ public class ProductosModel : PageModel
     public int TotalFiltrado { get; set; }
     public int TotalPaginas { get; set; } = 1;
     public string? Mensaje { get; set; }
+    public bool EsError { get; set; }
 
     public bool HayFiltros =>
         !string.IsNullOrWhiteSpace(Q) || Categoria is not null || Sub is not null || Bajo;
@@ -80,6 +81,7 @@ public class ProductosModel : PageModel
     public async Task OnGetAsync()
     {
         Mensaje = TempData["Mensaje"]?.ToString();
+        EsError = TempData["EsError"] is true;
 
         Q = string.IsNullOrWhiteSpace(Q) ? null : Q.Trim();
         if (Categoria is null) Sub = null;
@@ -195,6 +197,7 @@ public class ProductosModel : PageModel
         if (!User.IsInRole("admin"))
         {
             TempData["Mensaje"] = "Solo el administrador puede eliminar productos.";
+            TempData["EsError"] = true;
             return VolverALista(retorno);
         }
 
@@ -215,11 +218,13 @@ public class ProductosModel : PageModel
             else
             {
                 TempData["Mensaje"] = "El producto ya no existe.";
+                TempData["EsError"] = true;
             }
         }
         catch (PostgresException ex) when (ex.SqlState == "23503")
         {
-            TempData["Mensaje"] = "No se puede eliminar: el producto tiene movimientos de inventario.";
+            TempData["Mensaje"] = "No se puede eliminar: el producto ya tiene movimientos o pedidos registrados. Si ya no se vende, déjalo con stock 0.";
+            TempData["EsError"] = true;
         }
 
         return VolverALista(retorno);

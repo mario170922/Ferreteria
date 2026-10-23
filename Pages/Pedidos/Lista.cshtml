@@ -52,7 +52,7 @@
     {
         <div class="fer-card overflow-hidden">
             <div class="table-responsive">
-                <table class="table fer-tabla mb-0">
+                <table class="table fer-tabla fer-tabla-tarjetas mb-0">
                     <caption class="visually-hidden">Pedidos de los últimos 3 meses</caption>
                     <thead>
                         <tr>
@@ -77,15 +77,15 @@
                                     <a class="numero-orden" href="/Pedidos/Detalle/@p.Id"
                                        aria-label="Ver detalle del pedido @p.Numero">@p.Numero</a>
                                 </td>
-                                <td>@ListaModel.FormatearFecha(p.Fecha)</td>
-                                <td>@p.Ferreteria</td>
-                                <td>@p.Cliente</td>
+                                <td data-etiqueta="Fecha">@ListaModel.FormatearFecha(p.Fecha)</td>
+                                <td data-etiqueta="Ferretería">@p.Ferreteria</td>
+                                <td data-etiqueta="Cliente">@p.Cliente</td>
                                 @if (Model.EsAdmin)
                                 {
-                                    <td>@p.Vendedor</td>
+                                    <td data-etiqueta="Vendedor">@p.Vendedor</td>
                                 }
-                                <td class="text-end">@ListaModel.Moneda(p.Total)</td>
-                                <td class="text-center">
+                                <td class="text-end" data-etiqueta="Total">@ListaModel.Moneda(p.Total)</td>
+                                <td class="text-center" data-etiqueta="Estado">
                                     <span class="estado @ListaModel.ClaseEstado(p.Estado)">@ListaModel.EtiquetaEstado(p.Estado)</span>
                                 </td>
                                 <td class="text-center">

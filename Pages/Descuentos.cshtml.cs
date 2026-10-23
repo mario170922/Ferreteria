@@ -41,7 +41,7 @@ public class DescuentosModel : PageModel
             return Forbid();
         }
 
-        foreach (var fila in Filas)
+        foreach (var fila in Filas.Where(f => f.Rol != "admin"))
         {
             if (fila.DescuentoPct < 0 || fila.DescuentoPct > 100)
             {
@@ -81,10 +81,10 @@ public class DescuentosModel : PageModel
             SELECT id AS Id,
                    nombre_usuario AS NombreUsuario,
                    activo AS Activo,
-                   descuento_pct AS DescuentoPct
+                   descuento_pct AS DescuentoPct,
+                   rol AS Rol
             FROM usuarios
-            WHERE rol = 'vendedor'
-            ORDER BY nombre_usuario");
+            ORDER BY rol DESC, nombre_usuario");
 
         Filas = lista.ToList();
     }
@@ -95,5 +95,6 @@ public class DescuentosModel : PageModel
         public string NombreUsuario { get; set; } = "";
         public bool Activo { get; set; }
         public decimal DescuentoPct { get; set; }
+        public string Rol { get; set; } = "vendedor";
     }
 }

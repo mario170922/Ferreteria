@@ -58,6 +58,9 @@
 
         .btn-ec-outline:hover { border-color: var(--ec-amarillo); color: var(--ec-amarillo); }
 
+        /* Mensaje de "pedido alistado" con los colores oscuros del resto del sitio */
+        .barra .alert-success { background: #12301c; border-color: #2fbf5b; color: #d6f5df; }
+
         /* ---------- El sticker ---------- */
 
         .sticker {
@@ -429,7 +432,7 @@
 
         <div class="st-contenido-titulo">
             <h2 class="titulo-cond">Contenido</h2>
-            <span class="fw-semibold">@p.Items.Count productos · @p.TotalUnidades unidades</span>
+            <span class="fw-semibold">@p.Items.Count @(p.Items.Count == 1 ? "producto" : "productos") · @p.TotalUnidades.ToString("N0", new System.Globalization.CultureInfo("es-CO")) @(p.TotalUnidades == 1 ? "unidad" : "unidades")</span>
         </div>
 
         <table class="st-tabla">
@@ -438,7 +441,7 @@
                 @foreach (var item in p.Items)
                 {
                     <tr>
-                        <td class="st-cant"><span class="titulo-cond">@item.Cantidad</span></td>
+                        <td class="st-cant"><span class="titulo-cond">@item.Cantidad.ToString("N0", new System.Globalization.CultureInfo("es-CO"))</span></td>
                         <td class="st-prod">
                             <strong>@item.Nombre</strong>
                             @if (!string.IsNullOrWhiteSpace(item.Medida))

@@ -37,7 +37,7 @@ public class LoginModel : PageModel
         const string sql = @"
             SELECT id, nombre_usuario AS NombreUsuario, clave_hash AS ClaveHash, rol, activo AS Activo
             FROM usuarios
-            WHERE nombre_usuario = @Nombre";
+            WHERE lower(nombre_usuario) = lower(@Nombre)";
 
         var usuario = await conn.QuerySingleOrDefaultAsync<Usuario>(sql, new { Nombre = NombreUsuario.Trim() });
 

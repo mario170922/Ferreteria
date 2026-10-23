@@ -20,7 +20,7 @@
             align-items: center;
             gap: 1rem;
             padding: 1rem 1.25rem;
-            border-bottom: 1px solid #e3e3e3;
+            border-bottom: 1px solid var(--fer-borde);
             cursor: pointer;
             margin: 0;
         }
@@ -47,9 +47,11 @@
 
         .al-nombre { font-size: 1.15rem; font-weight: 600; }
 
-        .al-linea.listo { background: #eef8ee; }
-        .al-linea.listo .al-nombre { text-decoration: line-through; color: #5c7a5c; }
-        .al-linea.listo .al-cantidad { background: #2e7d32; color: #fff; }
+        .al-linea { transition: background-color var(--fer-rapido) ease; }
+        .al-linea:hover { background: rgba(245, 183, 0, .05); }
+        .al-linea.listo { background: #12301c; }
+        .al-linea.listo .al-nombre { text-decoration: line-through; color: #8fcf9f; }
+        .al-linea.listo .al-cantidad { background: var(--fer-verde); color: #000; }
 
         .al-progreso { height: 14px; }
     </style>
@@ -88,7 +90,7 @@
 
     <div class="d-flex justify-content-between mb-1">
         <span class="fw-semibold" id="texto-progreso" aria-live="polite"></span>
-        <span class="text-secondary">@p.TotalUnidades unidades en total</span>
+        <span class="text-secondary">@p.TotalUnidades.ToString("N0", new System.Globalization.CultureInfo("es-CO")) @(p.TotalUnidades == 1 ? "unidad" : "unidades") en total</span>
     </div>
     <div class="progress al-progreso mb-3" role="presentation">
         <div class="progress-bar bg-success" id="barra-progreso" style="width:0%"></div>
@@ -98,8 +100,8 @@
         @foreach (var item in p.Items)
         {
             <label class="al-linea">
-                <input type="checkbox" class="form-check-input al-check" checked="@(!pendiente)" disabled="@(!pendiente)" />
-                <span class="al-cantidad">@item.Cantidad</span>
+                <input type="checkbox" class="form-check-input al-check" checked="@(!pendiente)" disabled="@(!pendiente)" aria-label="Listo: @item.Nombre" />
+                <span class="al-cantidad">@item.Cantidad.ToString("N0", new System.Globalization.CultureInfo("es-CO"))</span>
                 <span class="flex-grow-1">
                     <span class="al-nombre d-block">@item.Nombre</span>
                     <span class="text-secondary">

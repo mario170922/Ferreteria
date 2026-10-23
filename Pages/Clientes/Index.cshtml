@@ -57,7 +57,7 @@
         else
         {
             <div class="table-responsive">
-                <table class="table fer-tabla mb-0">
+                <table class="table fer-tabla fer-tabla-tarjetas mb-0">
                     <caption class="visually-hidden">Clientes registrados</caption>
                     <thead>
                         <tr>
@@ -74,16 +74,18 @@
                         {
                             <tr>
                                 <td><strong>@c.NombreCliente</strong></td>
-                                <td>@(c.NombreFerreteria ?? "—")</td>
-                                <td>
-                                    @c.Celular1
-                                    @if (!string.IsNullOrEmpty(c.Celular2))
-                                    {
-                                        <br /><span class="text-secondary">@c.Celular2</span>
-                                    }
+                                <td data-etiqueta="Ferretería">@(c.NombreFerreteria ?? "—")</td>
+                                <td data-etiqueta="Celular">
+                                    <span>
+                                        @c.Celular1
+                                        @if (!string.IsNullOrEmpty(c.Celular2))
+                                        {
+                                            <br /><span class="text-secondary">@c.Celular2</span>
+                                        }
+                                    </span>
                                 </td>
-                                <td>@c.Direccion</td>
-                                <td>@c.Pedidos</td>
+                                <td data-etiqueta="Dirección">@c.Direccion</td>
+                                <td data-etiqueta="Pedidos">@c.Pedidos</td>
                                 <td class="text-end">
                                     <a class="btn btn-fer-outline btn-sm" href="/Clientes/Editar/@c.Id">
                                         <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar

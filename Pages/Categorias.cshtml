@@ -327,10 +327,10 @@
 
                         <div class="conteos-categoria">
                             <span class="pastilla-conteo">
-                                <i class="bi bi-box-seam" aria-hidden="true"></i>@cat.Productos.Count producto(s)
+                                <i class="bi bi-box-seam" aria-hidden="true"></i>@cat.Productos.Count @(cat.Productos.Count == 1 ? "producto" : "productos")
                             </span>
                             <span class="pastilla-conteo">
-                                <i class="bi bi-diagram-3" aria-hidden="true"></i>@cat.Subcategorias.Count subcategoría(s)
+                                <i class="bi bi-diagram-3" aria-hidden="true"></i>@cat.Subcategorias.Count @(cat.Subcategorias.Count == 1 ? "subcategoría" : "subcategorías")
                             </span>
                         </div>
 

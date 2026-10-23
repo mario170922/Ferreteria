@@ -330,7 +330,7 @@
             <h1 class="h2 mb-1">Pedido @p.Numero</h1>
             <p class="text-secondary mb-0">Fecha: @ListaModel.FormatearFecha(p.Fecha)</p>
         </div>
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3">
             <span class="estado ec-estado @ListaModel.ClaseEstado(p.Estado)">@ListaModel.EtiquetaEstado(p.Estado)</span>
             @if (Model.EsAdmin && p.Estado == "pendiente")
             {

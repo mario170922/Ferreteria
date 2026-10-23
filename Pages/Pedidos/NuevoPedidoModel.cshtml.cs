@@ -109,7 +109,7 @@ public class NuevoPedidoModel : PageModel
             var vendedor = await con.QueryFirstOrDefaultAsync<VendedorInfo>(@"
                 SELECT id AS Id, descuento_pct AS DescuentoPct
                 FROM usuarios
-                WHERE nombre_usuario = @n AND activo = true",
+                WHERE lower(nombre_usuario) = lower(@n) AND activo = true",
                 new { n = User.Identity?.Name ?? "" }, tx);
 
             if (vendedor is null)
@@ -117,10 +117,13 @@ public class NuevoPedidoModel : PageModel
                 throw new InvalidOperationException("Tu usuario no está activo. Consulta con el administrador.");
             }
 
-            if (DescuentoElegido < 0 || DescuentoElegido > vendedor.DescuentoPct)
+            // El administrador puede dar cualquier descuento; el vendedor, hasta su máximo.
+            decimal maximo = User.IsInRole("admin") ? 100m : vendedor.DescuentoPct;
+
+            if (DescuentoElegido < 0 || DescuentoElegido > maximo)
             {
                 throw new InvalidOperationException(
-                    $"El descuento elegido supera tu máximo permitido ({vendedor.DescuentoPct:0.##}%).");
+                    $"El descuento elegido supera tu máximo permitido ({maximo:0.##}%).");
             }
 
             int idCliente = await ObtenerOCrearClienteAsync(con, tx);
@@ -227,8 +230,13 @@ public class NuevoPedidoModel : PageModel
         NombreVendedor = User.Identity?.Name ?? "";
 
         DescuentoMaximo = await con.QueryFirstOrDefaultAsync<decimal?>(
-            "SELECT descuento_pct FROM usuarios WHERE nombre_usuario = @n",
+            "SELECT descuento_pct FROM usuarios WHERE lower(nombre_usuario) = lower(@n)",
             new { n = NombreVendedor }) ?? 0m;
+
+        if (User.IsInRole("admin"))
+        {
+            DescuentoMaximo = 100m;
+        }
 
         var productos = await con.QueryAsync<ProductoOpcion>(@"
             SELECT id           AS Id,
@@ -259,6 +267,23 @@ public class NuevoPedidoModel : PageModel
         if (string.IsNullOrWhiteSpace(Cliente.Direccion))
         {
             ModelState.AddModelError(string.Empty, "Escribe la dirección del cliente.");
+        }
+
+        // Los mismos límites que tiene la tabla clientes, con un mensaje claro.
+        RevisarLargo(Cliente.Celular1, 20, "El celular principal");
+        RevisarLargo(Cliente.Celular2, 20, "El otro celular");
+        RevisarLargo(Cliente.NombreFerreteria, 150, "El nombre de la ferretería");
+        RevisarLargo(Cliente.NombreCliente, 150, "El nombre del cliente");
+        RevisarLargo(Cliente.Direccion, 250, "La dirección");
+        RevisarLargo(Cliente.Ubicacion, 250, "La ubicación");
+        RevisarLargo(Cliente.Horario, 150, "El horario");
+    }
+
+    private void RevisarLargo(string? texto, int maximo, string campo)
+    {
+        if ((texto ?? "").Trim().Length > maximo)
+        {
+            ModelState.AddModelError(string.Empty, $"{campo} es muy largo (máximo {maximo} letras).");
         }
     }
 
@@ -298,7 +323,19 @@ public class NuevoPedidoModel : PageModel
             ModelState.AddModelError(string.Empty, "Agrega al menos un producto con cantidad.");
         }
 
-        return validas;
+        // Si el mismo producto quedó en dos líneas, se suman en una sola.
+        var juntas = validas
+            .GroupBy(v => v.ProductoId)
+            .Select(g => (ProductoId: g.Key, Cantidad: g.Sum(v => v.Cantidad)))
+            .ToList();
+
+        foreach (var j in juntas.Where(j => j.Cantidad > MaxCantidadPorLinea))
+        {
+            ModelState.AddModelError(string.Empty,
+                $"Un producto suma más de {MaxCantidadPorLinea:N0} unidades entre varias líneas.");
+        }
+
+        return juntas;
     }
 
     private async Task<int> ObtenerOCrearClienteAsync(NpgsqlConnection con, NpgsqlTransaction tx)

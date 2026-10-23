@@ -7,7 +7,8 @@ using Npgsql;
 
 namespace Ferreteria.Pages;
 
-[Authorize]
+// Registrar entradas y salidas y ver el historial es solo del administrador.
+[Authorize(Roles = "admin")]
 public class MovimientosModel : PageModel
 {
     private const int MaxCantidad = 1000000;
@@ -59,6 +60,10 @@ public class MovimientosModel : PageModel
         else if (Cantidad > MaxCantidad)
         {
             Error = $"La cantidad no puede ser mayor a {MaxCantidad:N0}.";
+        }
+        else if ((Motivo ?? "").Trim().Length > 150)
+        {
+            Error = "El motivo es muy largo (máximo 150 letras).";
         }
 
         if (Error == null)

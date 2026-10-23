@@ -57,6 +57,14 @@ public class EditarModel : PageModel
             Error = "Escribe la dirección del cliente.";
         else if (string.IsNullOrWhiteSpace(Form.Celular1))
             Error = "Escribe el celular del cliente.";
+        else
+            Error = Largo(Form.Celular1, 20, "El celular")
+                 ?? Largo(Form.Celular2, 20, "El otro celular")
+                 ?? Largo(Form.NombreCliente, 150, "El nombre del cliente")
+                 ?? Largo(Form.NombreFerreteria, 150, "El nombre de la ferretería")
+                 ?? Largo(Form.Direccion, 250, "La dirección")
+                 ?? Largo(Form.Ubicacion, 250, "La ubicación")
+                 ?? Largo(Form.Horario, 150, "El horario");
 
         if (Error is not null) return Page();
 
@@ -108,6 +116,12 @@ public class EditarModel : PageModel
         }
 
         return RedirectToPage("/Clientes/Index");
+    }
+
+    // Los mismos límites que tiene la tabla clientes, con un mensaje claro.
+    private static string? Largo(string? texto, int maximo, string campo)
+    {
+        return (texto ?? "").Trim().Length > maximo ? $"{campo} es muy largo (máximo {maximo} letras)." : null;
     }
 
     private static string? Nulo(string? texto)

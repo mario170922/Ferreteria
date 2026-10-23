@@ -46,7 +46,7 @@
                 </div>
                 <div class="fer-cifra py-2 px-4">
                     <div class="fer-cifra-etiqueta">Stock actual</div>
-                    <div class="fer-cifra-valor">@Model.StockActual</div>
+                    <div class="fer-cifra-valor">@Model.StockActual.ToString("N0", new System.Globalization.CultureInfo("es-CO"))</div>
                 </div>
             </div>
 

@@ -235,7 +235,7 @@
         <div class="velo">
             <h1 class="h2 mb-1">@Model.Categoria.Nombre</h1>
             <p class="mb-0 text-secondary">
-                @Model.Productos.Count producto(s) · @Model.Subcategorias.Count subcategoría(s)
+                @Model.Productos.Count @(Model.Productos.Count == 1 ? "producto" : "productos") · @Model.Subcategorias.Count @(Model.Subcategorias.Count == 1 ? "subcategoría" : "subcategorías")
             </p>
         </div>
     </div>
@@ -329,7 +329,7 @@
                 <div class="fila-sub">
                     <div>
                         <span class="fw-semibold">@sub.Nombre</span>
-                        <span class="text-secondary small ms-2">@sub.Cantidad producto(s)</span>
+                        <span class="text-secondary small ms-2">@sub.Cantidad @(sub.Cantidad == 1 ? "producto" : "productos")</span>
                     </div>
                     <form method="post" asp-page-handler="EliminarSubcategoria" asp-route-id="@Model.Categoria.Id"
                           onsubmit="return confirm('¿Eliminar &quot;@sub.Nombre&quot;? Sus productos quedarán en la categoría.');">

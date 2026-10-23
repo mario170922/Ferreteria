@@ -72,7 +72,7 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table fer-tabla mb-0">
+                    <table class="table fer-tabla fer-tabla-tarjetas mb-0">
                         <caption class="visually-hidden">Usuarios registrados en el sistema</caption>
                         <thead>
                             <tr>
@@ -87,8 +87,8 @@
                             {
                                 <tr>
                                     <td><strong>@u.NombreUsuario</strong></td>
-                                    <td>@(u.Rol == "admin" ? "Administrador" : "Vendedor")</td>
-                                    <td>
+                                    <td data-etiqueta="Rol">@(u.Rol == "admin" ? "Administrador" : "Vendedor")</td>
+                                    <td data-etiqueta="Estado">
                                         @if (u.Activo)
                                         {
                                             <span class="estado etiqueta-entrada">Activo</span>

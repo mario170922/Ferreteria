@@ -103,14 +103,12 @@ a {
 a:hover { color: var(--fer-naranja-oscuro); }
 
 /* Encabezado de cada página: título con una raya amarilla */
-main > header h1,
-main header > div > h1 {
+main h1:not(.fer-saludo):not(.fer-login-titulo) {
   position: relative;
   padding-bottom: .35rem;
 }
 
-main > header h1::after,
-main header > div > h1::after {
+main h1:not(.fer-saludo):not(.fer-login-titulo)::after {
   content: "";
   position: absolute;
   left: 0;
@@ -238,6 +236,9 @@ main header > div > h1::after {
 }
 
 .btn:active:not(:disabled) { transform: translateY(1px) scale(.98); }
+
+/* Espacio entre el ícono y el texto cuando la página no lo puso */
+.btn > .bi:first-child:not(:only-child):not([class*="me-"]) { margin-right: .5rem; }
 
 .btn-sm { min-height: 38px; }
 
@@ -590,6 +591,11 @@ main header > div > h1::after {
   vertical-align: middle;
 }
 
+/* Las tablas solo se desplazan de lado (en celular); nunca hacia abajo por un píxel de borde */
+.table-responsive { overflow-y: hidden; }
+
+.fer-tabla tbody tr:last-child > * { border-bottom-width: 0; }
+
 .fer-tabla tbody tr,
 .ec-tabla tbody tr {
   transition: background-color var(--fer-rapido) ease;
@@ -598,6 +604,61 @@ main header > div > h1::after {
 .fer-tabla tbody tr:hover > *,
 .ec-tabla tbody tr:hover > * {
   background-color: rgba(245, 183, 0, .06);
+}
+
+/* En celular, las tablas marcadas con .fer-tabla-tarjetas se vuelven tarjetas:
+   cada fila es un bloque y cada dato lleva su nombre (data-etiqueta) al lado.
+   Así no hay que deslizar de lado para ver el estado o los botones. */
+@media (max-width: 767.98px) {
+  .fer-tabla-tarjetas thead { display: none; }
+
+  .fer-tabla-tarjetas,
+  .fer-tabla-tarjetas tbody,
+  .fer-tabla-tarjetas tr,
+  .fer-tabla-tarjetas td { display: block; width: 100%; }
+
+  .fer-tabla-tarjetas tbody tr {
+    padding: .75rem 1rem;
+    border-bottom: 1px solid var(--fer-borde);
+  }
+
+  .fer-tabla-tarjetas tbody tr:last-child { border-bottom: 0; }
+
+  .fer-tabla-tarjetas td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .3rem 0 !important;
+    border: 0 !important;
+    text-align: right !important;
+    white-space: normal;
+  }
+
+  .fer-tabla-tarjetas td[data-etiqueta]::before {
+    content: attr(data-etiqueta);
+    color: var(--fer-texto-suave);
+    font-size: .9rem;
+    font-weight: 600;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  /* Primera celda (número de orden o nombre) como título de la tarjeta */
+  .fer-tabla-tarjetas td:first-child {
+    justify-content: flex-start;
+    font-size: 1.1rem;
+    padding-bottom: .5rem !important;
+  }
+
+  /* Última celda (botones) a lo ancho */
+  .fer-tabla-tarjetas td:last-child {
+    justify-content: stretch;
+    gap: .5rem;
+    padding-top: .6rem !important;
+  }
+
+  .fer-tabla-tarjetas td:last-child .btn { flex: 1; min-height: 44px; }
 }
 
 .fer-tabla tfoot th,
@@ -616,6 +677,10 @@ main header > div > h1::after {
   padding: 0 .2rem;
   transition: background-color var(--fer-rapido) ease, color var(--fer-rapido) ease;
 }
+
+/* Números de orden y valores en pesos nunca se parten en dos líneas */
+.fer-tabla .numero-orden,
+.fer-tabla td.text-end { white-space: nowrap; }
 
 .fer-tabla .numero-orden:hover {
   color: #000;
@@ -725,6 +790,19 @@ legend {
 .form-check-input:focus {
   border-color: var(--fer-naranja);
   box-shadow: 0 0 0 4px rgba(245, 183, 0, .2);
+}
+
+/* Botón "Seleccionar archivo" de los campos de foto */
+.form-control::file-selector-button {
+  background-color: var(--fer-naranja);
+  color: #000;
+  font-weight: 600;
+  border: 0;
+  transition: background-color var(--fer-rapido) ease;
+}
+
+.form-control:hover:not(:disabled):not([readonly])::file-selector-button {
+  background-color: var(--fer-naranja-oscuro);
 }
 
 .input-group-text {
@@ -933,6 +1011,61 @@ legend {
 
 .producto-card:hover .producto-imagen::after { opacity: 1; transform: scale(1); }
 
+/* Fotos que faltan: fondo con el patrón de la marca en vez de gris plano */
+.producto-card .producto-imagen {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(245, 183, 0, .08), transparent 60%),
+    url("/img/patron-tornillos.svg") center / 140px,
+    #1a1a1a;
+}
+
+.producto-card .producto-imagen-vacia { color: #5a5a5a; opacity: 1; }
+
+/* Botones de cada producto: con texto, grandes y fáciles de tocar.
+   "Movimientos" ocupa toda la fila; "Editar" y "Eliminar" van debajo. */
+.producto-card .producto-acciones { gap: .5rem; }
+
+.producto-card .btn-accion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  width: 100%;
+  min-height: 40px;
+  font-size: .9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.producto-card .producto-acciones > .btn-movimientos { flex: 1 1 100%; }
+
+.producto-card .btn-movimientos {
+  background: var(--fer-superficie-2);
+  border: 1px solid #3d3d3d;
+  color: var(--fer-texto);
+}
+
+.producto-card .btn-movimientos:hover {
+  border-color: var(--fer-naranja);
+  color: var(--fer-naranja);
+}
+
+.producto-card .btn-editar:hover { background: var(--fer-naranja-oscuro); opacity: 1; }
+
+/* Rojo oscuro con texto claro para que se lea bien */
+.producto-card .btn-eliminar {
+  background: #3a1716;
+  border: 1px solid #a33a37;
+  color: #ffd6d6;
+}
+
+.producto-card .btn-eliminar:hover {
+  background: #a33a37;
+  color: #fff;
+  opacity: 1;
+}
+
 .modal-lightbox.activo { animation: fer-aparecer var(--fer-medio) ease both; }
 .modal-lightbox.activo img { animation: fer-crecer var(--fer-medio) var(--fer-curva) both; }
 
@@ -955,6 +1088,9 @@ body.fer-saliendo {
   opacity: 0;
   transform: translateY(12px);
 }
+
+/* Las filas de tabla solo se desvanecen, sin moverse, para no crear barras de desplazamiento */
+tr.fer-revelar { transform: none; }
 
 .fer-revelar.visible {
   opacity: 1;

@@ -365,9 +365,9 @@
 
     @if (!string.IsNullOrEmpty(Model.Mensaje))
     {
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <div class="alert @(Model.EsError ? "alert-danger" : "alert-success") alert-dismissible fade show" role="@(Model.EsError ? "alert" : "status")">
             @Model.Mensaje
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -522,19 +522,19 @@
                         </div>
 
                         <div class="producto-acciones">
-                            <a href="/Movimientos/@producto.Id" class="btn-accion btn-movimientos" title="Ver movimientos">
-                                <i class="bi bi-arrow-left-right"></i>
-                            </a>
                             @if (User.IsInRole("admin"))
                             {
-                                <a href="/Editar/@producto.Id" class="btn-accion btn-editar" title="Editar">
-                                    <i class="bi bi-pencil"></i>
+                                <a href="/Movimientos/@producto.Id" class="btn-accion btn-movimientos">
+                                    <i class="bi bi-arrow-left-right" aria-hidden="true"></i>Movimientos
+                                </a>
+                                <a href="/Editar/@producto.Id" class="btn-accion btn-editar">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>Editar
                                 </a>
                                 <form method="post" action="/Productos?handler=Eliminar" style="flex: 1;">
                                     <input type="hidden" name="id" value="@producto.Id" />
                                     <input type="hidden" name="retorno" value="@Model.EnlaceActual()" />
-                                    <button type="submit" class="btn-accion btn-eliminar" onclick="return confirm('¿Eliminar este producto?')" title="Eliminar">
-                                        <i class="bi bi-trash"></i>
+                                    <button type="submit" class="btn-accion btn-eliminar" onclick="return confirm('¿Eliminar este producto?')">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>Eliminar
                                     </button>
                                 </form>
                             }

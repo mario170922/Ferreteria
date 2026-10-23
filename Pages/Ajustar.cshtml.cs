@@ -44,6 +44,10 @@ public class AjustarModel : PageModel
         {
             Error = "Escribe el motivo del ajuste (por ejemplo: conteo físico, producto dañado).";
         }
+        else if (Motivo.Trim().Length > 150)
+        {
+            Error = "El motivo es muy largo (máximo 150 letras).";
+        }
 
         if (Error == null)
         {

@@ -55,6 +55,19 @@ public class UsuariosModel : PageModel
 
         await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
 
+        // Para entrar no importan las mayúsculas, así que "Pedro" y "pedro" serían el mismo usuario.
+        bool repetido = await conn.ExecuteScalarAsync<bool>(
+            "SELECT EXISTS (SELECT 1 FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre))",
+            new { nombre });
+
+        if (repetido)
+        {
+            Mensaje = "Ya existe un usuario con ese nombre.";
+            EsError = true;
+            await CargarAsync();
+            return Page();
+        }
+
         try
         {
             await conn.ExecuteAsync(
@@ -79,7 +92,7 @@ public class UsuariosModel : PageModel
 
         // El administrador principal no se puede desactivar desde aquí
         await conn.ExecuteAsync(
-            "UPDATE usuarios SET activo = NOT activo WHERE id = @id AND nombre_usuario <> 'admin'",
+            "UPDATE usuarios SET activo = NOT activo WHERE id = @id AND lower(nombre_usuario) <> 'admin'",
             new { id });
 
         TempData["Mensaje"] = "Estado del usuario actualizado.";

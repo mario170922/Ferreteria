@@ -21,9 +21,9 @@
 <main id="contenido" class="container py-4">
 
     <header class="mb-4">
-        <h1 class="h2 mb-1">Descuentos por vendedor</h1>
+        <h1 class="h2 mb-1">Descuentos</h1>
         <p class="text-secondary mb-0">
-            El porcentaje se aplica al total de cada pedido nuevo. Los pedidos ya guardados no cambian.
+            Es el descuento máximo que cada vendedor puede dar en un pedido nuevo. Los administradores no tienen límite. Los pedidos ya guardados no cambian.
         </p>
     </header>
 
@@ -40,10 +40,10 @@
         <div class="fer-card overflow-hidden">
             <div class="table-responsive">
                 <table class="table fer-tabla mb-0">
-                    <caption class="visually-hidden">Descuento asignado a cada vendedor</caption>
+                    <caption class="visually-hidden">Descuento máximo de cada usuario</caption>
                     <thead>
                         <tr>
-                            <th scope="col">Vendedor</th>
+                            <th scope="col">Usuario</th>
                             <th scope="col">Estado</th>
                             <th scope="col" class="text-end">Descuento (%)</th>
                         </tr>
@@ -58,6 +58,11 @@
                                     <input type="hidden" name="Filas[@i].Id" value="@f.Id" />
                                     <input type="hidden" name="Filas[@i].NombreUsuario" value="@f.NombreUsuario" />
                                     <input type="hidden" name="Filas[@i].Activo" value="@f.Activo" />
+                                    <input type="hidden" name="Filas[@i].Rol" value="@f.Rol" />
+                                    @if (f.Rol == "admin")
+                                    {
+                                        <div class="small text-secondary">Administrador</div>
+                                    }
                                 </td>
                                 <td>
                                     <span class="estado @(f.Activo ? "estado-entregado" : "estado-cancelado")">
@@ -65,17 +70,25 @@
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <label class="visually-hidden" for="pct-@i">Descuento de @f.NombreUsuario en porcentaje</label>
-                                    <div class="d-inline-flex align-items-center gap-2">
-                                        <input id="pct-@i"
-                                               type="number"
-                                               class="form-control text-end"
-                                               style="max-width: 120px;"
-                                               name="Filas[@i].DescuentoPct"
-                                               value="@f.DescuentoPct.ToString(CultureInfo.InvariantCulture)"
-                                               min="0" max="100" step="1" />
-                                        <span aria-hidden="true">%</span>
-                                    </div>
+                                    @if (f.Rol == "admin")
+                                    {
+                                        <span class="fw-semibold">Sin límite</span>
+                                        <div class="small text-secondary">Puede dar de 0 a 100 %</div>
+                                    }
+                                    else
+                                    {
+                                        <label class="visually-hidden" for="pct-@i">Descuento de @f.NombreUsuario en porcentaje</label>
+                                        <div class="d-inline-flex align-items-center gap-2">
+                                            <input id="pct-@i"
+                                                   type="number"
+                                                   class="form-control text-end"
+                                                   style="max-width: 120px;"
+                                                   name="Filas[@i].DescuentoPct"
+                                                   value="@f.DescuentoPct.ToString(CultureInfo.InvariantCulture)"
+                                                   min="0" max="100" step="1" />
+                                            <span aria-hidden="true">%</span>
+                                        </div>
+                                    }
                                 </td>
                             </tr>
                         }
