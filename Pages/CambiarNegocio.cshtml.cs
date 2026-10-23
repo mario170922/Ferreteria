@@ -25,7 +25,7 @@ public class CambiarNegocioModel : PageModel
 
         // Se vuelve a leer el usuario de la base, por si lo desactivaron
         await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
-        var usuario = await conn.QuerySingleOrDefaultAsync<Usuario>(@"
+        var usuario = await conn.QueryFirstOrDefaultAsync<Usuario>(@"
             SELECT id, nombre_usuario AS NombreUsuario, rol, negocio, activo AS Activo
             FROM usuarios WHERE lower(nombre_usuario) = lower(@n)",
             new { n = User.Identity?.Name ?? "" });

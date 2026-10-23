@@ -55,7 +55,7 @@ public class LoginModel : PageModel
             FROM usuarios
             WHERE lower(nombre_usuario) = lower(@Nombre)";
 
-        var usuario = await conn.QuerySingleOrDefaultAsync<Usuario>(sql, new { Nombre = NombreUsuario.Trim() });
+        var usuario = await conn.QueryFirstOrDefaultAsync<Usuario>(sql + " ORDER BY id", new { Nombre = NombreUsuario.Trim() });
 
         if (usuario is null || !usuario.Activo || !BCrypt.Net.BCrypt.Verify(Clave, usuario.ClaveHash))
         {

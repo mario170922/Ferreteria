@@ -1,11 +1,21 @@
-using Dapper;
+﻿using Dapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages();
+// Números: los campos del navegador envían "1428.57". En español de Colombia el punto es
+// separador de miles, así que se usa el punto como decimal en los números (los precios en
+// pesos se siguen mostrando a la colombiana: $ 1.428). Ver Services/DecimalModelBinder.cs.
+var culturaSitio = (System.Globalization.CultureInfo)new System.Globalization.CultureInfo("es-CO").Clone();
+culturaSitio.NumberFormat.NumberDecimalSeparator = ".";
+culturaSitio.NumberFormat.NumberGroupSeparator = ",";
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture = culturaSitio;
+System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culturaSitio;
+
+builder.Services.AddRazorPages()
+    .AddMvcOptions(o => o.ModelBinderProviders.Insert(0, new Ferreteria.Services.DecimalModelBinderProvider()));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(opciones =>
@@ -19,9 +29,26 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
         // Las sesiones abiertas antes de separar Tornillería y Ferretería no dicen el negocio:
         // se cierran para que la persona vuelva a entrar eligiendo el negocio.
+        // También se cierra la sesión si al usuario lo desactivaron o le cambiaron el perfil o el negocio.
         opciones.Events.OnValidatePrincipal = async contexto =>
         {
-            if (contexto.Principal?.FindFirst(Ferreteria.Services.Negocio.ClaimNegocio) is null)
+            var principal = contexto.Principal;
+            bool valida = principal?.FindFirst(Ferreteria.Services.Negocio.ClaimNegocio) is not null;
+
+            if (valida && int.TryParse(principal!.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id))
+            {
+                var config = contexto.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+                await using var conn = new NpgsqlConnection(config.GetConnectionString("Ferreteria"));
+                var actual = await conn.QueryFirstOrDefaultAsync<(string Rol, string? Negocio, bool Activo)?>(
+                    "SELECT rol, negocio, activo FROM usuarios WHERE id = @id", new { id });
+
+                var perfil = principal.FindFirst(Ferreteria.Services.Negocio.ClaimPerfil)?.Value;
+                var negocio = principal.FindFirst(Ferreteria.Services.Negocio.ClaimNegocio)?.Value;
+                valida = actual is { Activo: true } u && u.Rol == perfil
+                         && (u.Rol == Ferreteria.Services.Negocio.AdminGlobal || u.Negocio == negocio);
+            }
+
+            if (!valida)
             {
                 contexto.RejectPrincipal();
                 await contexto.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

@@ -84,7 +84,7 @@ public class CargarModel : PageModel
         {
             Factura = LeerGuardado(Archivo);
         }
-        catch (Exception ex) when (ex is InvalidOperationException or System.Xml.XmlException)
+        catch (Exception ex)
         {
             System.IO.File.Delete(Path.Combine(Carpeta, Archivo));
             Error = ex is InvalidOperationException ? ex.Message : "El archivo no es una factura electrónica válida.";
@@ -96,6 +96,7 @@ public class CargarModel : PageModel
 
         if (await YaCargadaAsync(con, Factura) is { } aviso)
         {
+            System.IO.File.Delete(Path.Combine(Carpeta, Archivo));
             Error = aviso;
             Factura = null;
             return Page();
@@ -174,7 +175,8 @@ public class CargarModel : PageModel
                     // Costo de cada unidad con impuestos incluidos: lo que realmente se pagó
                     var costoUnidad = cantidad > 0 ? Math.Round(linea.ValorTotal / cantidad, 2) : 0;
 
-                    var llaveNuevo = linea.CodigoBarras ?? (form.CodigoNuevo ?? "").Trim();
+                    // Solo se reutiliza si es el mismo artículo del proveedor (mismo código de barras o del proveedor)
+                    var llaveNuevo = linea.CodigoBarras ?? linea.CodigoProveedor;
                     if (form.ProductoId == CrearNuevo && llaveNuevo.Length > 0 && creadosEnEstaFactura.TryGetValue(llaveNuevo, out var yaCreado))
                     {
                         productoId = yaCreado;
@@ -257,6 +259,11 @@ public class CargarModel : PageModel
                     ? "Uno de los productos nuevos tiene un código que ya existe. Cambia el código o elige el producto existente."
                     : "Esta factura ya estaba cargada.";
         }
+        catch (PostgresException)
+        {
+            await tx.RollbackAsync();
+            Error = "No se pudo guardar la compra. Revisa que los códigos y nombres no sean demasiado largos e intenta de nuevo.";
+        }
 
         await CargarProductosAsync(con, negocio);
         return Page();
@@ -270,7 +277,11 @@ public class CargarModel : PageModel
         return FacturaElectronica.Leer(s, archivo);
     }
 
-    private static string Nit(FacturaElectronica.Factura f) => f.ProveedorNit.Length > 0 ? f.ProveedorNit : "SIN-NIT " + f.ProveedorNombre;
+    // Si la factura no trae NIT, se usa una clave corta sacada del nombre (la columna admite 20 letras)
+    private static string Nit(FacturaElectronica.Factura f) => f.ProveedorNit.Length > 0
+        ? (f.ProveedorNit.Length > 20 ? f.ProveedorNit[..20] : f.ProveedorNit)
+        : "SN-" + Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(
+              System.Text.Encoding.UTF8.GetBytes(f.ProveedorNombre.ToUpperInvariant())))[..12];
 
     private static async Task<string?> YaCargadaAsync(NpgsqlConnection con, FacturaElectronica.Factura f, NpgsqlTransaction? tx = null)
     {

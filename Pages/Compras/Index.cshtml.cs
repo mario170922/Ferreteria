@@ -75,8 +75,15 @@ public class IndexModel : PageModel
         var motivo = $"Anulación: factura {compra.Value.Numero} de {compra.Value.Proveedor}";
         foreach (var p in porProducto)
         {
-            await con.ExecuteAsync("UPDATE productos SET stock = stock - @u WHERE id = @pid",
+            // Se vuelve a revisar el stock al restar, por si se vendió algo mientras tanto
+            var filas = await con.ExecuteAsync("UPDATE productos SET stock = stock - @u WHERE id = @pid AND stock >= @u",
                 new { u = p.Unidades, pid = p.ProductoId }, tx);
+            if (filas == 0)
+            {
+                await tx.RollbackAsync();
+                TempData["Error"] = $"No se puede anular: de {p.Nombre} ya no hay suficiente stock para restar.";
+                return RedirectToPage();
+            }
             await con.ExecuteAsync(
                 "INSERT INTO movimientos_inventario (producto_id, cantidad, motivo) VALUES (@pid, @c, @motivo)",
                 new { pid = p.ProductoId, c = -p.Unidades, motivo }, tx);

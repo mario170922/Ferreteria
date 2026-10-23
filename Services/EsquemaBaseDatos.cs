@@ -130,6 +130,13 @@ public static class EsquemaBaseDatos
             ALTER TABLE productos DROP COLUMN precio_venta;
             ALTER TABLE productos ADD COLUMN precio_venta numeric
                 GENERATED ALWAYS AS (round(precio_compra * (1 + margen_pct / 100), 2)) STORED;"),
+
+        // El mismo producto de fábrica puede estar en Tornillería y en Ferretería:
+        // el código de barras solo debe ser único dentro de cada negocio.
+        ("2026-10-23 codigo de barras por negocio", @"
+            DROP INDEX IF EXISTS ux_productos_codigo_barras;
+            CREATE UNIQUE INDEX ux_productos_codigo_barras
+                ON productos (negocio, codigo_barras) WHERE codigo_barras IS NOT NULL;"),
     };
 
     public static async Task ActualizarAsync(IConfiguration config, ILogger logger)

@@ -46,8 +46,8 @@ public class CajaModel : PageModel
             SELECT u.id AS Id, u.nombre_usuario AS Nombre,
                    count(p.id) FILTER (WHERE p.estado = 'entregado')                                   AS Entregados,
                    count(p.id) FILTER (WHERE p.estado = 'no_entregado')                                AS NoEntregados,
-                   COALESCE(SUM(p.pago_valor) FILTER (WHERE p.pago_metodo = 'efectivo'), 0)            AS Efectivo,
-                   COALESCE(SUM(p.pago_valor) FILTER (WHERE p.pago_metodo = 'transferencia'), 0)       AS Transferencias,
+                   COALESCE(SUM(p.pago_valor) FILTER (WHERE p.estado = 'entregado' AND p.pago_metodo = 'efectivo'), 0)      AS Efectivo,
+                   COALESCE(SUM(p.pago_valor) FILTER (WHERE p.estado = 'entregado' AND p.pago_metodo = 'transferencia'), 0) AS Transferencias,
                    (SELECT count(*) FROM pedidos x WHERE x.conductor_id = u.id AND x.negocio = @negocio
                        AND x.estado IN ('pendiente', 'alistado', 'en_ruta'))                           AS PorEntregar,
                    cc.efectivo_recibido AS Recibido, cc.nota AS Nota, cc.creado_en AS CerradoEn,
@@ -93,8 +93,8 @@ public class CajaModel : PageModel
 
         await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
         var totales = await con.QueryFirstOrDefaultAsync<(decimal Efectivo, decimal Transferencias)?>(@"
-            SELECT COALESCE(SUM(p.pago_valor) FILTER (WHERE p.pago_metodo = 'efectivo'), 0),
-                   COALESCE(SUM(p.pago_valor) FILTER (WHERE p.pago_metodo = 'transferencia'), 0)
+            SELECT COALESCE(SUM(p.pago_valor) FILTER (WHERE p.estado = 'entregado' AND p.pago_metodo = 'efectivo'), 0),
+                   COALESCE(SUM(p.pago_valor) FILTER (WHERE p.estado = 'entregado' AND p.pago_metodo = 'transferencia'), 0)
             FROM usuarios u
             LEFT JOIN pedidos p ON p.conductor_id = u.id AND p.negocio = @negocio AND p.entregado_en::date = @dia
             WHERE u.id = @conductorId AND u.rol = 'conductor' AND u.negocio = @negocio
@@ -115,7 +115,7 @@ public class CajaModel : PageModel
                 new
                 {
                     negocio, dia, conductorId, efectivo = totales.Value.Efectivo, transferencias = totales.Value.Transferencias,
-                    recibido, nota = string.IsNullOrWhiteSpace(nota) ? null : nota.Trim(), cajeroId
+                    recibido, nota = string.IsNullOrWhiteSpace(nota) ? null : (nota.Trim().Length > 300 ? nota.Trim()[..300] : nota.Trim()), cajeroId
                 });
         }
         catch (PostgresException ex) when (ex.SqlState == "23505")

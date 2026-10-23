@@ -50,7 +50,7 @@ public class EntregasModel : PageModel
 
     // Sale a entregar: el pedido pasa a "En ruta"
     public Task<IActionResult> OnPostSalirAsync(int id) =>
-        CambiarAsync(id, "en_ruta", null, "Pedido en ruta. Buen viaje.");
+        CambiarAsync(id, "en_ruta", null, null, "Pedido en ruta. Buen viaje.");
 
     // Entregado y cobrado
     public async Task<IActionResult> OnPostEntregarAsync(int id, string metodo, decimal valor, string? referencia)
@@ -66,23 +66,20 @@ public class EntregasModel : PageModel
             return RedirectToPage();
         }
 
-        return await CambiarAsync(id, "entregado", (metodo, valor, referencia?.Trim()), "¡Pedido entregado!");
+        var r = referencia?.Trim();
+        if (r is { Length: > 80 }) r = r[..80];
+        return await CambiarAsync(id, "entregado", (metodo, valor, r), null, "¡Pedido entregado!");
     }
 
     // No se pudo entregar: el stock vuelve al inventario
     public async Task<IActionResult> OnPostNoEntregarAsync(int id, string? nota)
     {
-        var r = await CambiarAsync(id, "no_entregado", null, "Pedido marcado como no entregado. La mercancía vuelve al inventario.");
-        if (!string.IsNullOrWhiteSpace(nota))
-        {
-            await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
-            await con.ExecuteAsync("UPDATE pedidos SET nota_entrega = @nota WHERE id = @id AND conductor_id = @yo",
-                new { nota = nota.Trim().Length > 300 ? nota.Trim()[..300] : nota.Trim(), id, yo = MiId });
-        }
-        return r;
+        var n = string.IsNullOrWhiteSpace(nota) ? null : nota.Trim();
+        if (n is { Length: > 300 }) n = n[..300];
+        return await CambiarAsync(id, "no_entregado", null, n, "Pedido marcado como no entregado. La mercancía vuelve al inventario.");
     }
 
-    private async Task<IActionResult> CambiarAsync(int id, string estado, (string Metodo, decimal Valor, string? Referencia)? pago, string ok)
+    private async Task<IActionResult> CambiarAsync(int id, string estado, (string Metodo, decimal Valor, string? Referencia)? pago, string? nota, string ok)
     {
         await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
         await con.OpenAsync();
@@ -91,20 +88,23 @@ public class EntregasModel : PageModel
         {
             // Solo pedidos asignados a este conductor y todavía sin terminar
             var esMio = await con.ExecuteScalarAsync<bool>(@"
-                SELECT EXISTS (SELECT 1 FROM pedidos WHERE id = @id AND conductor_id = @yo
-                               AND estado IN ('pendiente', 'alistado', 'en_ruta'))", new { id, yo = MiId }, tx);
+                SELECT EXISTS (SELECT 1 FROM pedidos WHERE id = @id AND conductor_id = @yo AND negocio = @negocio
+                               AND estado IN ('pendiente', 'alistado', 'en_ruta'))",
+                new { id, yo = MiId, negocio = User.NegocioActual() }, tx);
             if (!esMio)
                 throw new InvalidOperationException("Ese pedido ya no está en tu lista.");
 
-            await EstadoPedido.CambiarAsync(con, tx, id, User.NegocioActual(), estado);
+            if (await EstadoPedido.CambiarAsync(con, tx, id, User.NegocioActual(), estado) is null)
+                throw new InvalidOperationException("Ese pedido ya no está en tu lista.");
 
             if (estado is "entregado" or "no_entregado")
             {
                 await con.ExecuteAsync(@"
                     UPDATE pedidos SET entregado_en = now(),
-                        pago_metodo = @metodo, pago_valor = @valor, pago_referencia = @referencia
-                    WHERE id = @id",
-                    new { id, metodo = pago?.Metodo, valor = pago?.Valor, referencia = pago?.Referencia }, tx);
+                        pago_metodo = @metodo, pago_valor = @valor, pago_referencia = @referencia,
+                        nota_entrega = COALESCE(@nota, nota_entrega)
+                    WHERE id = @id AND conductor_id = @yo",
+                    new { id, yo = MiId, metodo = pago?.Metodo, valor = pago?.Valor, referencia = pago?.Referencia, nota }, tx);
             }
 
             await tx.CommitAsync();

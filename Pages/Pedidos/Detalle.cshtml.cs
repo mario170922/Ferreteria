@@ -109,7 +109,7 @@ public class DetalleModel : PageModel
                 // El administrador global entra a los dos: se le cambia de negocio y se le muestra
                 if (User.EsAdminGlobal())
                 {
-                    var usuario = await con.QuerySingleOrDefaultAsync<Ferreteria.Models.Usuario>(@"
+                    var usuario = await con.QueryFirstOrDefaultAsync<Ferreteria.Models.Usuario>(@"
                         SELECT id, nombre_usuario AS NombreUsuario, rol, negocio, activo AS Activo
                         FROM usuarios WHERE lower(nombre_usuario) = lower(@n)", new { n = User.Identity?.Name ?? "" });
                     if (usuario is { Activo: true, Rol: Negocio.AdminGlobal })
