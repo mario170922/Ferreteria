@@ -24,6 +24,7 @@ public class NuevoModel : PageModel
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
+        public decimal MargenPct { get; set; } = 100;
         public int Stock { get; set; }
         public int StockMinimo { get; set; }
     }
@@ -51,6 +52,8 @@ public class NuevoModel : PageModel
             Error = "El precio de compra es demasiado alto.";
         else if (Producto.Stock < 0 || Producto.StockMinimo < 0)
             Error = "El stock no puede ser negativo.";
+        else if (Producto.MargenPct < 0 || Producto.MargenPct > 1000)
+            Error = "La ganancia debe estar entre 0 % y 1000 %.";
 
         Producto.CodigoBarras = CodigoBarras.Limpiar(Producto.CodigoBarras);
         Error ??= CodigoBarras.Validar(Producto.CodigoBarras);
@@ -68,8 +71,8 @@ public class NuevoModel : PageModel
                 Producto.CodigoBarras = await CodigoBarras.GenerarAsync(conn, tx);
 
             int id = await conn.ExecuteScalarAsync<int>(@"
-                INSERT INTO productos (negocio, codigo, codigo_barras, nombre, medida, precio_compra, stock, stock_minimo)
-                VALUES (@negocio, @Codigo, @CodigoBarras, @Nombre, @Medida, @PrecioCompra, @Stock, @StockMinimo)
+                INSERT INTO productos (negocio, codigo, codigo_barras, nombre, medida, precio_compra, margen_pct, stock, stock_minimo)
+                VALUES (@negocio, @Codigo, @CodigoBarras, @Nombre, @Medida, @PrecioCompra, @MargenPct, @Stock, @StockMinimo)
                 RETURNING id",
                 new
                 {
@@ -79,6 +82,7 @@ public class NuevoModel : PageModel
                     Producto.Nombre,
                     Producto.Medida,
                     Producto.PrecioCompra,
+                    Producto.MargenPct,
                     Producto.Stock,
                     Producto.StockMinimo
                 }, tx);

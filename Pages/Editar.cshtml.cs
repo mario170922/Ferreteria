@@ -37,6 +37,7 @@ public class EditarModel : PageModel
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
+        public decimal MargenPct { get; set; } = 100;
         public int StockMinimo { get; set; }
         public List<int> CategoriaIds { get; set; } = new();
         public List<int> SubcategoriaIds { get; set; } = new();
@@ -63,6 +64,7 @@ public class EditarModel : PageModel
         public string Nombre { get; set; } = "";
         public string? Medida { get; set; }
         public decimal PrecioCompra { get; set; }
+        public decimal MargenPct { get; set; }
         public int StockMinimo { get; set; }
         public string? Imagen { get; set; }
     }
@@ -81,6 +83,7 @@ public class EditarModel : PageModel
         var p = await conn.QuerySingleOrDefaultAsync<ProductoFila>(@"
             SELECT id, codigo, codigo_barras AS CodigoBarras, nombre, medida,
                    precio_compra AS PrecioCompra,
+                   margen_pct    AS MargenPct,
                    stock_minimo  AS StockMinimo,
                    imagen
             FROM productos
@@ -97,6 +100,7 @@ public class EditarModel : PageModel
             Nombre = p.Nombre,
             Medida = p.Medida,
             PrecioCompra = p.PrecioCompra,
+            MargenPct = p.MargenPct,
             StockMinimo = p.StockMinimo,
             CategoriaIds = (await conn.QueryAsync<int>(
                 "SELECT categoria_id FROM producto_categorias WHERE producto_id = @id", new { id })).ToList(),
@@ -123,6 +127,8 @@ public class EditarModel : PageModel
             errores.Add("El precio de compra no puede ser negativo.");
         if (Form.StockMinimo < 0)
             errores.Add("El stock mínimo no puede ser negativo.");
+        if (Form.MargenPct < 0 || Form.MargenPct > 1000)
+            errores.Add("El margen de ganancia debe estar entre 0 % y 1000 %.");
 
         Form.CodigoBarras = CodigoBarras.Limpiar(Form.CodigoBarras);
         if (CodigoBarras.Validar(Form.CodigoBarras) is { } errorBarras)
@@ -162,6 +168,7 @@ public class EditarModel : PageModel
                     nombre        = @Nombre,
                     medida        = @Medida,
                     precio_compra = @PrecioCompra,
+                    margen_pct    = @MargenPct,
                     stock_minimo  = @StockMinimo,
                     imagen        = COALESCE(@nuevaRuta, imagen)
                 WHERE id = @Id AND negocio = @negocio",
@@ -174,6 +181,7 @@ public class EditarModel : PageModel
                     Form.Nombre,
                     Form.Medida,
                     Form.PrecioCompra,
+                    Form.MargenPct,
                     Form.StockMinimo,
                     nuevaRuta
                 }, tx);

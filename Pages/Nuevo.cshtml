@@ -64,8 +64,13 @@
                         <label class="form-label fw-semibold" for="Producto_PrecioCompra">Precio de compra (unidad)</label>
                         <div class="input-group input-group-lg">
                             <span class="input-group-text">$</span>
-                            <input asp-for="Producto.PrecioCompra" type="number" step="0.01" min="0" inputmode="decimal" class="form-control" />
+                            <input asp-for="Producto.PrecioCompra" type="number" step="0.01" min="0" inputmode="decimal" class="form-control js-precio-compra" />
                         </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="Producto_MargenPct">Ganancia (%)</label>
+                        <input asp-for="Producto.MargenPct" type="number" step="1" min="0" max="1000" inputmode="numeric" class="form-control form-control-lg js-margen" />
+                        <div class="form-text">Precio de venta: <strong class="js-precio-venta">$ 0</strong> · 100 % = el doble del precio de compra.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold" for="Producto_Stock">Stock inicial</label>
@@ -89,5 +94,20 @@
 
 </main>
 
+<script>
+    // Precio de venta en vivo: precio de compra + ganancia
+    (function () {
+        var compra = document.querySelector('.js-precio-compra');
+        var margen = document.querySelector('.js-margen');
+        var venta = document.querySelector('.js-precio-venta');
+        if (!compra || !margen || !venta) return;
+        function calcular() {
+            var v = (parseFloat(compra.value) || 0) * (1 + (parseFloat(margen.value) || 0) / 100);
+            venta.textContent = '$ ' + Math.round(v).toLocaleString('es-CO');
+        }
+        compra.addEventListener('input', calcular);
+        margen.addEventListener('input', calcular);
+    })();
+</script>
 </body>
 </html>

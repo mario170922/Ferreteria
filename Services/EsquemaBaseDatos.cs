@@ -121,6 +121,15 @@ public static class EsquemaBaseDatos
         ("2026-10-23 ventas de mostrador", @"
             ALTER TABLE pedidos ADD COLUMN tipo varchar(10) NOT NULL DEFAULT 'domicilio'
                 CHECK (tipo IN ('domicilio', 'mostrador'));"),
+
+        // Margen de ganancia por producto. Antes el precio de venta era siempre el doble del de
+        // compra; con margen 100 % por defecto, todos los precios quedan exactamente igual.
+        ("2026-10-23 margen por producto", @"
+            ALTER TABLE productos ADD COLUMN margen_pct numeric(6, 2) NOT NULL DEFAULT 100
+                CHECK (margen_pct >= 0 AND margen_pct <= 1000);
+            ALTER TABLE productos DROP COLUMN precio_venta;
+            ALTER TABLE productos ADD COLUMN precio_venta numeric
+                GENERATED ALWAYS AS (round(precio_compra * (1 + margen_pct / 100), 2)) STORED;"),
     };
 
     public static async Task ActualizarAsync(IConfiguration config, ILogger logger)
