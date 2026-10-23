@@ -462,17 +462,16 @@
         <div class="productos-grid">
             @foreach (var producto in Model.Lista)
             {
+                var tieneFoto = !string.IsNullOrEmpty(producto.Imagen);
                 <div class="producto-card">
-                    <div class="producto-imagen" onclick="abrirLightbox('@(producto.Imagen is not null ? Model.ObtenerRutaImagen(producto.Imagen, "productos") : "")')">
-                        @if (producto.Imagen is not null)
+                    <div class="producto-imagen @(tieneFoto ? "" : "sin-foto")" onclick="abrirLightbox('@(tieneFoto ? Model.ObtenerRutaImagen(producto.Imagen, "productos") : "")')">
+                        @if (tieneFoto)
                         {
                             <img src="@Model.ObtenerRutaImagen(producto.Imagen, "productos")" alt="@producto.Nombre" />
                         }
                         else
                         {
-                            <div class="producto-imagen-vacia">
-                                <i class="bi bi-image"></i>
-                            </div>
+                            <img class="fer-sin-foto" src="/img/sin-foto.svg" alt="Sin foto" />
                         }
                     </div>
 

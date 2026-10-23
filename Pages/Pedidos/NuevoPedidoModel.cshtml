@@ -99,6 +99,8 @@
             font-size: 1.4rem;
         }
 
+        .np-foto-vacia { object-fit: contain; padding: 4px; }
+
         .np-nombre { font-weight: 600; line-height: 1.2; }
         .np-detalle { font-size: .85rem; color: var(--fer-texto-suave); }
         .np-precio { color: var(--fer-naranja); font-weight: 700; }
@@ -483,8 +485,10 @@
                 img.loading = 'lazy';
                 return img;
             }
-            const vacia = el('span', 'np-foto');
-            vacia.appendChild(icono('bi-nut'));
+            // Sin foto: el dibujo del tornillo (wwwroot/img/sin-foto.svg)
+            const vacia = el('img', 'np-foto np-foto-vacia');
+            vacia.src = '/img/sin-foto.svg';
+            vacia.alt = '';
             return vacia;
         }
 

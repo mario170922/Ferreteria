@@ -132,6 +132,12 @@
             background: repeating-linear-gradient(135deg, #1f1f1f, #1f1f1f 12px, #242424 12px, #242424 24px);
         }
 
+        .tarjeta-producto .sin-foto img {
+            width: 62%;
+            height: auto;
+            object-fit: contain;
+        }
+
         .tarjeta-producto .sin-foto .bi {
             font-size: 1.6rem;
             color: #5a5a5a;
@@ -289,8 +295,8 @@
                         else
                         {
                             <div class="sin-foto">
-                                <i class="bi bi-image" aria-hidden="true"></i>
-                                <span>Sin imagen</span>
+                                <img class="fer-sin-foto" src="/img/sin-foto.svg" alt="" />
+                                <span>Sin foto</span>
                             </div>
                         }
                     </div>

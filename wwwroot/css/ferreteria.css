@@ -1138,6 +1138,21 @@ legend {
 
 .producto-card .producto-imagen-vacia { color: #5a5a5a; opacity: 1; }
 
+/* Dibujo del tornillo para productos sin foto (img/sin-foto.svg) */
+.fer-sin-foto {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.producto-card .producto-imagen .fer-sin-foto { width: 62%; height: 62%; }
+.producto-imagen.sin-foto { cursor: default; }
+.producto-imagen.sin-foto::after { display: none; }
+.producto-card:hover .producto-imagen.sin-foto .fer-sin-foto { transform: rotate(-6deg) scale(1.04); }
+.fer-sin-foto { transition: transform 300ms var(--fer-curva); }
+.miniatura .fer-sin-foto { width: 100%; height: 100%; padding: 6px; }
+
 /* Botones de cada producto: con texto, grandes y fáciles de tocar.
    "Movimientos" ocupa toda la fila; "Editar" y "Eliminar" van debajo. */
 .producto-card .producto-acciones { gap: .5rem; }
