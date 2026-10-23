@@ -185,11 +185,18 @@
             .np-aviso-stock { grid-column: 1 / -1; }
         }
 
+        /* El resumen acompaña al bajar solo en pantallas anchas; en las demás va debajo del formulario */
+        @@media (min-width: 1200px) {
+            .np-resumen { position: sticky; top: 1rem; }
+        }
+
         /* ---------- Descuento ---------- */
         .np-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
 
         .np-chip {
             min-width: 64px;
+            padding: 0 1rem;
+            white-space: nowrap;
             min-height: 46px;
             border-radius: 999px;
             border: 2px solid var(--fer-borde);
@@ -375,7 +382,7 @@
 
                     <div class="fer-card-cuerpo border-top">
                         <fieldset>
-                            <legend class="form-label fw-semibold fs-6 mb-2">Descuento (opcional)</legend>
+                            <legend class="form-label fw-semibold fs-6 mb-2 float-none">Descuento (opcional)</legend>
                             <input type="hidden" id="descuento" name="DescuentoElegido"
                                    value="@Model.DescuentoElegido.ToString(CultureInfo.InvariantCulture)" />
                             @if (tope == 0)
@@ -396,7 +403,7 @@
                                     <label for="descuento-otro" class="text-secondary">Otro:</label>
                                     <input id="descuento-otro" type="number" class="form-control" style="max-width:110px"
                                            min="0" max="@tope" step="1" inputmode="numeric" placeholder="%" />
-                                    <span class="text-secondary small">Puedes dar hasta @tope %.</span>
+                                    <span class="text-secondary small">Puedes dar hasta @tope&nbsp;%.</span>
                                 </div>
                             }
                         </fieldset>
@@ -406,7 +413,7 @@
             </div>
 
             <div class="col-12 col-xl-4">
-                <aside class="fer-card position-sticky" style="top: 1rem;" aria-labelledby="titulo-resumen">
+                <aside class="fer-card np-resumen" aria-labelledby="titulo-resumen">
                     <div class="fer-card-cuerpo">
                         <h2 id="titulo-resumen" class="h5 mb-3">3. Resumen</h2>
 
