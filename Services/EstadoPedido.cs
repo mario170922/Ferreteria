@@ -62,7 +62,13 @@ public static class EstadoPedido
             await RegistrarMovimientosAsync(con, tx, id, -1, $"Salida: pedido %s se reactivó como {Etiqueta(estado)}");
         }
 
-        await con.ExecuteAsync("UPDATE pedidos SET estado = @estado WHERE id = @id", new { estado, id }, tx);
+        // Hora en que terminó la entrega (la usa la Caja del día). Si vuelve a un estado activo, se borra.
+        await con.ExecuteAsync(@"
+            UPDATE pedidos SET estado = @estado,
+                entregado_en = CASE WHEN @estado IN ('entregado', 'no_entregado') THEN COALESCE(entregado_en, now())
+                                    WHEN @estado = 'cancelado' THEN entregado_en
+                                    ELSE NULL END
+            WHERE id = @id", new { estado, id }, tx);
         return actual;
     }
 
