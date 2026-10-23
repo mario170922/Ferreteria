@@ -120,12 +120,13 @@ public class EntregasModel : PageModel
 
     // ---------- Mapa ----------
 
-    // Texto que se busca en el mapa: dirección, barrio/ubicación y ciudad (appsettings "Empresa:Ciudad")
+    // Texto que se busca en el mapa: dirección, barrio/ubicación, ciudad y país
     public string Destino(Entrega e)
     {
         var partes = new List<string> { e.Direccion };
         if (!string.IsNullOrWhiteSpace(e.Ubicacion) && !EsEnlace(e.Ubicacion)) partes.Add(e.Ubicacion!);
-        if (_config["Empresa:Ciudad"] is { Length: > 0 } ciudad) partes.Add(ciudad);
+        // La ciudad se puede cambiar en appsettings.json ("Empresa": { "Ciudad": ... }); si no está, Bogotá
+        partes.Add(_config["Empresa:Ciudad"] is { Length: > 0 } ciudad ? ciudad : "Bogotá");
         partes.Add("Colombia");
         return string.Join(", ", partes);
     }
