@@ -23,7 +23,7 @@ public class StickerModel : PageModel
     {
         await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
 
-        var pedido = await Alistamiento.CargarAsync(con, id);
+        var pedido = await Alistamiento.CargarAsync(con, id, Ferreteria.Services.Negocio.NegocioActual(User));
         if (pedido is null) return NotFound();
 
         Pedido = pedido;

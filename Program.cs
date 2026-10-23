@@ -1,4 +1,5 @@
 using Dapper;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Npgsql;
 
@@ -15,6 +16,17 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         opciones.ExpireTimeSpan = TimeSpan.FromHours(12);
         opciones.SlidingExpiration = true;
         opciones.Cookie.HttpOnly = true;
+
+        // Las sesiones abiertas antes de separar Tornillería y Ferretería no dicen el negocio:
+        // se cierran para que la persona vuelva a entrar eligiendo el negocio.
+        opciones.Events.OnValidatePrincipal = async contexto =>
+        {
+            if (contexto.Principal?.FindFirst(Ferreteria.Services.Negocio.ClaimNegocio) is null)
+            {
+                contexto.RejectPrincipal();
+                await contexto.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -56,6 +68,6 @@ static async Task CrearAdminInicialAsync(IConfiguration config)
     var hash = BCrypt.Net.BCrypt.HashPassword(clave);
 
     await conn.ExecuteAsync(
-        "INSERT INTO usuarios (nombre_usuario, clave_hash, rol) VALUES (@usuario, @hash, 'admin')",
+        "INSERT INTO usuarios (nombre_usuario, clave_hash, rol) VALUES (@usuario, @hash, 'admin_global')",
         new { usuario, hash });
 }

@@ -68,10 +68,20 @@ public class NuevoModel : PageModel
                 Producto.CodigoBarras = await CodigoBarras.GenerarAsync(conn, tx);
 
             int id = await conn.ExecuteScalarAsync<int>(@"
-                INSERT INTO productos (codigo, codigo_barras, nombre, medida, precio_compra, stock, stock_minimo)
-                VALUES (@Codigo, @CodigoBarras, @Nombre, @Medida, @PrecioCompra, @Stock, @StockMinimo)
+                INSERT INTO productos (negocio, codigo, codigo_barras, nombre, medida, precio_compra, stock, stock_minimo)
+                VALUES (@negocio, @Codigo, @CodigoBarras, @Nombre, @Medida, @PrecioCompra, @Stock, @StockMinimo)
                 RETURNING id",
-                Producto, tx);
+                new
+                {
+                    negocio = User.NegocioActual(),
+                    Producto.Codigo,
+                    Producto.CodigoBarras,
+                    Producto.Nombre,
+                    Producto.Medida,
+                    Producto.PrecioCompra,
+                    Producto.Stock,
+                    Producto.StockMinimo
+                }, tx);
 
             // El stock inicial queda en el historial, igual que cualquier otra entrada.
             if (Producto.Stock > 0)

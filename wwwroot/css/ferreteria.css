@@ -1007,6 +1007,85 @@ legend {
   line-height: 1;
 }
 
+/* Negocio elegido, debajo del título del ingreso */
+.fer-login-negocio {
+  font-family: var(--fer-letra-titulo);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--fer-texto);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.fer-login-volver { color: var(--fer-naranja); text-decoration: none; font-size: .95rem; }
+.fer-login-volver:hover { text-decoration: underline; }
+
+/* Pantalla de bienvenida: elegir Tornillería o Ferretería */
+.fer-bienvenida { position: relative; width: 100%; max-width: 720px; text-align: center; }
+
+.fer-negocios {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.fer-negocio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  padding: 2rem 1.5rem;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(36, 36, 36, .92), rgba(24, 24, 24, .95));
+  border: 2px solid rgba(245, 183, 0, .35);
+  color: var(--fer-texto);
+  text-decoration: none;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, .55);
+  transition: transform var(--fer-medio) var(--fer-curva), border-color var(--fer-rapido) ease, box-shadow var(--fer-medio) ease;
+}
+
+.fer-negocio:hover,
+.fer-negocio:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--fer-naranja);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, .6), 0 0 0 4px var(--fer-amarillo-brillo);
+  color: var(--fer-texto);
+}
+
+.fer-negocio-icono {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  font-size: 2.8rem;
+  color: #000;
+  background: linear-gradient(180deg, #ffc61a 0%, var(--fer-naranja) 100%);
+}
+
+.fer-negocio-nombre {
+  font-family: var(--fer-letra-titulo);
+  font-size: 2.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.fer-negocio-ir { color: var(--fer-naranja); font-weight: 700; }
+
+/* Negocio actual en la barra superior */
+.fer-negocio-actual {
+  display: inline-flex;
+  align-items: center;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #000;
+  background: var(--fer-naranja);
+  border-radius: 999px;
+  padding: .05rem .6rem;
+  width: fit-content;
+}
+
 .fer-login-pie {
   margin-top: 1.5rem;
   text-align: center;

@@ -1,4 +1,5 @@
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -6,7 +7,8 @@ using Npgsql;
 
 namespace Ferreteria.Pages.Pedidos;
 
-[Authorize]
+// Hacen pedidos el administrador y los vendedores (no el cajero ni el conductor).
+[Authorize(Roles = "admin,vendedor")]
 public class NuevoPedidoModel : PageModel
 {
     private const int MaxLineas = 10;
@@ -79,16 +81,16 @@ public class NuevoPedidoModel : PageModel
         var ultimos = await con.QueryAsync<PedidoAnterior>(@"
             SELECT numero AS Numero, fecha AS Fecha, estado AS Estado, total AS Total
             FROM pedidos
-            WHERE cliente_id = @id
+            WHERE cliente_id = @id AND negocio = @negocio
             ORDER BY fecha DESC, id DESC
-            LIMIT 5", new { id = c.Id });
+            LIMIT 5", new { id = c.Id, negocio = User.NegocioActual() });
 
         // Para contar compras, los pedidos cancelados o no entregados no cuentan.
         var resumen = await con.QueryFirstAsync<ResumenCompras>(@"
             SELECT count(*) AS Pedidos, max(fecha) AS Ultima
             FROM pedidos
-            WHERE cliente_id = @id AND estado NOT IN ('cancelado', 'no_entregado')",
-            new { id = c.Id });
+            WHERE cliente_id = @id AND negocio = @negocio AND estado NOT IN ('cancelado', 'no_entregado')",
+            new { id = c.Id, negocio = User.NegocioActual() });
 
         // Lo que más compra: en cuántos pedidos lo llevó, cuándo fue la última vez
         // y cuántas unidades llevó esa vez, para repetirla con un toque.
@@ -104,10 +106,10 @@ public class NuevoPedidoModel : PageModel
             FROM pedido_items pi
             JOIN pedidos p    ON p.id = pi.pedido_id
             JOIN productos pr ON pr.id = pi.producto_id
-            WHERE p.cliente_id = @id AND p.estado NOT IN ('cancelado', 'no_entregado')
+            WHERE p.cliente_id = @id AND p.negocio = @negocio AND p.estado NOT IN ('cancelado', 'no_entregado')
             GROUP BY pr.id
             ORDER BY count(DISTINCT p.id) DESC, max(p.fecha) DESC
-            LIMIT 8", new { id = c.Id });
+            LIMIT 8", new { id = c.Id, negocio = User.NegocioActual() });
 
         return new JsonResult(new
         {
@@ -221,8 +223,8 @@ public class NuevoPedidoModel : PageModel
                            precio_venta  AS PrecioVenta,
                            stock         AS Stock
                     FROM productos
-                    WHERE id = @id
-                    FOR UPDATE", new { id = productoId }, tx);
+                    WHERE id = @id AND negocio = @negocio
+                    FOR UPDATE", new { id = productoId, negocio = User.NegocioActual() }, tx);
 
                 if (prod is null)
                 {
@@ -250,11 +252,12 @@ public class NuevoPedidoModel : PageModel
                 MidpointRounding.AwayFromZero);
 
             int pedidoId = await con.ExecuteScalarAsync<int>(@"
-                INSERT INTO pedidos (cliente_id, vendedor_id, descuento_pct, total)
-                VALUES (@cliente, @vendedor, @pct, @total)
+                INSERT INTO pedidos (negocio, cliente_id, vendedor_id, descuento_pct, total)
+                VALUES (@negocio, @cliente, @vendedor, @pct, @total)
                 RETURNING id",
                 new
                 {
+                    negocio = User.NegocioActual(),
                     cliente = idCliente,
                     vendedor = vendedor.Id,
                     pct = DescuentoElegido,
@@ -331,8 +334,8 @@ public class NuevoPedidoModel : PageModel
                    stock        AS Stock,
                    imagen       AS Imagen
             FROM productos
-            WHERE stock > 0
-            ORDER BY codigo");
+            WHERE stock > 0 AND negocio = @negocio
+            ORDER BY codigo", new { negocio = User.NegocioActual() });
 
         Productos = productos.ToList();
     }

@@ -1,4 +1,5 @@
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -58,8 +59,8 @@ public class AjustarModel : PageModel
             try
             {
                 var actual = await conn.ExecuteScalarAsync<int?>(
-                    "SELECT stock FROM productos WHERE id = @id FOR UPDATE",
-                    new { id }, tx);
+                    "SELECT stock FROM productos WHERE id = @id AND negocio = @negocio FOR UPDATE",
+                    new { id, negocio = User.NegocioActual() }, tx);
 
                 if (actual == null)
                     throw new InvalidOperationException("El producto no existe.");
@@ -98,8 +99,8 @@ public class AjustarModel : PageModel
         using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
         var p = await conn.QuerySingleOrDefaultAsync<ProductoAjuste>(@"
             SELECT nombre AS Nombre, medida AS Medida, stock AS StockActual
-            FROM productos WHERE id = @id",
-            new { id = Id });
+            FROM productos WHERE id = @id AND negocio = @negocio",
+            new { id = Id, negocio = User.NegocioActual() });
 
         if (p == null) return false;
 

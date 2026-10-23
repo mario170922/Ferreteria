@@ -108,18 +108,22 @@ public class ProductosModel : PageModel
         if (Pagina < 1) Pagina = 1;
 
         await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
+        var negocio = User.NegocioActual();
 
-        TotalGeneral = await conn.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM productos");
+        TotalGeneral = await conn.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM productos WHERE negocio = @negocio", new { negocio });
         TotalBajo = await conn.ExecuteScalarAsync<int>(
-            "SELECT COUNT(*) FROM productos WHERE stock_minimo > 0 AND stock <= stock_minimo");
+            "SELECT COUNT(*) FROM productos WHERE negocio = @negocio AND stock_minimo > 0 AND stock <= stock_minimo",
+            new { negocio });
 
         Categorias = (await conn.QueryAsync<CategoriaChip>(@"
             SELECT c.id AS Id, c.nombre AS Nombre, c.imagen AS Imagen,
                    COUNT(pc.producto_id)::int AS Cantidad
             FROM categorias c
             LEFT JOIN producto_categorias pc ON pc.categoria_id = c.id
+            WHERE c.negocio = @negocio
             GROUP BY c.id, c.nombre, c.imagen
-            ORDER BY c.nombre")).AsList();
+            ORDER BY c.nombre", new { negocio })).AsList();
 
         if (Categoria is not null && Categorias.All(c => c.Id != Categoria))
         {
@@ -142,8 +146,10 @@ public class ProductosModel : PageModel
                 Sub = null;
         }
 
-        var condiciones = new List<string>();
+        // Solo los productos del negocio en el que se está trabajando
+        var condiciones = new List<string> { "p.negocio = @negocio" };
         var parametros = new DynamicParameters();
+        parametros.Add("negocio", negocio);
 
         if (Q is not null)
         {
@@ -169,7 +175,7 @@ public class ProductosModel : PageModel
         if (Bajo)
             condiciones.Add("(p.stock_minimo > 0 AND p.stock <= p.stock_minimo)");
 
-        var donde = condiciones.Count > 0 ? "WHERE " + string.Join(" AND ", condiciones) : "";
+        var donde = "WHERE " + string.Join(" AND ", condiciones);
 
         TotalFiltrado = await conn.ExecuteScalarAsync<int>(
             $"SELECT COUNT(*) FROM productos p {donde}", parametros);
@@ -225,10 +231,12 @@ public class ProductosModel : PageModel
 
         try
         {
+            var negocio = User.NegocioActual();
             var imagen = await conn.ExecuteScalarAsync<string?>(
-                "SELECT imagen FROM productos WHERE id = @id", new { id });
+                "SELECT imagen FROM productos WHERE id = @id AND negocio = @negocio", new { id, negocio });
 
-            var filas = await conn.ExecuteAsync("DELETE FROM productos WHERE id = @id", new { id });
+            var filas = await conn.ExecuteAsync(
+                "DELETE FROM productos WHERE id = @id AND negocio = @negocio", new { id, negocio });
 
             if (filas > 0)
             {

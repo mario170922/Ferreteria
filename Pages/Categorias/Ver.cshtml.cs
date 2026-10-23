@@ -1,4 +1,5 @@
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -58,8 +59,8 @@ public class VerCategoriaModel : PageModel
         await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
 
         var categoria = await conn.QuerySingleOrDefaultAsync<CategoriaDetalle>(
-            "SELECT id AS Id, nombre AS Nombre, imagen AS Imagen FROM categorias WHERE id = @id",
-            new { id });
+            "SELECT id AS Id, nombre AS Nombre, imagen AS Imagen FROM categorias WHERE id = @id AND negocio = @negocio",
+            new { id, negocio = User.NegocioActual() });
 
         if (categoria is null)
             return RedirectToPage("/Categorias");
@@ -79,8 +80,10 @@ public class VerCategoriaModel : PageModel
         {
             await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
             await conn.ExecuteAsync(
-                "INSERT INTO subcategorias (categoria_id, nombre) VALUES (@categoriaId, @nombre)",
-                new { categoriaId, nombre });
+                @"INSERT INTO subcategorias (categoria_id, nombre)
+                  SELECT @categoriaId, @nombre
+                  WHERE EXISTS (SELECT 1 FROM categorias WHERE id = @categoriaId AND negocio = @negocio)",
+                new { categoriaId, nombre, negocio = User.NegocioActual() });
 
             return Volver(categoriaId, "Subcategoría agregada.");
         }
@@ -98,8 +101,9 @@ public class VerCategoriaModel : PageModel
         await using var tx = await conn.BeginTransactionAsync();
 
         var categoriaReal = await conn.ExecuteScalarAsync<int?>(
-            "SELECT categoria_id FROM subcategorias WHERE id = @subcategoriaId",
-            new { subcategoriaId }, tx);
+            @"SELECT s.categoria_id FROM subcategorias s JOIN categorias c ON c.id = s.categoria_id
+              WHERE s.id = @subcategoriaId AND c.negocio = @negocio",
+            new { subcategoriaId, negocio = User.NegocioActual() }, tx);
 
         if (categoriaReal is null)
         {

@@ -21,7 +21,8 @@ public class Alistamiento
 
     public int TotalUnidades => Items.Sum(i => i.Cantidad);
 
-    public static async Task<Alistamiento?> CargarAsync(NpgsqlConnection con, int id)
+    // Solo encuentra el pedido si es del negocio indicado.
+    public static async Task<Alistamiento?> CargarAsync(NpgsqlConnection con, int id, string negocio)
     {
         var pedido = await con.QueryFirstOrDefaultAsync<Alistamiento>(@"
             SELECT p.id                AS Id,
@@ -37,7 +38,7 @@ public class Alistamiento
                    c.celular_2         AS Celular2
             FROM pedidos p
             JOIN clientes c ON c.id = p.cliente_id
-            WHERE p.id = @id", new { id });
+            WHERE p.id = @id AND p.negocio = @negocio", new { id, negocio });
 
         if (pedido is null) return null;
 

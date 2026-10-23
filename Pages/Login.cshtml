@@ -1,14 +1,16 @@
 @page
 @model Ferreteria.Pages.LoginModel
+@using Ferreteria.Services
 @{
     Layout = null;
+    var negocio = Model.Negocio;
 }
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ingresar - Ferretería</title>
+    <title>Ingresar a @Negocio.Nombre(negocio) - El Castillo</title>
     <partial name="_Estilos" />
 </head>
 <body>
@@ -20,7 +22,9 @@
 
         <img src="/img/logo-casita.png" alt="Logo El Castillo Ferretería" class="fer-login-logo" />
         <h1 id="titulo-login" class="fer-login-titulo text-center mb-1">El Castillo</h1>
-        <p class="text-center text-secondary mb-4">Ferretería · Inventario y pedidos</p>
+        <p class="fer-login-negocio text-center mb-4">
+            <i class="bi @Negocio.Icono(negocio) me-2" aria-hidden="true"></i>@Negocio.Nombre(negocio)
+        </p>
 
         @if (Model.Mensaje is not null)
         {
@@ -28,6 +32,8 @@
         }
 
         <form method="post">
+            <input type="hidden" asp-for="Negocio" />
+            <input type="hidden" asp-for="ReturnUrl" />
             <div class="mb-3">
                 <label asp-for="NombreUsuario" class="form-label fw-semibold">Usuario</label>
                 <div class="input-group input-group-lg">
@@ -52,7 +58,9 @@
             </button>
         </form>
 
-        <p class="fer-login-pie mb-0">Tornillería y ferretería · El Castillo</p>
+        <p class="fer-login-pie mb-0">
+            <a href="/Bienvenida" class="fer-login-volver"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cambiar de negocio</a>
+        </p>
     </section>
 </main>
 

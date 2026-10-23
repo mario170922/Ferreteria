@@ -1,4 +1,5 @@
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -24,7 +25,7 @@ public class AlistarModel : PageModel
     {
         await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
 
-        var pedido = await Alistamiento.CargarAsync(con, id);
+        var pedido = await Alistamiento.CargarAsync(con, id, User.NegocioActual());
         if (pedido is null) return NotFound();
 
         Pedido = pedido;
@@ -38,8 +39,8 @@ public class AlistarModel : PageModel
 
         // Solo un pedido pendiente puede pasar a alistado.
         int filas = await con.ExecuteAsync(
-            "UPDATE pedidos SET estado = 'alistado' WHERE id = @id AND estado = 'pendiente'",
-            new { id });
+            "UPDATE pedidos SET estado = 'alistado' WHERE id = @id AND negocio = @negocio AND estado = 'pendiente'",
+            new { id, negocio = User.NegocioActual() });
 
         if (filas == 0)
         {

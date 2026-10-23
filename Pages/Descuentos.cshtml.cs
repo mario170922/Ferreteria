@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -57,8 +58,8 @@ public class DescuentosModel : PageModel
         foreach (var fila in Filas)
         {
             await con.ExecuteAsync(
-                "UPDATE usuarios SET descuento_pct = @pct WHERE id = @id AND rol = 'vendedor'",
-                new { pct = fila.DescuentoPct, id = fila.Id });
+                "UPDATE usuarios SET descuento_pct = @pct WHERE id = @id AND rol = 'vendedor' AND negocio = @negocio",
+                new { pct = fila.DescuentoPct, id = fila.Id, negocio = User.NegocioActual() });
         }
 
         Mensaje = "Descuentos guardados. Se aplicarán a los pedidos nuevos.";
@@ -84,7 +85,8 @@ public class DescuentosModel : PageModel
                    descuento_pct AS DescuentoPct,
                    rol AS Rol
             FROM usuarios
-            ORDER BY rol DESC, nombre_usuario");
+            WHERE negocio = @negocio AND rol IN ('vendedor', 'admin')
+            ORDER BY rol DESC, nombre_usuario", new { negocio = User.NegocioActual() });
 
         Filas = lista.ToList();
     }

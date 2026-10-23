@@ -49,13 +49,33 @@
                             <input asp-for="Clave" type="password" class="form-control form-control-lg" autocomplete="new-password" />
                         </div>
 
-                        <div class="mb-4">
-                            <label asp-for="Rol" class="form-label fw-semibold">Rol</label>
-                            <select asp-for="Rol" class="form-select form-select-lg">
-                                <option value="vendedor">Vendedor</option>
-                                <option value="admin">Administrador</option>
+                        <div class="mb-3">
+                            <label asp-for="Rol" class="form-label fw-semibold">Perfil</label>
+                            <select asp-for="Rol" class="form-select form-select-lg" id="Rol">
+                                @foreach (var perfil in Model.PerfilesPermitidos)
+                                {
+                                    <option value="@perfil">@Ferreteria.Services.Negocio.NombrePerfil(perfil)</option>
+                                }
                             </select>
                         </div>
+
+                        @if (Model.EsAdminGlobal)
+                        {
+                            <div class="mb-4" id="campo-negocio">
+                                <label asp-for="NegocioUsuario" class="form-label fw-semibold">Negocio</label>
+                                <select asp-for="NegocioUsuario" class="form-select form-select-lg">
+                                    @foreach (var n in Ferreteria.Services.Negocio.Todos)
+                                    {
+                                        <option value="@n">@Ferreteria.Services.Negocio.Nombre(n)</option>
+                                    }
+                                </select>
+                                <div class="form-text">El administrador global no lleva negocio: entra a los dos.</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="form-text mb-4">El usuario queda en <strong>@Ferreteria.Services.Negocio.Nombre(Ferreteria.Services.Negocio.NegocioActual(User))</strong>.</p>
+                        }
 
                         <button type="submit" class="btn btn-fer btn-lg w-100">
                             <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Crear usuario
@@ -77,7 +97,8 @@
                         <thead>
                             <tr>
                                 <th scope="col">Usuario</th>
-                                <th scope="col">Rol</th>
+                                <th scope="col">Perfil</th>
+                                <th scope="col">Negocio</th>
                                 <th scope="col">Estado</th>
                                 <th scope="col"><span class="visually-hidden">Acciones</span></th>
                             </tr>
@@ -87,7 +108,8 @@
                             {
                                 <tr>
                                     <td><strong>@u.NombreUsuario</strong></td>
-                                    <td data-etiqueta="Rol">@(u.Rol == "admin" ? "Administrador" : "Vendedor")</td>
+                                    <td data-etiqueta="Perfil">@Ferreteria.Services.Negocio.NombrePerfil(u.Rol)</td>
+                                    <td data-etiqueta="Negocio">@Ferreteria.Services.Negocio.Nombre(u.Negocio)</td>
                                     <td data-etiqueta="Estado">
                                         @if (u.Activo)
                                         {

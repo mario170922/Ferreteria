@@ -1,4 +1,5 @@
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -85,8 +86,8 @@ public class MovimientosModel : PageModel
             {
                 var filas = await conn.ExecuteAsync(@"
                     UPDATE productos SET stock = stock + @delta
-                    WHERE id = @id AND stock + @delta >= 0",
-                    new { delta, id }, tx);
+                    WHERE id = @id AND negocio = @negocio AND stock + @delta >= 0",
+                    new { delta, id, negocio = User.NegocioActual() }, tx);
 
                 if (filas == 0)
                     throw new InvalidOperationException("No hay stock suficiente para esa salida.");
@@ -122,7 +123,7 @@ public class MovimientosModel : PageModel
         using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
         var p = await conn.QuerySingleOrDefaultAsync<ProductoBase>(@"
             SELECT nombre AS Nombre, medida AS Medida, stock AS Stock
-            FROM productos WHERE id = @id", new { id });
+            FROM productos WHERE id = @id AND negocio = @negocio", new { id, negocio = User.NegocioActual() });
 
         if (p == null) return false;
 

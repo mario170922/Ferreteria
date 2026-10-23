@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Claims;
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Npgsql;
@@ -23,13 +24,15 @@ public class ListaModel : PageModel
     public async Task OnGetAsync()
     {
         EsAdmin = User.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == "admin");
+        // Administrador, cajero y conductor ven todos los pedidos del negocio; el vendedor solo los suyos
+        var veTodos = User.VeTodosLosPedidos();
 
         var connStr = _config.GetConnectionString("Ferreteria");
         await using var con = new NpgsqlConnection(connStr);
         await con.OpenAsync();
 
         int? vendedorId = null;
-        if (!EsAdmin)
+        if (!veTodos)
         {
             vendedorId = await con.QueryFirstOrDefaultAsync<int?>(
                 "SELECT id FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre)",
@@ -41,7 +44,7 @@ public class ListaModel : PageModel
             }
         }
 
-        string filtroVendedor = EsAdmin ? "" : "AND p.vendedor_id = @vid";
+        string filtroVendedor = veTodos ? "" : "AND p.vendedor_id = @vid";
 
         string sql = $@"
             SELECT p.id                AS Id,
@@ -56,10 +59,11 @@ public class ListaModel : PageModel
             JOIN clientes c ON c.id = p.cliente_id
             JOIN usuarios u ON u.id = p.vendedor_id
             WHERE p.fecha >= now() - interval '3 months'
+              AND p.negocio = @negocio
             {filtroVendedor}
             ORDER BY p.fecha DESC, p.id DESC";
 
-        var parametros = new { vid = vendedorId ?? 0 };
+        var parametros = new { vid = vendedorId ?? 0, negocio = User.NegocioActual() };
         var lista = await con.QueryAsync<PedidoFila>(sql, parametros);
         Pedidos = lista.ToList();
     }

@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Security.Claims;
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Npgsql;
@@ -32,7 +33,7 @@ public class IndexModel : PageModel
     {
         if (User.Identity?.IsAuthenticated != true)
         {
-            return RedirectToPage("/Login");
+            return RedirectToPage("/Bienvenida");
         }
 
         NombreUsuario = User.Identity.Name ?? "";
@@ -47,17 +48,20 @@ public class IndexModel : PageModel
         {
             await using var con = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
 
-            // El vendedor solo ve las cifras de sus propios pedidos.
+            // Solo cifras del negocio actual. El vendedor solo ve las de sus propios pedidos.
             Datos = await con.QueryFirstAsync<Resumen>(@"
                 SELECT
                     (SELECT count(*) FROM pedidos p
-                      WHERE p.estado = 'pendiente' AND (@esAdmin OR p.vendedor_id = u.id))      AS Pendientes,
+                      WHERE p.negocio = @negocio AND p.estado = 'pendiente'
+                        AND (@esAdmin OR p.vendedor_id = u.id))                                  AS Pendientes,
                     (SELECT count(*) FROM pedidos p
-                      WHERE p.fecha::date = current_date AND (@esAdmin OR p.vendedor_id = u.id)) AS PedidosHoy,
-                    (SELECT count(*) FROM productos WHERE stock_minimo > 0 AND stock <= stock_minimo) AS StockBajo,
+                      WHERE p.negocio = @negocio AND p.fecha::date = current_date
+                        AND (@esAdmin OR p.vendedor_id = u.id))                                  AS PedidosHoy,
+                    (SELECT count(*) FROM productos
+                      WHERE negocio = @negocio AND stock_minimo > 0 AND stock <= stock_minimo)   AS StockBajo,
                     (SELECT count(*) FROM clientes)                                               AS Clientes
                 FROM (SELECT (SELECT id FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre)) AS id) u",
-                new { esAdmin = EsAdmin, nombre = NombreUsuario });
+                new { esAdmin = User.VeTodosLosPedidos(), nombre = NombreUsuario, negocio = User.NegocioActual() });
 
             await CargarGraficasAsync(con);
         }
@@ -73,8 +77,8 @@ public class IndexModel : PageModel
     // Los pedidos cancelados y no entregados no cuentan como venta.
     private async Task CargarGraficasAsync(NpgsqlConnection con)
     {
-        var filtro = new { esAdmin = EsAdmin, nombre = NombreUsuario };
-        const string soloMios = @"(@esAdmin OR p.vendedor_id =
+        var filtro = new { esAdmin = User.VeTodosLosPedidos(), nombre = NombreUsuario, negocio = User.NegocioActual() };
+        const string soloMios = @"p.negocio = @negocio AND (@esAdmin OR p.vendedor_id =
             (SELECT id FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre)))";
 
         var ventas = (await con.QueryAsync<VentaDia>($@"

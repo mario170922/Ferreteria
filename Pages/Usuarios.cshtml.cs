@@ -1,5 +1,6 @@
 using Dapper;
 using Ferreteria.Models;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -7,6 +8,10 @@ using Npgsql;
 
 namespace Ferreteria.Pages;
 
+// Usuarios y perfiles.
+// - El administrador de un negocio ve y crea usuarios solo de su negocio.
+// - El administrador global ve a todos y puede crear usuarios en cualquier negocio,
+//   incluso otros administradores globales.
 [Authorize(Roles = "admin")]
 public class UsuariosModel : PageModel
 {
@@ -20,6 +25,7 @@ public class UsuariosModel : PageModel
     public List<Usuario> Lista { get; set; } = new();
     public string? Mensaje { get; set; }
     public bool EsError { get; set; }
+    public bool EsAdminGlobal => User.EsAdminGlobal();
 
     [BindProperty]
     public string NombreUsuario { get; set; } = "";
@@ -28,11 +34,20 @@ public class UsuariosModel : PageModel
     public string Clave { get; set; } = "";
 
     [BindProperty]
-    public string Rol { get; set; } = "vendedor";
+    public string Rol { get; set; } = Negocio.Vendedor;
+
+    [BindProperty]
+    public string? NegocioUsuario { get; set; }
+
+    // Perfiles que puede crear quien está en la página
+    public string[] PerfilesPermitidos => EsAdminGlobal
+        ? Negocio.Perfiles
+        : new[] { Negocio.Vendedor, Negocio.Cajero, Negocio.Conductor, Negocio.Admin };
 
     public async Task OnGetAsync()
     {
         Mensaje = TempData["Mensaje"]?.ToString();
+        NegocioUsuario = User.NegocioActual();
         await CargarAsync();
     }
 
@@ -41,15 +56,16 @@ public class UsuariosModel : PageModel
         var nombre = NombreUsuario.Trim();
 
         if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(Clave))
-        {
-            Mensaje = "Escribe el usuario y la contraseña.";
-            EsError = true;
-            await CargarAsync();
-            return Page();
-        }
+            return await ErrorAsync("Escribe el usuario y la contraseña.");
 
-        if (Rol != "admin" && Rol != "vendedor")
-            Rol = "vendedor";
+        if (!PerfilesPermitidos.Contains(Rol))
+            return await ErrorAsync("Elige un perfil de la lista.");
+
+        // El administrador global no es de un negocio; los demás sí.
+        // Quien no es administrador global solo crea usuarios en su propio negocio.
+        string? negocio = Rol == Negocio.AdminGlobal ? null
+            : EsAdminGlobal && Negocio.EsValido(NegocioUsuario) ? NegocioUsuario
+            : User.NegocioActual();
 
         var hash = BCrypt.Net.BCrypt.HashPassword(Clave);
 
@@ -61,28 +77,21 @@ public class UsuariosModel : PageModel
             new { nombre });
 
         if (repetido)
-        {
-            Mensaje = "Ya existe un usuario con ese nombre.";
-            EsError = true;
-            await CargarAsync();
-            return Page();
-        }
+            return await ErrorAsync("Ya existe un usuario con ese nombre.");
 
         try
         {
             await conn.ExecuteAsync(
-                "INSERT INTO usuarios (nombre_usuario, clave_hash, rol) VALUES (@nombre, @hash, @Rol)",
-                new { nombre, hash, Rol });
+                "INSERT INTO usuarios (nombre_usuario, clave_hash, rol, negocio) VALUES (@nombre, @hash, @Rol, @negocio)",
+                new { nombre, hash, Rol, negocio });
 
-            TempData["Mensaje"] = $"Usuario '{nombre}' creado.";
+            TempData["Mensaje"] = $"Usuario '{nombre}' creado como {Negocio.NombrePerfil(Rol).ToLower()}"
+                + (negocio is null ? "." : $" de {Negocio.Nombre(negocio)}.");
             return RedirectToPage();
         }
         catch (PostgresException ex) when (ex.SqlState == "23505")
         {
-            Mensaje = "Ya existe un usuario con ese nombre.";
-            EsError = true;
-            await CargarAsync();
-            return Page();
+            return await ErrorAsync("Ya existe un usuario con ese nombre.");
         }
     }
 
@@ -90,13 +99,24 @@ public class UsuariosModel : PageModel
     {
         await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
 
-        // El administrador principal no se puede desactivar desde aquí
-        await conn.ExecuteAsync(
-            "UPDATE usuarios SET activo = NOT activo WHERE id = @id AND lower(nombre_usuario) <> 'admin'",
-            new { id });
+        // El administrador principal no se puede desactivar desde aquí.
+        // El administrador de un negocio solo cambia usuarios de su negocio.
+        await conn.ExecuteAsync(@"
+            UPDATE usuarios SET activo = NOT activo
+            WHERE id = @id AND lower(nombre_usuario) <> 'admin'
+              AND (@global OR (negocio = @negocio AND rol <> 'admin_global'))",
+            new { id, global = EsAdminGlobal, negocio = User.NegocioActual() });
 
         TempData["Mensaje"] = "Estado del usuario actualizado.";
         return RedirectToPage();
+    }
+
+    private async Task<IActionResult> ErrorAsync(string texto)
+    {
+        Mensaje = texto;
+        EsError = true;
+        await CargarAsync();
+        return Page();
     }
 
     private async Task CargarAsync()
@@ -104,10 +124,11 @@ public class UsuariosModel : PageModel
         await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
 
         const string sql = @"
-            SELECT id, nombre_usuario AS NombreUsuario, rol, activo AS Activo
+            SELECT id, nombre_usuario AS NombreUsuario, rol, negocio, activo AS Activo
             FROM usuarios
-            ORDER BY nombre_usuario";
+            WHERE @global OR negocio = @negocio
+            ORDER BY negocio NULLS FIRST, nombre_usuario";
 
-        Lista = (await conn.QueryAsync<Usuario>(sql)).AsList();
+        Lista = (await conn.QueryAsync<Usuario>(sql, new { global = EsAdminGlobal, negocio = User.NegocioActual() })).AsList();
     }
 }

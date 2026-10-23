@@ -1,4 +1,5 @@
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -38,7 +39,7 @@ public class IndexModel : PageModel
                    c.direccion         AS Direccion,
                    c.celular_1         AS Celular1,
                    c.celular_2         AS Celular2,
-                   (SELECT count(*) FROM pedidos p WHERE p.cliente_id = c.id) AS Pedidos
+                   (SELECT count(*) FROM pedidos p WHERE p.cliente_id = c.id AND p.negocio = @negocio) AS Pedidos
             FROM clientes c
             WHERE @texto = ''
                OR c.nombre_cliente ILIKE '%' || @texto || '%'
@@ -48,7 +49,7 @@ public class IndexModel : PageModel
             ORDER BY c.nombre_cliente
             LIMIT 200";
 
-        Lista = (await con.QueryAsync<ClienteFila>(sql, new { texto })).AsList();
+        Lista = (await con.QueryAsync<ClienteFila>(sql, new { texto, negocio = User.NegocioActual() })).AsList();
     }
 
     public class ClienteFila

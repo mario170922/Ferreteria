@@ -94,8 +94,8 @@ public class CategoriasModel : PageModel
 
             await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
             await conn.ExecuteAsync(
-                "INSERT INTO categorias (nombre, imagen) VALUES (@nombre, @ruta)",
-                new { nombre, ruta });
+                "INSERT INTO categorias (negocio, nombre, imagen) VALUES (@negocio, @nombre, @ruta)",
+                new { negocio = User.NegocioActual(), nombre, ruta });
 
             return MensajeOk("Categoría creada.");
         }
@@ -121,11 +121,12 @@ public class CategoriasModel : PageModel
 
             await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
             var anterior = await conn.ExecuteScalarAsync<string?>(
-                "SELECT imagen FROM categorias WHERE id = @id", new { id });
+                "SELECT imagen FROM categorias WHERE id = @id AND negocio = @negocio",
+                new { id, negocio = User.NegocioActual() });
 
             await conn.ExecuteAsync(
-                "UPDATE categorias SET imagen = @nueva WHERE id = @id",
-                new { nueva, id });
+                "UPDATE categorias SET imagen = @nueva WHERE id = @id AND negocio = @negocio",
+                new { nueva, id, negocio = User.NegocioActual() });
 
             ImagenService.Eliminar(anterior, _entorno);
             return MensajeOk("Imagen actualizada.");
@@ -146,8 +147,10 @@ public class CategoriasModel : PageModel
         {
             await using var conn = new NpgsqlConnection(_config.GetConnectionString("Ferreteria"));
             await conn.ExecuteAsync(
-                "INSERT INTO subcategorias (categoria_id, nombre) VALUES (@categoriaId, @nombre)",
-                new { categoriaId, nombre });
+                @"INSERT INTO subcategorias (categoria_id, nombre)
+                  SELECT @categoriaId, @nombre
+                  WHERE EXISTS (SELECT 1 FROM categorias WHERE id = @categoriaId AND negocio = @negocio)",
+                new { categoriaId, nombre, negocio = User.NegocioActual() });
 
             return MensajeOk("Subcategoría agregada.");
         }
@@ -169,8 +172,9 @@ public class CategoriasModel : PageModel
         await using var tx = await conn.BeginTransactionAsync();
 
         var categoriaId = await conn.ExecuteScalarAsync<int?>(
-            "SELECT categoria_id FROM subcategorias WHERE id = @subcategoriaId",
-            new { subcategoriaId }, tx);
+            @"SELECT s.categoria_id FROM subcategorias s JOIN categorias c ON c.id = s.categoria_id
+              WHERE s.id = @subcategoriaId AND c.negocio = @negocio",
+            new { subcategoriaId, negocio = User.NegocioActual() }, tx);
 
         if (categoriaId is null)
         {
@@ -197,12 +201,15 @@ public class CategoriasModel : PageModel
     private async Task CargarAsync(NpgsqlConnection conn)
     {
         var categorias = (await conn.QueryAsync<CategoriaVista>(
-            "SELECT id, nombre, imagen FROM categorias ORDER BY nombre")).AsList();
+            "SELECT id, nombre, imagen FROM categorias WHERE negocio = @negocio ORDER BY nombre",
+            new { negocio = User.NegocioActual() })).AsList();
 
         var subcategorias = (await conn.QueryAsync<SubcategoriaFila>(@"
-            SELECT id, categoria_id AS CategoriaId, nombre
-            FROM subcategorias
-            ORDER BY nombre")).AsList();
+            SELECT s.id, s.categoria_id AS CategoriaId, s.nombre
+            FROM subcategorias s
+            JOIN categorias c ON c.id = s.categoria_id
+            WHERE c.negocio = @negocio
+            ORDER BY s.nombre", new { negocio = User.NegocioActual() })).AsList();
 
         var productos = (await conn.QueryAsync<ProductoFila>(@"
             SELECT pc.categoria_id AS CategoriaId, p.id, p.codigo, p.nombre, p.medida

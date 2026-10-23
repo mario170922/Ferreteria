@@ -1,4 +1,5 @@
 using Dapper;
+using Ferreteria.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -48,8 +49,10 @@ public class DetalleModel : PageModel
         await con.OpenAsync();
 
         // Para vendedores, buscamos su id. Si no existe, no mostramos nada.
+        // Administrador, cajero y conductor ven cualquier pedido del negocio.
+        var veTodos = User.VeTodosLosPedidos();
         int vendedorId = 0;
-        if (!EsAdmin)
+        if (!veTodos)
         {
             vendedorId = await con.QueryFirstOrDefaultAsync<int>(
                 "SELECT id FROM usuarios WHERE lower(nombre_usuario) = lower(@nombre)",
@@ -82,11 +85,12 @@ public class DetalleModel : PageModel
             JOIN clientes c ON c.id = p.cliente_id
             JOIN usuarios u ON u.id = p.vendedor_id
             WHERE p.id = @id
-              AND (@esAdmin OR p.vendedor_id = @vid)";
+              AND p.negocio = @negocio
+              AND (@veTodos OR p.vendedor_id = @vid)";
 
         Pedido = await con.QueryFirstOrDefaultAsync<PedidoCabecera>(
             sqlCabecera,
-            new { id, esAdmin = EsAdmin, vid = vendedorId });
+            new { id, veTodos, vid = vendedorId, negocio = User.NegocioActual() });
 
         if (Pedido is null)
         {
@@ -132,8 +136,8 @@ public class DetalleModel : PageModel
         try
         {
             var actual = await con.QueryFirstOrDefaultAsync<string>(
-                "SELECT estado FROM pedidos WHERE id = @id FOR UPDATE",
-                new { id }, tx);
+                "SELECT estado FROM pedidos WHERE id = @id AND negocio = @negocio FOR UPDATE",
+                new { id, negocio = User.NegocioActual() }, tx);
 
             if (actual is null)
             {

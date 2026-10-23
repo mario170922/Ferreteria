@@ -1,7 +1,10 @@
 @* Barra superior de todas las páginas. La página actual se resalta sola (ferreteria.js).
    Se usa con: <partial name="_Barra" /> *@
+@using Ferreteria.Services
 @{
     bool esAdmin = User.IsInRole("admin");
+    var negocio = User.NegocioActual();
+    var otroNegocio = negocio == Negocio.Tornilleria ? Negocio.Ferreteria : Negocio.Tornilleria;
 }
 <nav class="fer-nav py-2 py-md-3" aria-label="Navegación principal">
     <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -9,7 +12,7 @@
             <img src="/img/logo-casita.png" alt="" style="height:48px;width:auto" />
             <span class="d-flex flex-column">
                 <span class="fer-marca">El Castillo</span>
-                <span class="small text-secondary d-none d-sm-inline">Inventario y pedidos</span>
+                <span class="fer-negocio-actual"><i class="bi @Negocio.Icono(negocio) me-1" aria-hidden="true"></i>@Negocio.Nombre(negocio)</span>
             </span>
         </a>
         <div class="d-flex flex-wrap gap-2">
@@ -22,6 +25,17 @@
                 <a class="btn btn-light" href="/Categorias"><i class="bi bi-tags me-2" aria-hidden="true"></i>Categorías</a>
                 <a class="btn btn-light" href="/Usuarios"><i class="bi bi-person-gear me-2" aria-hidden="true"></i>Usuarios</a>
                 <a class="btn btn-light" href="/Descuentos"><i class="bi bi-percent me-2" aria-hidden="true"></i>Descuentos</a>
+            }
+            @if (User.EsAdminGlobal())
+            {
+                @* El administrador global pasa al otro negocio sin volver a ingresar *@
+                <form method="post" action="/CambiarNegocio" class="d-inline">
+                    <input type="hidden" name="negocio" value="@otroNegocio" />
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-light">
+                        <i class="bi bi-arrow-left-right me-2" aria-hidden="true"></i>Ir a @Negocio.Nombre(otroNegocio)
+                    </button>
+                </form>
             }
             <a class="btn btn-outline-light" href="/Salir"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Salir</a>
         </div>

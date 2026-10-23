@@ -84,7 +84,7 @@ public class EditarModel : PageModel
                    stock_minimo  AS StockMinimo,
                    imagen
             FROM productos
-            WHERE id = @id", new { id });
+            WHERE id = @id AND negocio = @negocio", new { id, negocio = User.NegocioActual() });
 
         if (p is null)
             return RedirectToPage("/Productos");
@@ -144,6 +144,13 @@ public class EditarModel : PageModel
             var anterior = await conn.ExecuteScalarAsync<string?>(
                 "SELECT imagen FROM productos WHERE id = @Id", new { Form.Id }, tx);
 
+            var negocio = User.NegocioActual();
+            var esDelNegocio = await conn.ExecuteScalarAsync<bool>(
+                "SELECT EXISTS (SELECT 1 FROM productos WHERE id = @Id AND negocio = @negocio)",
+                new { Form.Id, negocio }, tx);
+            if (!esDelNegocio)
+                throw new InvalidOperationException("Ese producto no es de este negocio.");
+
             // Si se borró el código de barras, se crea uno propio: todo producto debe tener uno.
             if (Form.CodigoBarras.Length == 0)
                 Form.CodigoBarras = await CodigoBarras.GenerarAsync(conn, tx);
@@ -157,9 +164,10 @@ public class EditarModel : PageModel
                     precio_compra = @PrecioCompra,
                     stock_minimo  = @StockMinimo,
                     imagen        = COALESCE(@nuevaRuta, imagen)
-                WHERE id = @Id",
+                WHERE id = @Id AND negocio = @negocio",
                 new
                 {
+                    negocio,
                     Form.Id,
                     Form.Codigo,
                     Form.CodigoBarras,
@@ -170,8 +178,12 @@ public class EditarModel : PageModel
                     nuevaRuta
                 }, tx);
 
-            // Categorías: las marcadas, más las que contienen las subcategorías marcadas
-            var subIds = Form.SubcategoriaIds.Distinct().ToArray();
+            // Categorías: las marcadas, más las que contienen las subcategorías marcadas.
+            // Solo se aceptan categorías y subcategorías de este mismo negocio.
+            var subIds = (await conn.QueryAsync<int>(@"
+                SELECT s.id FROM subcategorias s JOIN categorias c ON c.id = s.categoria_id
+                WHERE s.id = ANY(@ids) AND c.negocio = @negocio",
+                new { ids = Form.SubcategoriaIds.Distinct().ToArray(), negocio }, tx)).ToArray();
             var catIds = Form.CategoriaIds.Distinct().ToList();
 
             if (subIds.Length > 0)
@@ -181,7 +193,9 @@ public class EditarModel : PageModel
                     new { subIds }, tx);
                 catIds.AddRange(catsDeSub);
             }
-            catIds = catIds.Distinct().ToList();
+            catIds = (await conn.QueryAsync<int>(
+                "SELECT id FROM categorias WHERE id = ANY(@ids) AND negocio = @negocio",
+                new { ids = catIds.Distinct().ToArray(), negocio }, tx)).ToList();
 
             await conn.ExecuteAsync(
                 "DELETE FROM producto_subcategorias WHERE producto_id = @Id", new { Form.Id }, tx);
@@ -239,12 +253,15 @@ public class EditarModel : PageModel
     private async Task CargarCategoriasAsync(NpgsqlConnection conn)
     {
         var categorias = (await conn.QueryAsync<CategoriaOpcion>(
-            "SELECT id, nombre FROM categorias ORDER BY nombre")).AsList();
+            "SELECT id, nombre FROM categorias WHERE negocio = @negocio ORDER BY nombre",
+            new { negocio = User.NegocioActual() })).AsList();
 
         var subcategorias = (await conn.QueryAsync<SubcategoriaFila>(@"
-            SELECT id, categoria_id AS CategoriaId, nombre
-            FROM subcategorias
-            ORDER BY nombre")).AsList();
+            SELECT s.id, s.categoria_id AS CategoriaId, s.nombre
+            FROM subcategorias s
+            JOIN categorias c ON c.id = s.categoria_id
+            WHERE c.negocio = @negocio
+            ORDER BY s.nombre", new { negocio = User.NegocioActual() })).AsList();
 
         foreach (var cat in categorias)
         {

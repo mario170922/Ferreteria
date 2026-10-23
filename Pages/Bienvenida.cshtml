@@ -1,0 +1,41 @@
+@page
+@model Ferreteria.Pages.BienvenidaModel
+@using Ferreteria.Services
+@{
+    Layout = null;
+    string Enlace(string negocio) => "/Login?negocio=" + negocio +
+        (string.IsNullOrEmpty(Model.ReturnUrl) ? "" : "&ReturnUrl=" + Uri.EscapeDataString(Model.ReturnUrl));
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bienvenido - El Castillo</title>
+    <partial name="_Estilos" />
+</head>
+<body>
+
+<main id="contenido" class="fer-login">
+    <section class="fer-bienvenida" aria-labelledby="titulo-bienvenida">
+        <img src="/img/logo-casita.png" alt="Logo El Castillo" class="fer-login-logo" />
+        <h1 id="titulo-bienvenida" class="fer-login-titulo text-center mb-1">El Castillo</h1>
+        <p class="text-center fs-4 mb-4">¿A dónde deseas ingresar hoy?</p>
+
+        <div class="fer-negocios">
+            <a class="fer-negocio" href="@Enlace(Negocio.Tornilleria)">
+                <span class="fer-negocio-icono"><i class="bi @Negocio.Icono(Negocio.Tornilleria)" aria-hidden="true"></i></span>
+                <span class="fer-negocio-nombre">Tornillería</span>
+                <span class="fer-negocio-ir">Ingresar <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+            </a>
+            <a class="fer-negocio" href="@Enlace(Negocio.Ferreteria)">
+                <span class="fer-negocio-icono"><i class="bi @Negocio.Icono(Negocio.Ferreteria)" aria-hidden="true"></i></span>
+                <span class="fer-negocio-nombre">Ferretería</span>
+                <span class="fer-negocio-ir">Ingresar <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+            </a>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>
