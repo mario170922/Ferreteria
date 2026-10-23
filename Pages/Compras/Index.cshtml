@@ -34,6 +34,10 @@
     {
         <div class="alert alert-success" role="status">@Model.Mensaje</div>
     }
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger" role="alert">@Model.Error</div>
+    }
 
     @if (Model.Lista.Count == 0)
     {
@@ -58,6 +62,7 @@
                             <th scope="col">Proveedor</th>
                             <th scope="col" class="text-end">Productos</th>
                             <th scope="col" class="text-end">Total</th>
+                            <th scope="col"><span class="visually-hidden">Acciones</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -69,6 +74,15 @@
                                 <td data-etiqueta="Proveedor">@c.Proveedor</td>
                                 <td data-etiqueta="Productos" class="text-end">@c.Productos</td>
                                 <td data-etiqueta="Total" class="text-end">@ListaModel.Moneda(c.Total)</td>
+                                <td class="text-end">
+                                    <form method="post" asp-page-handler="Anular" asp-route-id="@c.Id" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-fer-outline"
+                                                data-confirmar="¿Anular la factura @c.Numero de @c.Proveedor? Se restan del inventario las unidades que sumó y deja de contar como egreso."
+                                                data-confirmar-boton="Sí, anular" data-confirmar-tipo="peligro">
+                                            <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Anular
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                         }
                     </tbody>
