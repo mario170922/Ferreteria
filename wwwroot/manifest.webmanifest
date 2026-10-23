@@ -1,0 +1,23 @@
+{
+  "name": "El Castillo Ferretería",
+  "short_name": "El Castillo",
+  "description": "Inventario y pedidos de El Castillo Ferretería",
+  "lang": "es-CO",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    { "src": "/img/app/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/img/app/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/img/app/icono-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/img/app/icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Nuevo pedido", "url": "/Pedidos/Nuevo", "icons": [{ "src": "/img/app/icono-192.png", "sizes": "192x192" }] },
+    { "name": "Inventario", "url": "/Productos", "icons": [{ "src": "/img/app/icono-192.png", "sizes": "192x192" }] },
+    { "name": "Pedidos", "url": "/Pedidos/Lista", "icons": [{ "src": "/img/app/icono-192.png", "sizes": "192x192" }] }
+  ]
+}

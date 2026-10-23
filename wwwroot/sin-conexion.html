@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111111" />
+    <title>Sin conexión - El Castillo</title>
+    <link rel="stylesheet" href="/lib/bootstrap-5.3.3/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/lib/bootstrap-icons/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="/lib/barlow/barlow.css" />
+    <style>
+        /* Página que muestra la app del celular cuando no llega al servidor */
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: #111111;
+            color: #f4f4f4;
+            font-family: "Barlow", "Segoe UI", system-ui, sans-serif;
+            text-align: center;
+        }
+        .caja { max-width: 420px; }
+        .logo { height: 96px; width: auto; margin-bottom: 1rem; opacity: .9; }
+        h1 { font-family: "Barlow Condensed", "Barlow", sans-serif; font-weight: 800; color: #f5b700; font-size: 2.2rem; text-transform: uppercase; }
+        p { font-size: 1.15rem; color: #d0d0d0; }
+        .btn-reintentar {
+            min-height: 52px;
+            padding: 0 2rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            border-radius: 10px;
+            background: #f5b700;
+            border: 2px solid #f5b700;
+            color: #000;
+        }
+        .btn-reintentar:hover { background: #ffcb2e; border-color: #ffcb2e; }
+    </style>
+</head>
+<body>
+    <main class="caja">
+        <img class="logo" src="/img/logo-casita.png" alt="" />
+        <h1>Sin conexión</h1>
+        <p>El celular no logra comunicarse con el sistema de la ferretería.</p>
+        <p class="small">Revise que esté conectado al wifi del almacén y vuelva a intentar.</p>
+        <button type="button" class="btn btn-reintentar mt-3" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>Volver a intentar
+        </button>
+    </main>
+</body>
+</html>

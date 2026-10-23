@@ -21,7 +21,15 @@
         cerrarMensajesDeExito();
         botonVolverArriba();
         transicionEntrePaginas();
+        registrarApp();
     });
+
+    // Permite instalar el sitio en el celular como una app (ver /sw.js).
+    // El navegador solo lo acepta en https o en localhost; en otros casos no pasa nada.
+    function registrarApp() {
+        if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+        navigator.serviceWorker.register('/sw.js').catch(function () { });
+    }
 
     // La página donde está el usuario queda resaltada en la barra superior.
     function marcarPaginaActual() {
