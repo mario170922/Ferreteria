@@ -58,6 +58,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
+// Copia de seguridad diaria de la base (Services/RespaldoDiario.cs)
+builder.Services.AddHostedService<Ferreteria.Services.RespaldoDiario>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
