@@ -59,23 +59,10 @@
                             </select>
                         </div>
 
-                        @if (Model.EsAdminGlobal)
-                        {
-                            <div class="mb-4" id="campo-negocio">
-                                <label asp-for="NegocioUsuario" class="form-label fw-semibold">Negocio</label>
-                                <select asp-for="NegocioUsuario" class="form-select form-select-lg">
-                                    @foreach (var n in Ferreteria.Services.Negocio.Todos)
-                                    {
-                                        <option value="@n">@Ferreteria.Services.Negocio.Nombre(n)</option>
-                                    }
-                                </select>
-                                <div class="form-text">El administrador global no lleva negocio: entra a los dos.</div>
-                            </div>
-                        }
-                        else
-                        {
-                            <p class="form-text mb-4">El usuario queda en <strong>@Ferreteria.Services.Negocio.Nombre(Ferreteria.Services.Negocio.NegocioActual(User))</strong>.</p>
-                        }
+                        <p class="form-text mb-4">
+                            El usuario queda en <strong>@Ferreteria.Services.Negocio.Nombre(Ferreteria.Services.Negocio.NegocioActual(User))</strong>
+                            y solo podrá entrar por ahí. El administrador global entra a los dos.
+                        </p>
 
                         <button type="submit" class="btn btn-fer btn-lg w-100">
                             <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Crear usuario
@@ -88,7 +75,7 @@
         <section class="col-12 col-lg-7" aria-labelledby="titulo-lista">
             <div class="fer-card overflow-hidden h-100">
                 <div class="fer-card-cuerpo pb-2">
-                    <h2 id="titulo-lista" class="h5 mb-0">Usuarios existentes</h2>
+                    <h2 id="titulo-lista" class="h5 mb-0">Usuarios de @Ferreteria.Services.Negocio.Nombre(Ferreteria.Services.Negocio.NegocioActual(User))</h2>
                 </div>
 
                 <div class="table-responsive">

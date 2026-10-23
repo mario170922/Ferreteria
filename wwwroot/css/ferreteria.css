@@ -196,9 +196,9 @@ main h1:not(.fer-saludo):not(.fer-login-titulo)::after {
   color: #fff;
 }
 
-/* En pantallas medianas y celulares todos los botones quedan a la vista en varias filas,
-   y la barra no se queda pegada arriba para no tapar la página */
-@media (max-width: 1199.98px) {
+/* Si los botones no caben en una fila (pantallas de menos de 1400 px), la barra
+   no se queda pegada arriba para no tapar la página */
+@media (max-width: 1399.98px) {
   .fer-nav,
   .ec-nav { position: static; }
 

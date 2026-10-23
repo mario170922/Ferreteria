@@ -8,10 +8,12 @@ using Npgsql;
 
 namespace Ferreteria.Pages;
 
-// Usuarios y perfiles.
-// - El administrador de un negocio ve y crea usuarios solo de su negocio.
-// - El administrador global ve a todos y puede crear usuarios en cualquier negocio,
-//   incluso otros administradores globales.
+// Usuarios y perfiles. Cada negocio tiene sus propios usuarios:
+// - La lista muestra los usuarios del negocio en el que se está trabajando, más los
+//   administradores globales (que entran a los dos).
+// - Los usuarios nuevos quedan en el negocio actual. Para crear uno de Ferretería,
+//   el administrador global primero pasa a Ferretería con el botón de la barra.
+// - Solo el administrador global puede crear otros administradores globales.
 [Authorize(Roles = "admin")]
 public class UsuariosModel : PageModel
 {
@@ -36,9 +38,6 @@ public class UsuariosModel : PageModel
     [BindProperty]
     public string Rol { get; set; } = Negocio.Vendedor;
 
-    [BindProperty]
-    public string? NegocioUsuario { get; set; }
-
     // Perfiles que puede crear quien está en la página
     public string[] PerfilesPermitidos => EsAdminGlobal
         ? Negocio.Perfiles
@@ -47,7 +46,6 @@ public class UsuariosModel : PageModel
     public async Task OnGetAsync()
     {
         Mensaje = TempData["Mensaje"]?.ToString();
-        NegocioUsuario = User.NegocioActual();
         await CargarAsync();
     }
 
@@ -61,11 +59,8 @@ public class UsuariosModel : PageModel
         if (!PerfilesPermitidos.Contains(Rol))
             return await ErrorAsync("Elige un perfil de la lista.");
 
-        // El administrador global no es de un negocio; los demás sí.
-        // Quien no es administrador global solo crea usuarios en su propio negocio.
-        string? negocio = Rol == Negocio.AdminGlobal ? null
-            : EsAdminGlobal && Negocio.EsValido(NegocioUsuario) ? NegocioUsuario
-            : User.NegocioActual();
+        // El administrador global no es de un negocio; los demás quedan en el negocio actual.
+        string? negocio = Rol == Negocio.AdminGlobal ? null : User.NegocioActual();
 
         var hash = BCrypt.Net.BCrypt.HashPassword(Clave);
 
@@ -104,7 +99,7 @@ public class UsuariosModel : PageModel
         await conn.ExecuteAsync(@"
             UPDATE usuarios SET activo = NOT activo
             WHERE id = @id AND lower(nombre_usuario) <> 'admin'
-              AND (@global OR (negocio = @negocio AND rol <> 'admin_global'))",
+              AND (negocio = @negocio OR (@global AND rol = 'admin_global'))",
             new { id, global = EsAdminGlobal, negocio = User.NegocioActual() });
 
         TempData["Mensaje"] = "Estado del usuario actualizado.";
@@ -126,9 +121,9 @@ public class UsuariosModel : PageModel
         const string sql = @"
             SELECT id, nombre_usuario AS NombreUsuario, rol, negocio, activo AS Activo
             FROM usuarios
-            WHERE @global OR negocio = @negocio
+            WHERE negocio = @negocio OR rol = 'admin_global'
             ORDER BY negocio NULLS FIRST, nombre_usuario";
 
-        Lista = (await conn.QueryAsync<Usuario>(sql, new { global = EsAdminGlobal, negocio = User.NegocioActual() })).AsList();
+        Lista = (await conn.QueryAsync<Usuario>(sql, new { negocio = User.NegocioActual() })).AsList();
     }
 }
