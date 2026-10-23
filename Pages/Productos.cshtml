@@ -495,9 +495,13 @@
         <h1 class="h3 mb-0">Inventario</h1>
         @if (User.IsInRole("admin"))
         {
-            <a class="btn btn-fer" href="/Nuevo">
-                <i class="bi bi-plus-circle"></i> Nuevo producto
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-fer-outline" href="/Reposicion"><i class="bi bi-cart-plus"></i> Qué comprar</a>
+                <a class="btn btn-fer-outline" href="/Etiquetas"><i class="bi bi-upc-scan"></i> Etiquetas</a>
+                <a class="btn btn-fer" href="/Nuevo">
+                    <i class="bi bi-plus-circle"></i> Nuevo producto
+                </a>
+            </div>
         }
     </div>
 

@@ -1,0 +1,83 @@
+@page
+@model ReposicionModel
+@using Ferreteria.Pages.Pedidos
+@using Ferreteria.Services
+@{
+    Layout = null;
+    var grupos = Model.Filas.GroupBy(f => f.Proveedor ?? "Sin compras registradas").ToList();
+    var cultura = new System.Globalization.CultureInfo("es-CO");
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Qué comprar - @Negocio.Nombre(User.NegocioActual())</title>
+    <partial name="_Estilos" />
+</head>
+<body>
+
+<a href="#contenido" class="visually-hidden-focusable btn btn-fer m-2">Ir al contenido</a>
+<partial name="_Barra" />
+
+<main id="contenido" class="container py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-2">
+        <h1 class="h2 mb-0">Qué comprar</h1>
+        <button type="button" class="btn btn-fer-outline no-imprimir" onclick="window.print()"><i class="bi bi-printer me-2" aria-hidden="true"></i>Imprimir lista</button>
+    </div>
+    <p class="text-secondary mb-4">
+        Productos de @Negocio.Nombre(User.NegocioActual()) que están en su stock mínimo o por debajo.
+        La cantidad sugerida deja el producto en 3 veces su mínimo, o en lo que se vendió los últimos 30 días si es más.
+        Solo salen los productos que tienen un stock mínimo definido (se pone en Editar producto).
+    </p>
+
+    @if (Model.Filas.Count == 0)
+    {
+        <div class="fer-card fer-vacio">
+            <i class="bi bi-check2-circle" aria-hidden="true"></i>
+            <h2>No hay nada por comprar</h2>
+            <p class="mb-0">Ningún producto está en su mínimo. Revisa que los productos tengan stock mínimo definido.</p>
+        </div>
+    }
+
+    @foreach (var g in grupos)
+    {
+        <section class="fer-card overflow-hidden mb-4" aria-label="@g.Key">
+            <div class="fer-card-cuerpo pb-2 d-flex flex-wrap justify-content-between gap-2">
+                <h2 class="h5 mb-0"><i class="bi bi-truck me-2" aria-hidden="true"></i>@g.Key</h2>
+                <span class="text-secondary">Costo estimado: <strong>@ListaModel.Moneda(g.Sum(f => f.CostoEstimado))</strong></span>
+            </div>
+            <div class="table-responsive">
+                <table class="table fer-tabla fer-tabla-tarjetas mb-0">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-end">Hay</th>
+                            <th class="text-end">Mínimo</th>
+                            <th class="text-end">Vendidas 30 días</th>
+                            <th class="text-end">Pedir</th>
+                            <th class="text-end">Costo aprox.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in g)
+                        {
+                            <tr>
+                                <td data-etiqueta="Producto"><a href="/Editar/@f.Id">@f.Nombre@(string.IsNullOrWhiteSpace(f.Medida) ? "" : " · " + f.Medida)</a>
+                                    <div class="small text-secondary">@f.Codigo@(f.UltimaCompra is null ? "" : " · última compra " + f.UltimaCompra.Value.ToString("dd/MM/yyyy"))</div></td>
+                                <td data-etiqueta="Hay" class="text-end @(f.Stock <= 0 ? "text-danger fw-bold" : "")">@f.Stock.ToString("N0", cultura)</td>
+                                <td data-etiqueta="Mínimo" class="text-end">@f.StockMinimo.ToString("N0", cultura)</td>
+                                <td data-etiqueta="Vendidas 30 días" class="text-end">@f.Vendidas30.ToString("N0", cultura)</td>
+                                <td data-etiqueta="Pedir" class="text-end fw-bold">@f.Sugerido.ToString("N0", cultura)</td>
+                                <td data-etiqueta="Costo aprox." class="text-end">@ListaModel.Moneda(f.CostoEstimado)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</main>
+</body>
+</html>
