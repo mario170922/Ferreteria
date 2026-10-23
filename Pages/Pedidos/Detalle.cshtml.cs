@@ -99,7 +99,33 @@ public class DetalleModel : PageModel
 
         if (Pedido is null)
         {
-            return NotFound();
+            // ¿Existe, pero es del otro negocio? Pasa cuando se abre un enlace o un QR
+            // estando en el otro negocio.
+            var otroNegocio = await con.QueryFirstOrDefaultAsync<string?>(
+                "SELECT negocio FROM pedidos WHERE id = @id", new { id });
+
+            if (otroNegocio is not null && otroNegocio != User.NegocioActual())
+            {
+                // El administrador global entra a los dos: se le cambia de negocio y se le muestra
+                if (User.EsAdminGlobal())
+                {
+                    var usuario = await con.QuerySingleOrDefaultAsync<Ferreteria.Models.Usuario>(@"
+                        SELECT id, nombre_usuario AS NombreUsuario, rol, negocio, activo AS Activo
+                        FROM usuarios WHERE lower(nombre_usuario) = lower(@n)", new { n = User.Identity?.Name ?? "" });
+                    if (usuario is { Activo: true, Rol: Negocio.AdminGlobal })
+                    {
+                        await Ferreteria.Pages.LoginModel.IniciarSesionAsync(HttpContext, usuario, otroNegocio);
+                        TempData["Mensaje"] = $"Este pedido es de {Negocio.Nombre(otroNegocio)}: te pasé a {Negocio.Nombre(otroNegocio)}.";
+                        return RedirectToPage("/Pedidos/Detalle", new { id });
+                    }
+                }
+
+                TempData["Error"] = $"Ese pedido es de {Negocio.Nombre(otroNegocio)}. Entra por {Negocio.Nombre(otroNegocio)} para verlo.";
+                return RedirectToPage("/Pedidos/Lista");
+            }
+
+            TempData["Error"] = "Ese pedido no existe o no lo tienes asignado.";
+            return RedirectToPage("/Pedidos/Lista");
         }
 
         const string sqlItems = @"

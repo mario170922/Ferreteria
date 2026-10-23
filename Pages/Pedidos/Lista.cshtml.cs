@@ -19,10 +19,12 @@ public class ListaModel : PageModel
     }
 
     public List<PedidoFila> Pedidos { get; set; } = new();
+    public string? Error { get; set; }
     public bool EsAdmin { get; set; }
 
     public async Task OnGetAsync()
     {
+        Error = TempData["Error"] as string;
         EsAdmin = User.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == "admin");
         // Administrador, cajero y conductor ven todos los pedidos del negocio; el vendedor solo los suyos
         var veTodos = User.VeTodosLosPedidos();
