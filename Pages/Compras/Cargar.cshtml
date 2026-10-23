@@ -63,10 +63,11 @@
         <form method="post" asp-page-handler="Leer" enctype="multipart/form-data" class="fer-card p-4">
             <label for="factura" class="cf-subir">
                 <i class="bi bi-file-earmark-zip" aria-hidden="true"></i>
-                <span class="fs-5 fw-semibold">Elige el archivo .zip de la factura</span>
+                <span class="fs-5 fw-semibold">Elige el archivo de la factura</span>
                 <span class="text-secondary">Es el archivo que llega adjunto en el correo del proveedor junto con el PDF.
-                    También sirve el .xml que viene dentro del .zip.</span>
-                <input id="factura" name="factura" type="file" accept=".zip,.xml" class="form-control form-control-lg mt-2" style="max-width: 460px" required />
+                    También sirve el .xml que viene dentro del .zip. Si solo tienes el PDF o una foto de una factura impresa,
+                    también se puede: la lee la inteligencia artificial y luego revisas cada línea.</span>
+                <input id="factura" name="factura" type="file" accept=".zip,.xml,.pdf,.jpg,.jpeg,.png,.webp" class="form-control form-control-lg mt-2" style="max-width: 460px" required />
             </label>
             <div class="d-flex justify-content-end mt-3">
                 <button type="submit" class="btn btn-fer btn-lg">
@@ -88,6 +89,13 @@
             </div>
         </section>
 
+        @if (Model.LeidaConIA)
+        {
+            <div class="alert alert-info" role="status">
+                Esta factura se leyó con inteligencia artificial desde un PDF o una foto. <strong>Revisa cada dato contra el papel</strong>
+                (cantidades, precios y totales) antes de guardar.
+            </div>
+        }
         @if (Model.Alertas.Count > 0)
         {
             <div class="alert alert-warning" role="alert">
@@ -187,9 +195,9 @@
                         </div>
 
                         <div class="d-flex flex-wrap gap-3 mt-2">
-                            @if (res?.Estado == Homologacion.Aprobar)
+                            @if (res?.Estado == Homologacion.Aprobar || Model.LeidaConIA)
                             {
-                                <div class="form-check js-aprobar">
+                                <div class="form-check @(Model.LeidaConIA ? "" : "js-aprobar")">
                                     <input class="form-check-input" type="checkbox" name="Lineas[@i].Aprobado" value="true" id="apr-@i" checked="@form.Aprobado" />
                                     <label class="form-check-label fw-semibold" for="apr-@i">Aprobado: sí es este producto</label>
                                 </div>

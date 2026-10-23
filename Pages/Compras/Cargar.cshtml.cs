@@ -85,9 +85,15 @@ public class CargarModel : PageModel
         }
 
         var ext = Path.GetExtension(factura.FileName).ToLowerInvariant();
-        if (ext is not (".zip" or ".xml"))
+        var conIA = LectorFacturaIA.Extensiones.Contains(ext);
+        if (ext is not (".zip" or ".xml") && !conIA)
         {
-            Error = "El archivo debe ser el .zip o el .xml que llegó en el correo. El PDF solo sirve para leer.";
+            Error = "El archivo debe ser el .zip o .xml del correo, o un PDF o foto (.jpg, .png) de la factura.";
+            return Page();
+        }
+        if (conIA && !LectorFacturaIA.Configurado(_config))
+        {
+            Error = "Para leer PDF o fotos falta configurar la clave de la inteligencia artificial. Mientras tanto, usa el .zip o .xml del correo.";
             return Page();
         }
 
@@ -98,11 +104,19 @@ public class CargarModel : PageModel
 
         try
         {
+            if (conIA)
+            {
+                // PDF o foto: la lee la IA una sola vez y se guarda lo leído junto al archivo
+                var bytes = await System.IO.File.ReadAllBytesAsync(Path.Combine(Carpeta, Archivo));
+                var leida = await LectorFacturaIA.LeerAsync(_config, bytes, ext, HttpContext.RequestAborted);
+                await System.IO.File.WriteAllTextAsync(Path.Combine(Carpeta, Archivo + ".json"), LectorFacturaIA.ComoJson(leida));
+            }
             Factura = LeerGuardado(Archivo);
         }
         catch (Exception ex)
         {
             System.IO.File.Delete(Path.Combine(Carpeta, Archivo));
+            System.IO.File.Delete(Path.Combine(Carpeta, Archivo + ".json"));
             Error = ex is InvalidOperationException ? ex.Message : "El archivo no es una factura electrónica válida.";
             return Page();
         }
@@ -113,6 +127,7 @@ public class CargarModel : PageModel
         if (await YaCargadaAsync(con, Factura) is { } aviso)
         {
             System.IO.File.Delete(Path.Combine(Carpeta, Archivo));
+            System.IO.File.Delete(Path.Combine(Carpeta, Archivo + ".json"));
             Error = aviso;
             Factura = null;
             return Page();
@@ -122,6 +137,8 @@ public class CargarModel : PageModel
         Alertas = FacturaElectronica.Validar(Factura);
         Resultados = await HomologarAsync(con, negocio, Factura);
         Lineas = ValoresIniciales(Factura, Resultados);
+        // Lo leído por IA puede tener errores: todo pide aprobación aunque el texto coincida
+        if (conIA) foreach (var l in Lineas) l.Aprobado = false;
         return Page();
     }
 
@@ -163,6 +180,8 @@ public class CargarModel : PageModel
                 faltan.Add($"Línea {n}: elige el producto, créalo nuevo o marca \"No sumar\".");
             else if (res.Estado == Homologacion.Aprobar && form.ProductoId == res.ProductoId && !form.Aprobado)
                 faltan.Add($"Línea {n}: marca \"Aprobado\" para confirmar la sugerencia ({res.Confianza} % de confianza).");
+            else if (LeidaConIA && form.ProductoId != NoSumar && !form.Aprobado)
+                faltan.Add($"Línea {n}: la factura se leyó con IA; revisa la línea contra el papel y marca \"Aprobado\".");
             if (form.Cantidad is <= 0)
                 faltan.Add($"Línea {n}: la cantidad debe ser mayor que cero.");
         }
@@ -339,8 +358,14 @@ public class CargarModel : PageModel
 
     // ---------- Ayudas ----------
 
+    // Si la factura se leyó con IA (PDF o foto), se usan los datos guardados al leerla
+    public bool LeidaConIA => Archivo is not null && System.IO.File.Exists(Path.Combine(Carpeta, Archivo + ".json"));
+
     private FacturaElectronica.Factura LeerGuardado(string archivo)
     {
+        var json = Path.Combine(Carpeta, archivo + ".json");
+        if (System.IO.File.Exists(json))
+            return LectorFacturaIA.DesdeJson(System.IO.File.ReadAllText(json));
         using var s = System.IO.File.OpenRead(Path.Combine(Carpeta, archivo));
         return FacturaElectronica.Leer(s, archivo);
     }
