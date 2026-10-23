@@ -2,9 +2,32 @@
 @model NuevoPedidoModel
 @using Ferreteria.Pages.Pedidos
 @using System.Globalization
+@using System.Text.Json
 @{
     Layout = null;
     int tope = (int)Math.Floor(Model.DescuentoMaximo);
+
+    // Productos con existencias, para el buscador (se arma en el navegador, sin pedir nada más al servidor)
+    var productosJson = JsonSerializer.Serialize(Model.Productos.Select(p => new
+    {
+        id = p.Id,
+        codigo = p.Codigo,
+        nombre = p.Nombre,
+        medida = p.Medida ?? "",
+        precio = p.PrecioVenta,
+        stock = p.Stock,
+        imagen = string.IsNullOrEmpty(p.Imagen) ? ""
+               : p.Imagen.Contains('/') ? "/" + p.Imagen.TrimStart('/')
+               : "/img/productos/" + p.Imagen
+    }));
+
+    // Si el pedido volvió con un error, se recuperan las líneas que ya tenía
+    var lineasJson = JsonSerializer.Serialize(Model.Lineas
+        .Where(l => l.ProductoId > 0 && (l.Cantidad ?? 0) > 0)
+        .Select(l => new { id = l.ProductoId, cantidad = l.Cantidad }));
+
+    // Botones rápidos de descuento hasta el máximo permitido
+    var rapidos = new[] { 0, 5, 10, 15, 20, 25, 30, 40, 50 }.Where(d => d <= tope).ToList();
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -13,6 +36,188 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nuevo pedido - Ferretería</title>
     <partial name="_Estilos" />
+    <style>
+        /* ---------- Buscador de productos ---------- */
+        .np-buscador { position: relative; }
+
+        .np-buscador .bi-search {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--fer-naranja);
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        .np-buscador input { padding-left: 2.8rem; }
+
+        .np-resultados {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: .6rem;
+            margin-top: .75rem;
+            max-height: 420px;
+            overflow-y: auto;
+            padding: 2px;
+        }
+
+        .np-producto {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            width: 100%;
+            padding: .6rem;
+            text-align: left;
+            color: var(--fer-texto);
+            background: var(--fer-superficie-2);
+            border: 1px solid var(--fer-borde);
+            border-radius: var(--fer-radio-sm);
+            transition: border-color var(--fer-rapido) ease, transform var(--fer-rapido) ease, background-color var(--fer-rapido) ease;
+        }
+
+        .np-producto:hover,
+        .np-producto:focus-visible {
+            border-color: var(--fer-naranja);
+            background: #2a2510;
+            transform: translateY(-1px);
+        }
+
+        .np-producto.en-pedido { border-color: var(--fer-verde); }
+
+        .np-foto {
+            width: 52px;
+            height: 52px;
+            flex-shrink: 0;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #1a1a1a url("/img/patron-tornillos.svg") center / 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.4rem;
+        }
+
+        .np-nombre { font-weight: 600; line-height: 1.2; }
+        .np-detalle { font-size: .85rem; color: var(--fer-texto-suave); }
+        .np-precio { color: var(--fer-naranja); font-weight: 700; }
+
+        .np-mas {
+            margin-left: auto;
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--fer-naranja);
+            color: #000;
+            font-size: 1.2rem;
+        }
+
+        .np-producto.en-pedido .np-mas { background: var(--fer-verde); }
+
+        /* ---------- Líneas del pedido ---------- */
+        .np-linea {
+            display: grid;
+            grid-template-columns: 52px 1fr auto auto auto;
+            align-items: center;
+            gap: .75rem;
+            padding: .75rem 1.25rem;
+            border-top: 1px solid var(--fer-borde);
+        }
+
+        .np-linea.resaltada { animation: np-resaltar 1.2s ease; }
+
+        @@keyframes np-resaltar {
+            0%, 60% { background: rgba(245, 183, 0, .22); }
+            100% { background: transparent; }
+        }
+
+        .np-cantidad {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+        }
+
+        .np-cantidad .btn {
+            width: 46px;
+            padding: 0;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .np-cantidad input {
+            width: 84px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .np-subtotal { min-width: 100px; text-align: right; font-weight: 700; }
+
+        .np-quitar {
+            color: var(--fer-rojo);
+            border: 1px solid transparent;
+            background: transparent;
+            width: 44px;
+        }
+
+        .np-quitar:hover { border-color: var(--fer-rojo); color: var(--fer-rojo); }
+
+        .np-aviso-stock { grid-column: 2 / -1; font-size: .85rem; color: #ffb3b3; }
+
+        @@media (max-width: 767.98px) {
+            .np-linea {
+                grid-template-columns: 52px 1fr auto;
+                grid-template-areas:
+                    "foto nombre quitar"
+                    "cant cant subtotal";
+                padding: .75rem 1rem;
+            }
+            .np-linea > .np-foto { grid-area: foto; }
+            .np-linea > .np-info { grid-area: nombre; }
+            .np-linea > .np-cantidad { grid-area: cant; }
+            .np-linea > .np-subtotal { grid-area: subtotal; align-self: center; }
+            .np-linea > .np-quitar { grid-area: quitar; }
+            .np-aviso-stock { grid-column: 1 / -1; }
+        }
+
+        /* ---------- Descuento ---------- */
+        .np-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+        .np-chip {
+            min-width: 64px;
+            min-height: 46px;
+            border-radius: 999px;
+            border: 2px solid var(--fer-borde);
+            background: var(--fer-superficie-2);
+            color: var(--fer-texto);
+            font-weight: 700;
+            transition: all var(--fer-rapido) ease;
+        }
+
+        .np-chip:hover { border-color: var(--fer-naranja); }
+
+        .np-chip[aria-pressed="true"] {
+            background: var(--fer-naranja);
+            border-color: var(--fer-naranja);
+            color: #000;
+        }
+
+        /* ---------- Historial del cliente ---------- */
+        .np-historial-producto {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .6rem 0;
+            border-top: 1px dashed var(--fer-borde);
+        }
+
+        .np-historial-producto:first-child { border-top: 0; }
+    </style>
 </head>
 <body>
 
@@ -36,13 +241,15 @@
     @if (!ModelState.IsValid)
     {
         <div class="alert alert-danger" role="alert">
-            <strong>No se pudo guardar el pedido:</strong>
-            <ul class="mb-0 mt-2">
-                @foreach (var error in ModelState.Values.SelectMany(v => v.Errors).Where(e => !string.IsNullOrEmpty(e.ErrorMessage)))
-                {
-                    <li>@error.ErrorMessage</li>
-                }
-            </ul>
+            <div>
+                <strong>No se pudo guardar el pedido:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach (var error in ModelState.Values.SelectMany(v => v.Errors).Where(e => !string.IsNullOrEmpty(e.ErrorMessage)))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
         </div>
     }
 
@@ -121,96 +328,78 @@
                     </div>
                 </section>
 
-                <section class="fer-card" aria-labelledby="titulo-productos">
-                    <div class="fer-card-cuerpo pb-0">
-                        <h2 id="titulo-productos" class="h5 mb-3">2. Productos</h2>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table fer-tabla mb-0">
-                            <caption class="visually-hidden">Productos del pedido. Elige el producto y escribe la cantidad.</caption>
-                            <thead>
-                                <tr>
-                                    <th scope="col">Producto</th>
-                                    <th scope="col" style="width: 130px;">Cantidad</th>
-                                    <th scope="col" class="text-end">Precio</th>
-                                    <th scope="col" class="text-end">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @for (int i = 0; i < Model.Lineas.Count; i++)
-                                {
-                                    var linea = Model.Lineas[i];
-                                    <tr>
-                                        <td>
-                                            <label class="visually-hidden" for="producto-@i">Producto de la línea @(i + 1)</label>
-                                            <select id="producto-@i"
-                                                    name="Lineas[@i].ProductoId"
-                                                    class="form-select linea-producto"
-                                                    data-linea="@i">
-                                                <option value="0">Elige un producto</option>
-                                                @foreach (var p in Model.Productos)
-                                                {
-                                                    <option value="@p.Id"
-                                                            selected="@(p.Id == linea.ProductoId)"
-                                                            data-precio="@p.PrecioVenta.ToString(CultureInfo.InvariantCulture)">
-                                                        @p.Codigo · @p.Nombre @p.Medida (stock: @p.Stock.ToString("N0", new System.Globalization.CultureInfo("es-CO")))
-                                                    </option>
-                                                }
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <label class="visually-hidden" for="cantidad-@i">Cantidad de la línea @(i + 1)</label>
-                                            <input id="cantidad-@i"
-                                                   type="number"
-                                                   name="Lineas[@i].Cantidad"
-                                                   class="form-control linea-cantidad"
-                                                   data-linea="@i"
-                                                   min="1" max="100000" step="1"
-                                                   value="@linea.Cantidad" />
-                                        </td>
-                                        <td class="text-end">
-                                            <span id="precio-@i">—</span>
-                                        </td>
-                                        <td class="text-end">
-                                            <span id="subtotal-@i" class="fw-semibold">—</span>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                <section id="historial" class="fer-card mb-4" aria-labelledby="titulo-historial" hidden>
+                    <div class="fer-card-cuerpo">
+                        <h2 id="titulo-historial" class="h5 mb-1">Lo que ha comprado este cliente</h2>
+                        <p id="historial-resumen" class="text-secondary mb-3"></p>
+                        <div id="historial-aviso" class="small mb-2" role="status" aria-live="polite"></div>
 
-                    <div class="fer-card-cuerpo border-top">
-                        <div class="row g-3 align-items-center">
-                            <div class="col-sm-4">
-                                <label for="descuento" class="form-label fw-semibold mb-0">Descuento (opcional)</label>
+                        <div class="row g-4">
+                            <div class="col-lg-7">
+                                <h3 class="h6 text-secondary text-uppercase mb-2">Lo que más compra</h3>
+                                <div id="historial-productos"></div>
                             </div>
-                            <div class="col-sm-8">
-                                <select id="descuento" name="DescuentoElegido" class="form-select form-select-lg"
-                                        aria-describedby="ayuda-descuento" @(tope == 0 ? "disabled" : "")>
-                                    @for (int d = 0; d <= tope; d++)
-                                    {
-                                        <option value="@d" selected="@(d == (int)Model.DescuentoElegido)">
-                                            @(d == 0 ? "Sin descuento" : d + " %")
-                                        </option>
-                                    }
-                                </select>
-                                <div id="ayuda-descuento" class="form-text">
-                                    @if (tope == 0)
-                                    {
-                                        <span>Tu usuario no tiene descuento permitido.</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Puedes elegir hasta @tope %. Si no eliges nada, el pedido va sin descuento.</span>
-                                    }
-                                </div>
+                            <div class="col-lg-5">
+                                <h3 class="h6 text-secondary text-uppercase mb-2">Últimos pedidos</h3>
+                                <ul id="historial-pedidos" class="list-unstyled mb-0"></ul>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <div class="fer-card-cuerpo pt-0 small text-secondary">
-                        Solo aparecen productos con existencias. Si necesitas más filas, guarda el pedido y crea otro.
+                <section class="fer-card" aria-labelledby="titulo-productos">
+                    <div class="fer-card-cuerpo">
+                        <h2 id="titulo-productos" class="h5 mb-3">2. Productos</h2>
+
+                        <label for="buscar-producto" class="form-label fw-semibold">Busca el producto y tócalo para agregarlo</label>
+                        <div class="np-buscador">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <input id="buscar-producto" type="search" class="form-control form-control-lg"
+                                   placeholder="Nombre, código o medida. Ej.: drywall 1/2" autocomplete="off"
+                                   aria-describedby="ayuda-buscar" />
+                        </div>
+                        <div id="ayuda-buscar" class="form-text">Solo aparecen productos con existencias.</div>
+                        <div id="resultados" class="np-resultados" aria-label="Resultados de la búsqueda"></div>
+                        <p id="sin-resultados" class="text-secondary mt-3 mb-0" hidden>No encontramos productos con esa búsqueda.</p>
+                    </div>
+
+                    <div class="fer-card-cuerpo pb-2 pt-0 d-flex justify-content-between align-items-center">
+                        <h3 class="h6 mb-0">En el pedido</h3>
+                        <span id="contador-lineas" class="small text-secondary" role="status" aria-live="polite"></span>
+                    </div>
+                    <div id="lineas"></div>
+                    <div id="pedido-vacio" class="fer-vacio py-4">
+                        <i class="bi bi-cart" aria-hidden="true"></i>
+                        <p class="mb-0">Todavía no hay productos. Búscalos arriba y tócalos para agregarlos.</p>
+                    </div>
+
+                    <div class="fer-card-cuerpo border-top">
+                        <fieldset>
+                            <legend class="form-label fw-semibold fs-6 mb-2">Descuento (opcional)</legend>
+                            <input type="hidden" id="descuento" name="DescuentoElegido"
+                                   value="@Model.DescuentoElegido.ToString(CultureInfo.InvariantCulture)" />
+                            @if (tope == 0)
+                            {
+                                <p class="text-secondary mb-0">Tu usuario no tiene descuento permitido.</p>
+                            }
+                            else
+                            {
+                                <div class="np-chips mb-2">
+                                    @foreach (var d in rapidos)
+                                    {
+                                        <button type="button" class="np-chip" data-descuento="@d" aria-pressed="false">
+                                            @(d == 0 ? "Sin descuento" : d + " %")
+                                        </button>
+                                    }
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="descuento-otro" class="text-secondary">Otro:</label>
+                                    <input id="descuento-otro" type="number" class="form-control" style="max-width:110px"
+                                           min="0" max="@tope" step="1" inputmode="numeric" placeholder="%" />
+                                    <span class="text-secondary small">Puedes dar hasta @tope %.</span>
+                                </div>
+                            }
+                        </fieldset>
                     </div>
                 </section>
 
@@ -252,75 +441,391 @@
 </main>
 
 <script>
-    const formato = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
-    const selDescuento = document.getElementById('descuento');
+    (function () {
+        const PRODUCTOS = @Html.Raw(productosJson);
+        const LINEAS_INICIALES = @Html.Raw(lineasJson);
+        const TOPE = @tope;
+        const MAX_LINEAS = 30;
 
-    function recalcular() {
-        let subtotal = 0;
+        const formato = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+        const numero = new Intl.NumberFormat('es-CO');
+        const porId = new Map(PRODUCTOS.map(p => [p.id, p]));
 
-        document.querySelectorAll('.linea-producto').forEach(function (sel) {
-            const i = sel.dataset.linea;
-            const opcion = sel.options[sel.selectedIndex];
-            const precio = Number(opcion && opcion.dataset.precio ? opcion.dataset.precio : 0);
-            const cantidad = Number(document.getElementById('cantidad-' + i).value || 0);
-            const linea = precio * cantidad;
+        // Líneas del pedido: [{ id, cantidad }]
+        let lineas = [];
 
-            document.getElementById('precio-' + i).textContent = precio > 0 ? formato.format(precio) : '—';
-            document.getElementById('subtotal-' + i).textContent = linea > 0 ? formato.format(linea) : '—';
-            subtotal += linea;
+        // ---------- Utilidades para armar elementos sin innerHTML ----------
+        function el(etiqueta, clase, texto) {
+            const e = document.createElement(etiqueta);
+            if (clase) e.className = clase;
+            if (texto !== undefined && texto !== null) e.textContent = texto;
+            return e;
+        }
+
+        function icono(nombre) {
+            const i = el('i', 'bi ' + nombre);
+            i.setAttribute('aria-hidden', 'true');
+            return i;
+        }
+
+        function foto(p) {
+            if (p && p.imagen) {
+                const img = el('img', 'np-foto');
+                img.src = p.imagen;
+                img.alt = '';
+                img.loading = 'lazy';
+                return img;
+            }
+            const vacia = el('span', 'np-foto');
+            vacia.appendChild(icono('bi-nut'));
+            return vacia;
+        }
+
+        function nombreCompleto(p) {
+            return p.nombre + (p.medida ? ' · ' + p.medida : '');
+        }
+
+        function sinTildes(t) {
+            return (t || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        }
+
+        // ---------- Buscador ----------
+        const buscador = document.getElementById('buscar-producto');
+        const resultados = document.getElementById('resultados');
+        const sinResultados = document.getElementById('sin-resultados');
+
+        function buscar() {
+            const palabras = sinTildes(buscador.value).split(/\s+/).filter(Boolean);
+            const encontrados = PRODUCTOS.filter(p => {
+                const texto = sinTildes(p.codigo + ' ' + p.nombre + ' ' + p.medida);
+                return palabras.every(w => texto.includes(w));
+            }).slice(0, palabras.length ? 24 : 12);
+
+            resultados.replaceChildren();
+            encontrados.forEach(p => resultados.appendChild(tarjetaProducto(p)));
+            sinResultados.hidden = encontrados.length > 0;
+            return encontrados;
+        }
+
+        function tarjetaProducto(p) {
+            const boton = el('button', 'np-producto');
+            boton.type = 'button';
+            if (lineas.some(l => l.id === p.id)) boton.classList.add('en-pedido');
+            boton.setAttribute('aria-label', 'Agregar ' + nombreCompleto(p) + ', ' + formato.format(p.precio) + ', stock ' + numero.format(p.stock));
+
+            const info = el('span', 'flex-grow-1');
+            info.appendChild(el('span', 'np-nombre d-block', nombreCompleto(p)));
+            info.appendChild(el('span', 'np-detalle d-block', 'Código ' + p.codigo + ' · Stock ' + numero.format(p.stock)));
+            info.appendChild(el('span', 'np-precio d-block', formato.format(p.precio)));
+
+            const mas = el('span', 'np-mas');
+            mas.appendChild(icono(lineas.some(l => l.id === p.id) ? 'bi-check-lg' : 'bi-plus-lg'));
+
+            boton.append(foto(p), info, mas);
+            boton.addEventListener('click', () => agregar(p.id, 1, true));
+            return boton;
+        }
+
+        buscador.addEventListener('input', buscar);
+
+        // Enter en el buscador agrega el primer resultado (y no envía el formulario)
+        buscador.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const primero = buscar()[0];
+                if (primero) {
+                    agregar(primero.id, 1, true);
+                    buscador.select();
+                }
+            }
         });
 
-        const pctDescuento = Number(selDescuento ? selDescuento.value : 0);
-        const descuento = subtotal * pctDescuento / 100;
-        const total = Math.round(subtotal - descuento);
+        // ---------- Líneas del pedido ----------
+        const contLineas = document.getElementById('lineas');
+        const vacio = document.getElementById('pedido-vacio');
+        const contador = document.getElementById('contador-lineas');
 
-        document.getElementById('etiqueta-descuento').textContent = 'Descuento (' + pctDescuento + '%)';
-        document.getElementById('resumen-subtotal').textContent = formato.format(subtotal);
-        document.getElementById('resumen-descuento').textContent = '− ' + formato.format(descuento);
-        document.getElementById('resumen-total').textContent = formato.format(total);
-    }
+        // sumar = true: si ya está, suma la cantidad. Devuelve false si no se pudo.
+        function agregar(id, cantidad, sumar) {
+            const p = porId.get(id);
+            if (!p) return false;
 
-    document.querySelectorAll('.linea-producto, .linea-cantidad').forEach(function (el) {
-        el.addEventListener('input', recalcular);
-        el.addEventListener('change', recalcular);
-    });
-
-    if (selDescuento) {
-        selDescuento.addEventListener('change', recalcular);
-    }
-
-    document.getElementById('celular1').addEventListener('blur', async function (e) {
-        const cel = e.target.value.trim();
-        const estado = document.getElementById('estado-cliente');
-
-        if (!cel) {
-            estado.textContent = '';
-            return;
-        }
-
-        estado.textContent = 'Buscando cliente...';
-
-        try {
-            const respuesta = await fetch('/Pedidos/Nuevo?handler=Cliente&cel=' + encodeURIComponent(cel));
-            const datos = await respuesta.json();
-
-            if (datos.encontrado) {
-                document.getElementById('nombreFerreteria').value = datos.nombreFerreteria || '';
-                document.getElementById('nombreCliente').value = datos.nombreCliente || '';
-                document.getElementById('direccion').value = datos.direccion || '';
-                document.getElementById('ubicacion').value = datos.ubicacion || '';
-                document.getElementById('horario').value = datos.horario || '';
-                document.getElementById('celular2').value = datos.celular2 || '';
-                estado.textContent = 'Cliente encontrado. Revisa sus datos antes de guardar.';
-            } else {
-                estado.textContent = 'Cliente nuevo. Escribe sus datos.';
+            const existente = lineas.find(l => l.id === id);
+            if (existente) {
+                if (sumar) existente.cantidad = Math.min(existente.cantidad + cantidad, p.stock);
+                dibujar();
+                resaltar(id);
+                return true;
             }
-        } catch (error) {
-            estado.textContent = 'No se pudo buscar el cliente. Puedes escribir los datos a mano.';
-        }
-    });
 
-    recalcular();
+            if (lineas.length >= MAX_LINEAS) {
+                alert('Un pedido puede tener hasta ' + MAX_LINEAS + ' productos distintos.');
+                return false;
+            }
+
+            lineas.push({ id: id, cantidad: Math.max(1, Math.min(cantidad, p.stock)) });
+            dibujar();
+            resaltar(id);
+            return true;
+        }
+
+        function resaltar(id) {
+            const fila = contLineas.querySelector('[data-id="' + id + '"]');
+            if (!fila) return;
+            fila.classList.remove('resaltada');
+            void fila.offsetWidth;
+            fila.classList.add('resaltada');
+            fila.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        function dibujar() {
+            contLineas.replaceChildren();
+
+            lineas.forEach((l, i) => {
+                const p = porId.get(l.id);
+                const fila = el('div', 'np-linea');
+                fila.dataset.id = l.id;
+
+                // Lo que se envía al servidor: mismo formato de siempre
+                const hId = el('input'); hId.type = 'hidden'; hId.name = 'Lineas[' + i + '].ProductoId'; hId.value = l.id;
+                const hCant = el('input'); hCant.type = 'hidden'; hCant.name = 'Lineas[' + i + '].Cantidad'; hCant.value = l.cantidad;
+
+                const info = el('div', 'np-info');
+                info.appendChild(el('div', 'np-nombre', nombreCompleto(p)));
+                info.appendChild(el('div', 'np-detalle', formato.format(p.precio) + ' c/u · Stock ' + numero.format(p.stock)));
+
+                const cant = el('div', 'np-cantidad');
+                const menos = el('button', 'btn btn-fer-outline', '−');
+                menos.type = 'button';
+                menos.setAttribute('aria-label', 'Una unidad menos de ' + p.nombre);
+                const campo = el('input', 'form-control');
+                campo.type = 'number'; campo.min = 1; campo.max = p.stock; campo.step = 1; campo.inputMode = 'numeric';
+                campo.value = l.cantidad;
+                campo.setAttribute('aria-label', 'Cantidad de ' + nombreCompleto(p));
+                const mas = el('button', 'btn btn-fer-outline', '+');
+                mas.type = 'button';
+                mas.setAttribute('aria-label', 'Una unidad más de ' + p.nombre);
+                cant.append(menos, campo, mas);
+
+                const subtotal = el('div', 'np-subtotal', formato.format(p.precio * l.cantidad));
+
+                const quitar = el('button', 'btn np-quitar');
+                quitar.type = 'button';
+                quitar.setAttribute('aria-label', 'Quitar ' + nombreCompleto(p) + ' del pedido');
+                quitar.appendChild(icono('bi-trash'));
+
+                const aviso = el('div', 'np-aviso-stock');
+                aviso.setAttribute('role', 'status');
+
+                function cambiar(nueva) {
+                    let n = Math.floor(Number(nueva) || 0);
+                    aviso.textContent = '';
+                    if (n > p.stock) {
+                        n = p.stock;
+                        aviso.textContent = 'Solo hay ' + numero.format(p.stock) + ' en existencia.';
+                    }
+                    if (n < 1) n = 1;
+                    l.cantidad = n;
+                    campo.value = n;
+                    hCant.value = n;
+                    subtotal.textContent = formato.format(p.precio * n);
+                    recalcular();
+                }
+
+                menos.addEventListener('click', () => cambiar(l.cantidad - 1));
+                mas.addEventListener('click', () => cambiar(l.cantidad + 1));
+                campo.addEventListener('change', () => cambiar(campo.value));
+                quitar.addEventListener('click', () => {
+                    lineas = lineas.filter(x => x !== l);
+                    dibujar();
+                });
+
+                fila.append(hId, hCant, foto(p), info, cant, subtotal, quitar, aviso);
+                contLineas.appendChild(fila);
+            });
+
+            vacio.hidden = lineas.length > 0;
+            contador.textContent = lineas.length === 0 ? '' :
+                lineas.length + (lineas.length === 1 ? ' producto' : ' productos');
+            buscar();
+            recalcular();
+        }
+
+        // ---------- Descuento ----------
+        const descuento = document.getElementById('descuento');
+        const chips = Array.from(document.querySelectorAll('.np-chip'));
+        const otro = document.getElementById('descuento-otro');
+
+        function ponerDescuento(valor, desdeOtro) {
+            let v = Math.floor(Number(valor) || 0);
+            if (v < 0) v = 0;
+            if (v > TOPE) v = TOPE;
+            descuento.value = v;
+            chips.forEach(c => c.setAttribute('aria-pressed', String(Number(c.dataset.descuento) === v)));
+            if (otro && !desdeOtro) otro.value = chips.some(c => Number(c.dataset.descuento) === v) ? '' : v;
+            if (otro && desdeOtro && String(v) !== otro.value && otro.value !== '') otro.value = v;
+            recalcular();
+        }
+
+        chips.forEach(c => c.addEventListener('click', () => ponerDescuento(c.dataset.descuento, false)));
+        if (otro) otro.addEventListener('input', () => ponerDescuento(otro.value === '' ? 0 : otro.value, true));
+
+        // ---------- Totales ----------
+        function recalcular() {
+            const subtotal = lineas.reduce((s, l) => s + porId.get(l.id).precio * l.cantidad, 0);
+            const pct = Number(descuento.value || 0);
+            const valorDescuento = subtotal * pct / 100;
+
+            document.getElementById('etiqueta-descuento').textContent = 'Descuento (' + pct + '%)';
+            document.getElementById('resumen-subtotal').textContent = formato.format(subtotal);
+            document.getElementById('resumen-descuento').textContent = '− ' + formato.format(valorDescuento);
+            document.getElementById('resumen-total').textContent = formato.format(Math.round(subtotal - valorDescuento));
+        }
+
+        // No se puede guardar sin productos
+        document.getElementById('formPedido').addEventListener('submit', e => {
+            if (lineas.length === 0) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                buscador.focus();
+                document.getElementById('ayuda-buscar').textContent = 'Agrega al menos un producto antes de guardar.';
+                document.getElementById('ayuda-buscar').classList.add('text-danger');
+            }
+        }, true);
+
+        // ---------- Cliente e historial ----------
+        const celular = document.getElementById('celular1');
+        const estado = document.getElementById('estado-cliente');
+        const historial = document.getElementById('historial');
+        let consulta = 0;
+
+        async function buscarCliente(llenarDatos) {
+            const cel = celular.value.trim();
+            const mia = ++consulta;
+
+            if (!cel) {
+                estado.textContent = '';
+                historial.hidden = true;
+                return;
+            }
+
+            estado.textContent = 'Buscando cliente...';
+
+            try {
+                const respuesta = await fetch('/Pedidos/Nuevo?handler=Cliente&cel=' + encodeURIComponent(cel));
+                const datos = await respuesta.json();
+                if (mia !== consulta) return; // llegó tarde: ya buscaron otro celular
+
+                if (!datos.encontrado) {
+                    estado.textContent = 'Cliente nuevo. Escribe sus datos.';
+                    historial.hidden = true;
+                    return;
+                }
+
+                if (llenarDatos) {
+                    document.getElementById('nombreFerreteria').value = datos.nombreFerreteria || '';
+                    document.getElementById('nombreCliente').value = datos.nombreCliente || '';
+                    document.getElementById('direccion').value = datos.direccion || '';
+                    document.getElementById('ubicacion').value = datos.ubicacion || '';
+                    document.getElementById('horario').value = datos.horario || '';
+                    document.getElementById('celular2').value = datos.celular2 || '';
+                    estado.textContent = 'Cliente encontrado. Revisa sus datos antes de guardar.';
+                } else {
+                    estado.textContent = '';
+                }
+
+                mostrarHistorial(datos);
+            } catch (error) {
+                if (mia !== consulta) return;
+                estado.textContent = 'No se pudo buscar el cliente. Puedes escribir los datos a mano.';
+                historial.hidden = true;
+            }
+        }
+
+        function mostrarHistorial(datos) {
+            const resumen = document.getElementById('historial-resumen');
+            const productos = document.getElementById('historial-productos');
+            const pedidos = document.getElementById('historial-pedidos');
+            const aviso = document.getElementById('historial-aviso');
+            aviso.textContent = '';
+            productos.replaceChildren();
+            pedidos.replaceChildren();
+
+            if (!datos.pedidos) {
+                resumen.textContent = 'Este cliente todavía no tiene compras.';
+            } else {
+                resumen.textContent = 'Ha hecho ' + datos.pedidos + (datos.pedidos === 1 ? ' pedido' : ' pedidos') +
+                    '. El último fue el ' + datos.ultimaCompra + '.';
+            }
+
+            (datos.frecuentes || []).forEach(f => {
+                const fila = el('div', 'np-historial-producto');
+                const info = el('div', 'flex-grow-1');
+                info.appendChild(el('div', 'np-nombre', f.nombre + (f.medida ? ' · ' + f.medida : '')));
+                info.appendChild(el('div', 'np-detalle',
+                    'Veces: ' + f.veces + ' · Última compra: ' + f.ultimaFecha + ' (' + numero.format(f.ultimaCantidad) + ' und.)'));
+                fila.appendChild(info);
+
+                if (f.stock <= 0 || !porId.has(f.id)) {
+                    fila.appendChild(el('span', 'small text-secondary text-nowrap', 'Sin existencias'));
+                } else {
+                    const boton = el('button', 'btn btn-fer-outline btn-sm text-nowrap');
+                    boton.type = 'button';
+                    boton.append(icono('bi-plus-lg'), document.createTextNode('Agregar'));
+                    boton.setAttribute('aria-label', 'Agregar ' + f.nombre + ' con ' + f.ultimaCantidad + ' unidades');
+                    boton.addEventListener('click', () => {
+                        if (lineas.some(l => l.id === f.id)) {
+                            aviso.textContent = f.nombre + ' ya está en el pedido. Cambia la cantidad abajo si hace falta.';
+                            resaltar(f.id);
+                            return;
+                        }
+                        const p = porId.get(f.id);
+                        const cantidad = Math.min(f.ultimaCantidad, p.stock);
+                        if (agregar(f.id, cantidad, false)) {
+                            aviso.textContent = f.nombre + ' agregado con ' + numero.format(cantidad) + ' unidades.';
+                        }
+                    });
+                    fila.appendChild(boton);
+                }
+                productos.appendChild(fila);
+            });
+
+            if ((datos.frecuentes || []).length === 0) {
+                productos.appendChild(el('p', 'text-secondary small mb-0', 'Sin productos para mostrar.'));
+            }
+
+            (datos.ultimos || []).forEach(u => {
+                const li = el('li', 'd-flex justify-content-between align-items-center gap-2 py-1');
+                const izq = el('span');
+                izq.appendChild(el('strong', null, u.numero));
+                izq.appendChild(el('span', 'text-secondary small ms-2', u.fecha));
+                const der = el('span', 'd-flex align-items-center gap-2');
+                der.appendChild(el('span', 'estado ' + u.claseEstado, u.estado));
+                der.appendChild(el('span', 'small fw-semibold', formato.format(u.total)));
+                li.append(izq, der);
+                pedidos.appendChild(li);
+            });
+
+            if ((datos.ultimos || []).length === 0) {
+                pedidos.appendChild(el('li', 'text-secondary small', 'Sin pedidos.'));
+            }
+
+            historial.hidden = false;
+        }
+
+        celular.addEventListener('blur', () => buscarCliente(true));
+
+        // ---------- Arranque ----------
+        LINEAS_INICIALES.forEach(l => {
+            const p = porId.get(l.id);
+            if (p) lineas.push({ id: l.id, cantidad: Math.max(1, Math.min(l.cantidad, p.stock)) });
+        });
+        dibujar();
+        ponerDescuento(descuento.value, false);
+
+        // Si la página volvió con un error, se recarga el historial sin tocar lo que ya escribieron
+        if (celular.value.trim()) buscarCliente(false);
+    })();
 </script>
 
 </body>

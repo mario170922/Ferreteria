@@ -57,7 +57,8 @@ public class NuevoPedidoModel : PageModel
         await con.OpenAsync();
 
         var c = await con.QueryFirstOrDefaultAsync<ClienteEncontrado>(@"
-            SELECT nombre_ferreteria AS NombreFerreteria,
+            SELECT id                AS Id,
+                   nombre_ferreteria AS NombreFerreteria,
                    nombre_cliente    AS NombreCliente,
                    direccion         AS Direccion,
                    ubicacion         AS Ubicacion,
@@ -73,6 +74,41 @@ public class NuevoPedidoModel : PageModel
             return new JsonResult(new { encontrado = false });
         }
 
+        // Historial del cliente con cualquier vendedor.
+        // Los últimos pedidos se muestran todos, con su estado.
+        var ultimos = await con.QueryAsync<PedidoAnterior>(@"
+            SELECT numero AS Numero, fecha AS Fecha, estado AS Estado, total AS Total
+            FROM pedidos
+            WHERE cliente_id = @id
+            ORDER BY fecha DESC, id DESC
+            LIMIT 5", new { id = c.Id });
+
+        // Para contar compras, los pedidos cancelados o no entregados no cuentan.
+        var resumen = await con.QueryFirstAsync<ResumenCompras>(@"
+            SELECT count(*) AS Pedidos, max(fecha) AS Ultima
+            FROM pedidos
+            WHERE cliente_id = @id AND estado NOT IN ('cancelado', 'no_entregado')",
+            new { id = c.Id });
+
+        // Lo que más compra: en cuántos pedidos lo llevó, cuándo fue la última vez
+        // y cuántas unidades llevó esa vez, para repetirla con un toque.
+        var frecuentes = await con.QueryAsync<ProductoFrecuente>(@"
+            SELECT pr.id      AS Id,
+                   pr.codigo  AS Codigo,
+                   pr.nombre  AS Nombre,
+                   pr.medida  AS Medida,
+                   pr.stock   AS Stock,
+                   count(DISTINCT p.id) AS Veces,
+                   max(p.fecha)         AS UltimaFecha,
+                   (array_agg(pi.cantidad ORDER BY p.fecha DESC, pi.id DESC))[1] AS UltimaCantidad
+            FROM pedido_items pi
+            JOIN pedidos p    ON p.id = pi.pedido_id
+            JOIN productos pr ON pr.id = pi.producto_id
+            WHERE p.cliente_id = @id AND p.estado NOT IN ('cancelado', 'no_entregado')
+            GROUP BY pr.id
+            ORDER BY count(DISTINCT p.id) DESC, max(p.fecha) DESC
+            LIMIT 8", new { id = c.Id });
+
         return new JsonResult(new
         {
             encontrado = true,
@@ -81,8 +117,55 @@ public class NuevoPedidoModel : PageModel
             direccion = c.Direccion,
             ubicacion = c.Ubicacion ?? "",
             horario = c.Horario ?? "",
-            celular2 = c.Celular2 ?? ""
+            celular2 = c.Celular2 ?? "",
+            pedidos = resumen.Pedidos,
+            ultimaCompra = resumen.Ultima?.ToString("dd/MM/yyyy"),
+            ultimos = ultimos.Select(u => new
+            {
+                numero = u.Numero,
+                fecha = u.Fecha.ToString("dd/MM/yyyy"),
+                estado = ListaModel.EtiquetaEstado(u.Estado),
+                claseEstado = ListaModel.ClaseEstado(u.Estado),
+                total = u.Total
+            }),
+            frecuentes = frecuentes.Select(f => new
+            {
+                id = f.Id,
+                codigo = f.Codigo,
+                nombre = f.Nombre,
+                medida = f.Medida ?? "",
+                stock = f.Stock,
+                veces = f.Veces,
+                ultimaFecha = f.UltimaFecha.ToString("dd/MM/yyyy"),
+                ultimaCantidad = f.UltimaCantidad
+            })
         });
+    }
+
+    public class ResumenCompras
+    {
+        public long Pedidos { get; set; }
+        public DateTime? Ultima { get; set; }
+    }
+
+    public class PedidoAnterior
+    {
+        public string Numero { get; set; } = "";
+        public DateTime Fecha { get; set; }
+        public string Estado { get; set; } = "";
+        public decimal Total { get; set; }
+    }
+
+    public class ProductoFrecuente
+    {
+        public int Id { get; set; }
+        public string Codigo { get; set; } = "";
+        public string Nombre { get; set; } = "";
+        public string? Medida { get; set; }
+        public int Stock { get; set; }
+        public long Veces { get; set; }
+        public DateTime UltimaFecha { get; set; }
+        public int UltimaCantidad { get; set; }
     }
 
     // ---------- Guardar pedido ----------
@@ -244,7 +327,8 @@ public class NuevoPedidoModel : PageModel
                    nombre       AS Nombre,
                    medida       AS Medida,
                    precio_venta AS PrecioVenta,
-                   stock        AS Stock
+                   stock        AS Stock,
+                   imagen       AS Imagen
             FROM productos
             WHERE stock > 0
             ORDER BY codigo");
@@ -402,6 +486,7 @@ public class NuevoPedidoModel : PageModel
         public string? Medida { get; set; }
         public decimal PrecioVenta { get; set; }
         public int Stock { get; set; }
+        public string? Imagen { get; set; }
     }
 
     public class ProductoStock
@@ -419,6 +504,7 @@ public class NuevoPedidoModel : PageModel
 
     public class ClienteEncontrado
     {
+        public int Id { get; set; }
         public string? NombreFerreteria { get; set; }
         public string NombreCliente { get; set; } = "";
         public string Direccion { get; set; } = "";
