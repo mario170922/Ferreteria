@@ -106,8 +106,8 @@
         }
         .producto-stock {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 0.4rem;
             margin-bottom: 1rem;
             padding: 0.5rem;
             background: var(--fer-superficie-2);
@@ -121,6 +121,143 @@
             color: var(--fer-texto-suave);
             font-size: 0.75rem;
         }
+        .stock-fila {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        /* Barra de stock: rojo agotado o bajo, amarillo cerca del mínimo, verde bien */
+        .stock-barra {
+            position: relative;
+            display: block;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+        }
+        .stock-barra span {
+            display: block;
+            height: 100%;
+            border-radius: 3px;
+            background: var(--fer-verde);
+            transition: width 0.3s ease;
+        }
+        .stock-marca-minimo {
+            position: absolute;
+            left: 33.3%;
+            top: -3px;
+            bottom: -3px;
+            width: 2px;
+            background: var(--fer-texto-suave);
+            opacity: 0.6;
+        }
+        .stock-medio .stock-barra span { background: var(--fer-naranja); }
+        .stock-bajo .stock-barra span,
+        .stock-agotado .stock-barra span { background: var(--fer-rojo); }
+        .stock-bajo .stock-valor,
+        .stock-agotado .stock-valor { color: var(--fer-rojo); }
+
+        /* Buscador con lupa y aviso de "buscando" */
+        .busqueda-caja { position: relative; }
+        .busqueda-caja .busqueda-input { padding-left: 2.6rem; font-size: 1.05rem; }
+        .busqueda-icono {
+            position: absolute;
+            left: 0.95rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--fer-texto-suave);
+        }
+        .busqueda-girando {
+            position: absolute;
+            right: 0.9rem;
+            top: 50%;
+            width: 1.1rem;
+            height: 1.1rem;
+            margin-top: -0.55rem;
+            border: 2px solid var(--fer-naranja);
+            border-right-color: transparent;
+            border-radius: 50%;
+            opacity: 0;
+            animation: fer-girar 0.7s linear infinite;
+            transition: opacity 0.15s ease;
+        }
+        .busqueda-caja.buscando .busqueda-girando { opacity: 1; }
+        @@keyframes fer-girar { to { transform: rotate(360deg); } }
+
+        /* Botones Tarjetas / Lista */
+        .vista-selector {
+            display: inline-flex;
+            border: 1px solid var(--fer-borde);
+            border-radius: var(--fer-radio-sm);
+            overflow: hidden;
+        }
+        .vista-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            min-height: 40px;
+            padding: 0 0.9rem;
+            border: 0;
+            background: var(--fer-superficie);
+            color: var(--fer-texto-suave);
+            font-weight: 600;
+        }
+        .vista-btn[aria-pressed="true"] {
+            background: var(--fer-naranja);
+            color: #000;
+        }
+
+        /* Vista en lista: una fila por producto, foto pequeña y lo esencial */
+        .vista-lista .productos-grid {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            padding-top: 0.5rem;
+        }
+        .vista-lista .producto-card {
+            flex-direction: row;
+            align-items: stretch;
+        }
+        .vista-lista .producto-card:hover { transform: none; }
+        .vista-lista .producto-imagen {
+            width: 76px;
+            flex-shrink: 0;
+            aspect-ratio: 1;
+            height: 76px;
+            align-self: center;
+            margin-left: 0.5rem;
+            border-radius: var(--fer-radio-sm);
+        }
+        .vista-lista .producto-imagen::after { display: none; }
+        .vista-lista .producto-info {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem 1.25rem;
+            padding: 0.6rem 0.9rem;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .vista-lista .producto-nombre { flex: 1 1 100%; margin: 0; font-size: 1rem; }
+        .vista-lista .producto-codigo { flex: 1 1 160px; margin: 0; }
+        .vista-lista .producto-categorias { display: none; }
+        .vista-lista .producto-precios { display: block; margin: 0; min-width: 110px; }
+        .vista-lista .producto-precios .precio-item + .precio-item { display: none; }
+        .vista-lista .producto-stock { margin: 0; width: 180px; }
+        .vista-lista .producto-acciones { flex-wrap: nowrap; margin-left: auto; }
+        .vista-lista .producto-card .btn-accion { flex: 0 0 auto; width: auto; padding: 0.4rem 0.8rem; }
+        .vista-lista .producto-card .producto-acciones > .btn-movimientos { flex: 0 0 auto; }
+        .vista-lista .producto-acciones form { flex: 0 0 auto !important; }
+        @@media (max-width: 767.98px) {
+            .vista-lista .producto-imagen { width: 60px; height: 60px; align-self: flex-start; margin-top: 0.6rem; }
+            .vista-lista .producto-stock { width: 100%; }
+            .vista-lista .producto-info { padding: 0.6rem 0.7rem; gap: 0.4rem 0.75rem; }
+            .vista-lista .producto-acciones { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 0.4rem; }
+            .vista-lista .producto-card .btn-accion,
+            .vista-lista .producto-card .producto-acciones > .btn-movimientos,
+            .vista-lista .producto-acciones form { flex: 1 1 auto !important; }
+            .vista-lista .producto-card .btn-accion { padding: 0.4rem 0.5rem; font-size: 0.85rem; }
+            .vista-lista .producto-acciones form .btn-accion { width: 100%; }
+        }
+
         .badge-bajo {
             background: var(--fer-rojo);
             color: white;
@@ -372,10 +509,19 @@
     }
 
     <div class="filtros-contenedor">
-        <form role="search" class="mb-0">
-            <input type="text" class="busqueda-input" name="q" value="@Model.Q" placeholder="Buscar por código, nombre o medida..." />
+        @* Búsqueda instantánea: los resultados cambian mientras se escribe, sin recargar la página.
+           Los campos ocultos conservan la categoría y los filtros elegidos. *@
+        <form role="search" class="mb-0 busqueda-caja" id="form-busqueda" action="/Productos" method="get">
+            <i class="bi bi-search busqueda-icono" aria-hidden="true"></i>
+            <input type="search" class="busqueda-input" name="q" value="@Model.Q" autocomplete="off"
+                   placeholder="Buscar por código, nombre o medida..." aria-label="Buscar productos" />
+            <span class="busqueda-girando" aria-hidden="true"></span>
+            @if (Model.Categoria is not null) { <input type="hidden" name="categoria" value="@Model.Categoria" /> }
+            @if (Model.Sub is not null) { <input type="hidden" name="sub" value="@Model.Sub" /> }
+            @if (Model.Bajo) { <input type="hidden" name="bajo" value="true" /> }
         </form>
 
+        <div id="filtros-chips">
         <div class="chips-contenedor">
             <a href="@Model.Enlace(null, null, false, 1)" class="chip @(Model.Categoria is null ? "activo" : "")">
                 <i class="bi bi-collection"></i>
@@ -427,7 +573,21 @@
                 </a>
             }
         </div>
+        </div>
     </div>
+
+    <div class="d-flex justify-content-end mb-2">
+        <div class="vista-selector" role="group" aria-label="Forma de ver los productos">
+            <button type="button" class="vista-btn" data-vista="tarjetas" aria-pressed="true">
+                <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>Tarjetas
+            </button>
+            <button type="button" class="vista-btn" data-vista="lista" aria-pressed="false">
+                <i class="bi bi-list-ul" aria-hidden="true"></i>Lista
+            </button>
+        </div>
+    </div>
+
+    <div id="resultados" aria-live="polite">
 
     @if (Model.HayFiltros)
     {
@@ -506,18 +666,30 @@
                             </div>
                         </div>
 
-                        <div class="producto-stock">
-                            <div>
-                                <span class="stock-valor">@producto.Stock</span>
-                                @if (producto.StockMinimo > 0)
+                        <div class="producto-stock stock-@producto.NivelStock">
+                            <div class="stock-fila">
+                                <div>
+                                    <span class="stock-valor">@producto.Stock</span>
+                                    <span class="stock-minimo">@(producto.StockMinimo > 0 ? $"/ mín: {producto.StockMinimo}" : "en stock")</span>
+                                </div>
+                                @if (producto.NivelStock == "agotado")
                                 {
-                                    <span class="stock-minimo">/ mín: @producto.StockMinimo</span>
+                                    <span class="badge-bajo">AGOTADO</span>
+                                }
+                                else if (producto.StockBajo)
+                                {
+                                    <span class="badge-bajo">BAJO</span>
                                 }
                             </div>
-                            @if (producto.StockBajo)
-                            {
-                                <span class="badge-bajo">BAJO</span>
-                            }
+                            <div class="stock-barra" role="img"
+                                 aria-label="Stock @producto.Stock@(producto.StockMinimo > 0 ? $" de mínimo {producto.StockMinimo}" : "")">
+                                <span style="width:@(producto.PorcentajeStock)%"></span>
+                                @if (producto.StockMinimo > 0)
+                                {
+                                    @* Rayita que marca dónde está el mínimo (un tercio de la barra) *@
+                                    <i class="stock-marca-minimo" aria-hidden="true"></i>
+                                }
+                            </div>
                         </div>
 
                         <div class="producto-acciones">
@@ -576,6 +748,7 @@
             </div>
         }
     }
+    </div>
 
 </main>
 
@@ -603,14 +776,62 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
     if (e.target.id === 'lightbox') cerrarLightbox();
 });
 
-const busqueda = document.querySelector('.busqueda-input');
-let timeoutId;
+// ---------- Búsqueda instantánea ----------
+// Mientras se escribe, se piden los resultados al servidor y solo se cambia la lista,
+// así el cursor no se pierde. Si algo falla, se abre la página normal con la búsqueda.
+const formBusqueda = document.getElementById('form-busqueda');
+const busqueda = formBusqueda.querySelector('.busqueda-input');
+let esperaBusqueda, pedidoEnCurso;
+
+function urlBusqueda() {
+    const datos = new URLSearchParams(new FormData(formBusqueda));
+    if (!datos.get('q').trim()) datos.delete('q');
+    const texto = datos.toString();
+    return '/Productos' + (texto ? '?' + texto : '');
+}
+
+function buscarAhora() {
+    const url = urlBusqueda();
+    if (pedidoEnCurso) pedidoEnCurso.abort();
+    pedidoEnCurso = new AbortController();
+    formBusqueda.classList.add('buscando');
+
+    fetch(url, { signal: pedidoEnCurso.signal })
+        .then(r => { if (!r.ok || r.redirected) throw new Error('respuesta'); return r.text(); })
+        .then(html => {
+            const nuevo = new DOMParser().parseFromString(html, 'text/html');
+            for (const id of ['resultados', 'filtros-chips']) {
+                const viejo = document.getElementById(id), reemplazo = nuevo.getElementById(id);
+                if (viejo && reemplazo) viejo.replaceWith(reemplazo);
+            }
+            history.replaceState(null, '', url);
+            formBusqueda.classList.remove('buscando');
+        })
+        .catch(err => { if (err.name !== 'AbortError') location.href = url; });
+}
+
 busqueda.addEventListener('input', () => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-        busqueda.closest('form').submit();
-    }, 500);
+    clearTimeout(esperaBusqueda);
+    esperaBusqueda = setTimeout(buscarAhora, 250);
 });
+
+formBusqueda.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearTimeout(esperaBusqueda);
+    buscarAhora();
+});
+
+// ---------- Vista en tarjetas o en lista compacta (se recuerda en este equipo) ----------
+const botonesVista = document.querySelectorAll('.vista-btn');
+function ponerVista(vista) {
+    document.body.classList.toggle('vista-lista', vista === 'lista');
+    botonesVista.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vista === vista)));
+}
+botonesVista.forEach(b => b.addEventListener('click', () => {
+    ponerVista(b.dataset.vista);
+    try { localStorage.setItem('inventario-vista', b.dataset.vista); } catch (e) { }
+}));
+try { ponerVista(localStorage.getItem('inventario-vista') || 'tarjetas'); } catch (e) { }
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') cerrarLightbox();

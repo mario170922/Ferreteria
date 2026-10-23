@@ -55,6 +55,25 @@ public class ProductosModel : PageModel
         public string Categorias { get; set; } = "";
 
         public bool StockBajo => StockMinimo > 0 && Stock <= StockMinimo;
+
+        // Barra de stock: se llena por completo al llegar a 3 veces el mínimo.
+        // Sin mínimo definido, se toma 100 unidades como "lleno".
+        public int PorcentajeStock
+        {
+            get
+            {
+                if (Stock <= 0) return 0;
+                var lleno = StockMinimo > 0 ? StockMinimo * 3 : 100;
+                return Math.Clamp((int)Math.Round(Stock * 100.0 / lleno), 4, 100);
+            }
+        }
+
+        // agotado, bajo (en el mínimo o menos), medio (hasta 2 veces el mínimo) u ok
+        public string NivelStock =>
+            Stock <= 0 ? "agotado"
+            : StockBajo ? "bajo"
+            : StockMinimo > 0 && Stock <= StockMinimo * 2 ? "medio"
+            : "ok";
     }
 
     public class CategoriaChip
